@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/Solution Items/" />
+  <Project Path="base/base.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+</Solution>

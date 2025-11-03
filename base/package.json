@@ -1,0 +1,31 @@
+{
+  "name": "base",
+  "version": "1.0.0",
+  "main": "./dist/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/connect-redis": "^0.0.23",
+    "@types/express": "^5.0.3",
+    "@types/express-session": "^1.18.2",
+    "@types/node": "^24.5.2",
+    "@types/oracledb": "^6.9.1",
+    "eslint": "^9.36.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "connect-redis": "^9.0.0",
+    "cron": "^4.3.3",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "oracledb": "^6.9.0",
+    "redis": "^5.8.2"
+  }
+}

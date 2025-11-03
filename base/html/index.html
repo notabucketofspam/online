@@ -1,0 +1,215 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+		<meta charset="utf-8" />
+<link rel="stylesheet" type="text/css" href="/css/great-scott.css"/>
+<meta name="viewport" content="width=device-width, user-scalable=yes"/>
+		<title>the absolute wurst - waluigi-servebeer.com</title>
+	<style>
+		.dumb-box{
+			width:3in;
+			border-width:3px;
+			border-style:groove;
+			border-color:aqua;
+			padding:4px;
+			margin:8px;
+		}
+		h1{
+			margin-bottom:0;
+		}
+		h2{
+			text-align:center;
+			display:inline-block;
+			margin: 0px;
+			user-select:none;
+		}
+	</style>
+</head>
+<body>	
+  <div class="sef lard">
+    <div>
+      <h1>the absolute wurst</h1>
+      <span>an interactive login experience</span>
+      <button onclick="window.location.assign('/')">Leave</button>
+    </div>
+
+    <hr />
+
+    <div id="auth-status-area" hidden>
+      <p>Welcome back, <b id="welcome-message"></b> !!</p>
+      <p><button id="logout-button" style="transform: matrix(3, 0, 0, 1, 60, 0)">Logout</button></p>
+    </div>
+
+    <div id="auth-forms-container" hidden>
+      <details name="doot" class="dumb-box">
+        <summary><h2>login to your account</h2></summary>
+        <form id="api_users_login">
+          <div><label>email:<input type="email" name="email" maxlength="100" required autocomplete="off" /></label></div>
+          <div><label>password:<input type="password" name="password" required /></label></div>
+          <button type="submit">login</button>
+        </form>
+      </details>
+      <details name="doot" class="dumb-box">
+        <summary><h2>sign-up for free spam here</h2></summary>
+        <form id="api_users_add">
+          <div><label>email:<input type="email" name="email" maxlength="100" required autocomplete="off" /></label></div>
+          <div><label>username:<input type="text" name="username" minlength="1" maxlength="50" required autocomplete="off" /></label></div>
+          <div><label>password:<input type="password" name="password" minlength="1" maxlength="128" required /></label></div>
+          <button type="submit">sign-up</button>
+        </form>
+      </details>
+    </div>
+  </div>
+<script src="/js/everything.js"></script>
+<script>
+
+var welcomeMessage = document.getElementById('welcome-message');
+var logoutButton = document.getElementById('logout-button');
+var authFormsContainer = document.getElementById('auth-forms-container');
+var authStatusArea = document.getElementById('auth-status-area');
+
+// --- Logout Handler ---
+logoutButton.addEventListener('click', async function() {
+		try {
+				const response = await fetch('/api/users/logout', { method: 'POST' });
+				if (response.ok) {
+						updateUiForUser(null);
+						localStorage.removeItem("online_username");
+				} else {
+						alert('Logout failed.');
+				}
+		} catch (error) {
+				console.error('Logout error:', error);
+		}
+});
+
+// --- UI Update Function ---
+function updateUiForUser(username) {
+		if (username) {
+				welcomeMessage.textContent = username;
+				authStatusArea.removeAttribute("hidden");
+				authFormsContainer.setAttribute("hidden","");
+		} else {
+				authStatusArea.setAttribute("hidden", "")
+				authFormsContainer.removeAttribute("hidden");
+		}
+}
+
+// --- Check Login Status Endpoint Call ---
+async function checkLoginStatus() {
+	if (true) {
+		try {
+				const response = await fetch('/api/users/info', {
+						method: 'GET',
+						cache:"no-store"
+				});
+
+				if (response.ok) {
+						// User is authenticated, retrieve username
+						const data = await response.json();
+						updateUiForUser(data.username);
+						localStorage.setItem("online_username", data.username);
+				} else {
+						// User is not authenticated (HTTP 401 or 404 from server)
+						updateUiForUser(null);
+				}
+		} catch (error) {
+				console.error('Status check error:', error);
+				updateUiForUser(null);
+		}
+	}
+
+}
+
+// --- Form Handlers ---
+document.getElementById('api_users_add').addEventListener('submit', async function (event) {
+		event.preventDefault(); // Prevent the default form submission
+
+		const email = document.querySelector('#api_users_add [name="email"]').value;
+		const username = document.querySelector('#api_users_add [name="username"]').value;
+		const password = document.querySelector('#api_users_add [name="password"]').value;
+
+		try {
+				const response = await fetch('/api/users/add', {
+						method: 'POST',
+						headers: {
+								'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ email: email, username: username, password: password })
+				});
+
+				if (response.ok) {
+						alert('Signup successful!');
+						document.getElementById('api_users_add').reset(); // Clear the form
+				} else {
+						const errorData = await response.json();
+						alert('Signup failed: ' + (errorData.message || 'Unknown error'));
+				}
+		} catch (error) {
+				console.error('Fetch error:', error);
+				alert('Network error: Could not connect to the server.');
+		}
+});
+
+document.getElementById('api_users_login').addEventListener('submit', async function (event) {
+		event.preventDefault(); // Prevent the default form submission
+
+		const email = document.querySelector('#api_users_login [name="email"]').value;
+		const password = document.querySelector('#api_users_login [name="password"]').value;
+
+		try {
+				const response = await fetch('/api/users/login', {
+						method: 'POST',
+						headers: {
+								'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ email: email, password: password })
+				});
+
+				if (response.ok) {
+						//alert('Login successful!');
+						document.getElementById('api_users_login').reset();
+						checkLoginStatus(); // Update UI after successful login
+				} else {
+						const errorData = await response.json();
+						alert('Login failed: ' + (errorData.message || 'Unknown error'));
+				}
+		} catch (error) {
+				console.error('Fetch error:', error);
+				alert('Network error: Could not connect to the server.');
+		}
+});
+
+// --- storage stuff
+
+async function setStorage(stor){
+	try{
+		const response = await fetch('/api/users/storage',	{
+			method: "POST",
+			headers:{
+				'Content-Type': 'application/json'
+			},
+			body:JSON.stringify(stor)
+		});
+		const data = await response.json();
+		return data;
+	} catch (error) {
+		console.error(error);
+	}
+}
+
+async function getStorage(){
+	try{
+		const response = await fetch('api/users/storage');
+		const data = await response.json();
+		return data;
+	} catch(error){
+		console.error(error);
+	}
+}
+
+// Run this on page load
+checkLoginStatus();
+</script>
+</body>
+</html>
