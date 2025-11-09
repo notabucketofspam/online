@@ -43,7 +43,8 @@ app.use(session({
 		cookie: {
 				secure: false, // Set to true in production if using HTTPS
 				httpOnly: true, // Prevent client-side JS access
-				path: "/api"
+				path: "/api",
+				maxAge: 8.64e9, // 100 days
 		}
 }));
 
