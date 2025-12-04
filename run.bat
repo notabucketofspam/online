@@ -1,3 +1,2 @@
 @echo off
-cd base
-node .
+START "online" /D base "node" .
