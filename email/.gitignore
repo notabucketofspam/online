@@ -1,0 +1,13 @@
+.vscode/***
+dist/***
+
+keys/***
+node_modules/***
+notkeys/***
+obj/***
+
+wallet_ValuedCustomer/***
+
+desktop.ini
+package-lock.json
+tsconfig.tsbuildinfo

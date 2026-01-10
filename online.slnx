@@ -4,4 +4,8 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="email/email.esproj">
+    <Build />
+    <Deploy />
+  </Project>
 </Solution>
