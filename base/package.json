@@ -24,6 +24,7 @@
     "cron": "^4.3.3",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
+    "oci-sdk": "^2.123.0",
     "oracledb": "^6.9.0",
     "redis": "^5.8.2"
   }
