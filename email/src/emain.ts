@@ -1,8 +1,6 @@
-var cog = console.log;
-
 import * as path from "node:path";
 import * as fs from "node:fs";
-const astext_II = (x: string) => fs.readFileSync(path.join("../email", x), { encoding: "utf8" });
+const astext_II = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
 
 import * as emaildataplane from "oci-emaildataplane";
 import common = require("oci-common");
