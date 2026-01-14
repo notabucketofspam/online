@@ -26,7 +26,7 @@ async function sendEmail(submitEmailDetails : models.SubmitEmailDetails) {
 		return 1;
 	}
 }
-const body_html = astext_II("./html_p/pw_email.html");
+const body_html = astext_II("./html/emall.html");
 export async function password_reset(addressee: string, token: string) {
 	const this_body = body_html.replace("this is where we put the password reset token", token);
 
