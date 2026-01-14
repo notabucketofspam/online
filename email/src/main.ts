@@ -28,17 +28,15 @@ async function sendEmail(submitEmailDetails : models.SubmitEmailDetails) {
 		return 1;
 	}
 }
-
+const body_html = astext_II("./html_p/pw_email.html");
 export async function password_reset(addressee: string, token: string) {
-	const body_html = astext_II("./html_p/pw_email.html")
-		.replace("this is where we put the password reset token", token);
+	const this_body = body_html.replace("this is where we put the password reset token", token);
 
 	// Create a request and dependent object(s).
 	const submitEmailDetails : models.SubmitEmailDetails = {
 		sender: {
 			senderAddress: {
-				email: "noreply@waluigi-servebeer.com",
-				name: "noreply"
+				email: "noreply@waluigi-servebeer.com"
 			},
 			compartmentId: astext_II("./keys/compartment_id")
 		},
@@ -48,7 +46,7 @@ export async function password_reset(addressee: string, token: string) {
 			}]
 		},
 		subject: `Password reset for waluigi-servebeer.com`,
-		bodyHtml: body_html,
+		bodyHtml: this_body,
 	};
 	const sig_ok = await sendEmail(submitEmailDetails);
 	return sig_ok;
