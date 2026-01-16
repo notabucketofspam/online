@@ -1,6 +1,7 @@
 import express from 'express';
 import * as path from "node:path";
-import { addUser, getUserByEmail, verifyPassword, updateJsonStorage, getJsonStorage } from './db'; // Import database functions
+//import { addUser, getUserByEmail, verifyPassword, updateJsonStorage, getJsonStorage } from './db'; // Import database functions
+import * as odb from "./db";
 import { Request, Response } from 'express';
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
@@ -35,8 +36,9 @@ function getSecret() {
 }
 
 // Configure session middleware with RedisStore
+const redisStore = new RedisStore({ client: redisClient });
 app.use(session({
-		store: new RedisStore({ client: redisClient }),
+		store: redisStore,
 		secret: getSecret(),
 		resave: false,
 		saveUninitialized: false,
@@ -56,7 +58,7 @@ async function handleAdd(req: Request, res: Response) {
 		const { email, username, password } = req.body;
 
 		try {
-				const result = await addUser(username, password, email);
+				const result = await odb.addUser(username, password, email);
 				if (result) {
 						res.status(201).json({ message: 'User added successfully!' });
 				} else {
@@ -81,8 +83,8 @@ async function handleLogin(req: Request, res: Response) {
 		const { email, password } = req.body;
 
 		try {
-				const user = await getUserByEmail(email);
-				if (user && verifyPassword(password, user.PASSWORDHASH, user.SALT)) {
+				const user = await odb.getUserByEmail(email);
+				if (user && odb.verifyPassword(password, user.PASSWORDHASH, user.SALT)) {
 						// Successful login: store user data in session
 						req.session.userId = user.USERID;
 						req.session.username = user.USERNAME;
@@ -132,6 +134,7 @@ async function handleLogout(req: Request, res: Response) {
 		});
 }
 
+// --------------- this stuff is for the storage api ----------------------
 // New route handler to save user's JSON storage
 async function handleSaveStorage(req: Request, res: Response) {
 		if (!req.session.userId) {
@@ -145,7 +148,7 @@ async function handleSaveStorage(req: Request, res: Response) {
 		}
 
 		try {
-				const result = await updateJsonStorage(req.session.userId, data);
+				const result = await odb.updateJsonStorage(req.session.userId, data);
 				if (result) {
 						req.session.storage = data; // Update session with new storage data
 						res.json({ message: 'Storage updated successfully!' });
@@ -165,7 +168,7 @@ async function handleGetStorage(req: Request, res: Response) {
 		}
 
 		try {
-				const storageData = await getJsonStorage(req.session.userId);
+				const storageData = await odb.getJsonStorage(req.session.userId);
 				if (storageData) {
 						req.session.storage = storageData;
 						res.json({ storage: storageData });
@@ -179,6 +182,104 @@ async function handleGetStorage(req: Request, res: Response) {
 		}
 }
 
+// ------------- this is the section with the password reset stuffs -----------------
+import {password_reset as email_pwr} from "./emain";
+
+function generate_reset_token(){
+	const token = crypto.generateKeySync('hmac',{length:64}).export().toString('hex');
+	return token;
+}
+
+/**
+ * this guy shall do the sending of the email
+ * @param req
+ * @param res
+ */
+async function handle_ask_for_token(req: Request, res: Response){
+
+	const {email} = req.body;
+
+	try{
+		const looks_legit = await odb.checkIfUserIsReal(email);
+
+		if (looks_legit) {
+			// this is a real person
+
+			const token = generate_reset_token();
+
+			// deal with redis and her shenanigans
+			const timeToKill = await redisClient.ttl(`pwrt:${email}`);
+
+			// we're only gonna send a token if it's been a lil while
+			if (timeToKill < 600) {
+				await redisClient.setEx(`pwrt:${email}`, 1000, token);
+
+				// sending the email now
+				await email_pwr(email, token);
+			}
+		} else {
+			// i dont know you
+		}
+
+		// you get a thumbs-up either way
+		res.sendStatus(200);
+	} catch(erro){
+		console.error('error with the token thing', erro);
+		res.sendStatus(500);
+	}
+}
+import {SessionData} from 'express-session';
+/**
+ * For when the user actually fills out the password reset form
+ * @param req
+ * @param res
+ */
+async function handlePasswordReset(req: Request, res: Response){
+
+	const {email, password, token} = req.body;
+
+	try {
+		const heslegit = await redisClient.get(`pwrt:${email}`);
+		if (heslegit === token) {
+			// ok, the token looks good
+
+			const update_ok = await odb.updateUserPassword(email, password);
+			if (update_ok) {
+				// the password updated fine,
+				// so now we gotta clear any remaining sessions for this user
+			
+				/*
+				// TODO actually do this part
+				redisStore.all(async (err, sessions) => {
+					if (err) {
+						console.error('ERROR fetching all sessions for password reset', err);
+						res.status(500).json({message: "sorry nothing."});
+					} else {
+						const sessionsToDelete : string[] = [];
+						sessions.forEach((sess: SessionData) => {
+
+						});
+					}
+				});
+				*/
+
+				await redisClient.del(`pwrt:${email}`); // delete the used token
+				res.status(200).json({message: "aight you're good to go now :^)"});
+			} else {
+				res.status(500).json({message: "something went wrong. idk why :/"});
+			}
+
+		} else {
+			// we got a problem, chief
+			res.status(401).json({message: 'Invalid or expired token.'});
+		}
+
+	} catch (erro){
+		console.error('ERROR in password reset form', erro);
+		res.status(500).json({message:"some kinda snafu on our end. sorry pal."});
+	}
+}
+
 // Define Routes
 app.post('/api/users/add', handleAdd);
 app.post('/api/users/login', handleLogin);
@@ -186,6 +287,8 @@ app.post('/api/users/logout', isAuthenticated, handleLogout);
 app.get("/api/users/info", isAuthenticated, handleInfo);
 app.post('/api/users/storage', isAuthenticated, handleSaveStorage); // Route to save JSON storage
 app.get('/api/users/storage', isAuthenticated, handleGetStorage);   // Route to retrieve JSON storage
+app.post('/api/users/ask-for-token', handle_ask_for_token);
+app.post('/api/users/password-reset', handlePasswordReset);
 
 // Export the Express app
 export default app;

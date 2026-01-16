@@ -1,5 +1,16 @@
 ﻿<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<!-- 
+!!! DISCLAIMER !!!
+
+There's some large sections of this project that are machine-generated
+(iirc it's gemini 2.5 flash for the most part, maybe something else too idk).
+why? bc i wanted to try out this snazzy code completion thing in visual studio '26.
+
+As a rule of thumb:
+- if it looks sloppy, its probably code completion
+- if it looks sinful, its probably me :^)
+-->
 <head>
 		<meta charset="utf-8" />
 <link rel="stylesheet" type="text/css" href="/css/great-scott.css"/>
@@ -7,7 +18,7 @@
 		<title>the absolute wurst - waluigi-servebeer.com</title>
 	<style>
 		.dumb-box{
-			width:3in;
+			max-width:3in;
 			border-width:3px;
 			border-style:groove;
 			border-color:aqua;
@@ -21,45 +32,62 @@
 			text-align:center;
 			display:inline-block;
 			margin: 0px;
-			user-select:none;
+		}
+		summary {
+			user-select: none;
 		}
 	</style>
 </head>
 <body>	
-  <div class="sef lard">
-    <div>
-      <h1>the absolute wurst</h1>
-      <span>an interactive login experience</span>
-      <button onclick="goto_smart('/')">Leave</button>
-    </div>
+	<div class="sef lard">
+		<div>
+			<h1>the absolute wurst</h1>
+			<span>an interactive login experience</span>
+			<button onclick="goto_smart('/')">Leave</button>
+		</div>
 
-    <hr />
+		<hr />
 
-    <div id="auth-status-area" hidden>
-      <p>Welcome back, <b id="welcome-message"></b> !!</p>
-      <p><button id="logout-button" style="transform: matrix(3, 0, 0, 1, 60, 0)">Logout</button></p>
-    </div>
+		<div id="auth-status-area" hidden>
+			<p>Welcome back, <b id="welcome-message"></b> !!</p>
+			<p><button id="logout-button" style="transform: matrix(3, 0, 0, 1, 60, 0)">Logout</button></p>
+		</div>
 
-    <div id="auth-forms-container" hidden>
-      <details name="doot" class="dumb-box">
-        <summary><h2>login to your account</h2></summary>
-        <form id="api_users_login">
-          <div><label>email:<input type="email" name="email" maxlength="100" required autocomplete="off" /></label></div>
-          <div><label>password:<input type="password" name="password" required /></label></div>
-          <button type="submit">login</button>
-        </form>
-      </details>
-      <details name="doot" class="dumb-box">
-        <summary><h2>sign-up for free spam here</h2></summary>
-        <form id="api_users_add">
-          <div><label>email:<input type="email" name="email" maxlength="100" required autocomplete="off" /></label></div>
-          <div><label>username:<input type="text" name="username" minlength="1" maxlength="50" required autocomplete="off" /></label></div>
-          <div><label>password:<input type="password" name="password" minlength="1" maxlength="128" required /></label></div>
-          <button type="submit">sign-up</button>
-        </form>
-      </details>
-    </div>
-  </div>
+		<div id="auth-forms-container" hidden>
+			<details name="doot" class="dumb-box">
+				<summary><h2>login to your account</h2></summary>
+				<form id="api_users_login">
+					<div><label>email:<input type="email" name="email" maxlength="100" required autocomplete="email" /></label></div>
+					<div><label>password:<input type="password" name="password" required autocomplete="current-password" /></label></div>
+					<button type="submit">login</button>
+				</form>
+			</details>
+			<details name="doot" class="dumb-box">
+				<summary><h2>sign-up for free spam here</h2></summary>
+				<form id="api_users_add">
+					<div><label>email:<input type="email" name="email" maxlength="100" required autocomplete="email" /></label></div>
+					<div><label>username:<input type="text" name="username" minlength="1" maxlength="50" required autocomplete="username" /></label></div>
+					<div><label>password:<input type="password" name="password" minlength="1" maxlength="128" required autocomplete="new-password" /></label></div>
+					<button type="submit">sign-up</button>
+				</form>
+			</details>
+		</div>
+
+		<!-- ---------------- this is the section for the password reset stuff ---------------------- -->
+		<details name="doot" class="dumb-box" style="max-width:fit-content">
+			<summary><em>Need to reset and/or change your password?</em></summary>
+			<form id="ask_for_token">
+				<p>
+					<label>
+						email:
+						<input type="email" name="email" maxlength="100" required autocomplete="email" placeholder="your email address" />
+					</label>
+				</p>
+				<p><button type="submit">Submit</button></p>
+			</form>
+		</details>
+
+	</div>
 <script src="/js/everything.js"></script>
 <script>
 
@@ -76,7 +104,7 @@ logoutButton.addEventListener('click', async function() {
 						updateUiForUser(null);
 						localStorage.removeItem("online_username");
 				} else {
-						alert('Logout failed.');
+						alert_II('Logout failed.');
 				}
 		} catch (error) {
 				console.error('Logout error:', error);
@@ -139,15 +167,15 @@ document.getElementById('api_users_add').addEventListener('submit', async functi
 				});
 
 				if (response.ok) {
-						alert('Signup successful!');
+						alert_II('Signup successful!');
 						document.getElementById('api_users_add').reset(); // Clear the form
 				} else {
 						const errorData = await response.json();
-						alert('Signup failed: ' + (errorData.message || 'Unknown error'));
+						alert_II('Signup failed: ' + (errorData.message || 'Unknown error'));
 				}
 		} catch (error) {
 				console.error('Fetch error:', error);
-				alert('Network error: Could not connect to the server.');
+				alert_II('Network error: Could not connect to the server.');
 		}
 });
 
@@ -167,17 +195,42 @@ document.getElementById('api_users_login').addEventListener('submit', async func
 				});
 
 				if (response.ok) {
-						//alert('Login successful!');
+						//alert_II('Login successful!');
 						document.getElementById('api_users_login').reset();
 						checkLoginStatus(); // Update UI after successful login
 				} else {
 						const errorData = await response.json();
-						alert('Login failed: ' + (errorData.message || 'Unknown error'));
+						alert_II('Login failed: ' + (errorData.message || 'Unknown error'));
 				}
 		} catch (error) {
 				console.error('Fetch error:', error);
-				alert('Network error: Could not connect to the server.');
+				alert_II('Network error: Could not connect to the server.');
 		}
+});
+
+// --------------- this guy is for the password reset -----------------------
+document.getElementById("ask_for_token").addEventListener("submit", async function (ev){
+	ev.preventDefault();
+
+	const email = document.querySelector('#ask_for_token [name="email"]').value;
+
+	try {
+		const response = await fetch('/api/users/ask-for-token', {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({ email:email })
+		});
+		if (response.ok) {
+			alert_II("Ok, now check your email inbox.");
+			document.getElementById('ask_for_token').reset();
+		} else {
+			const errorData = await response.text();
+			alert_II('fail: ' + (errorData || 'Unknown error'));
+		}
+	} catch (err) {
+		console.error(err);
+		alert_II("Error: " + err.message);
+	}
 });
 
 // --- storage stuff

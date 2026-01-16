@@ -157,3 +157,39 @@ export async function checkPlease() {
 			console.error(error);
 		}
 }
+
+export async function checkIfUserIsReal (email : string) {
+	const sql = `SELECT EMAIL FROM USERS WHERE EMAIL = :email`;
+	const params = { email };
+	try {
+		const result = await queryDatabase(sql, params, false);
+		if (result && result.rows && result.rows.length > 0) {
+			return true;
+		} else {			
+			return false;
+		}
+	} catch (error) {
+		console.error(error);
+		// eh, assume that it's the user's fault this time
+		return false;
+	}
+}
+
+export async function updateUserPassword (email : string, password : string) {
+
+	const {salt, passwordHash} = hashPassword(password);
+
+	const sql = 
+	`UPDATE USERS SET
+		PASSWORDHASH = :passwordHash,
+		SALT = :salt
+	WHERE EMAIL = :email`;
+	const params = {passwordHash, salt, email};
+	try {
+		const result = await queryDatabase(sql, params, true);
+		return result.rowsAffected === 1;
+	} catch (error) {
+		console.error(error);
+		throw error;
+	}
+}
