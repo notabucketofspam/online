@@ -1,1 +1,7 @@
-<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.3653345" />
+﻿<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.3653345">
+  <PropertyGroup>
+    <ShouldRunNpmAudit>false</ShouldRunNpmAudit>
+    <BuildCommand>tsc --build</BuildCommand>
+    <CleanCommand>tsc --build --clean</CleanCommand>
+  </PropertyGroup>
+</Project>
