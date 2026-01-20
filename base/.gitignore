@@ -11,6 +11,3 @@ wallet_ValuedCustomer/***
 desktop.ini
 package-lock.json
 tsconfig.tsbuildinfo
-
-html/emall.html
-src/emain.ts
