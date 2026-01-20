@@ -1,3 +1,6 @@
+// also, some of this stuff was taken directly from
+// Oracle's docs (which was apparently also machine-generated btw)
+
 import * as path from "node:path";
 import * as fs from "node:fs";
 const astext_II = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
@@ -44,6 +47,28 @@ export async function password_reset(addressee: string, token: string) {
 			}]
 		},
 		subject: `Password reset for waluigi-servebeer.com`,
+		bodyHtml: this_body,
+	};
+	const sig_ok = await sendEmail(submitEmailDetails);
+	return sig_ok;
+}
+
+const body_adduser = astext_II("html/emall_adduser.html");
+export async function email_noob(addressee:string, token: string){
+	const this_body = body_adduser.replace("Reggie Fils-Aime", token);
+	const submitEmailDetails : models.SubmitEmailDetails = {
+		sender: {
+			senderAddress: {
+				email: "noreply@waluigi-servebeer.com"
+			},
+			compartmentId: astext_II("./keys/compartment_id")
+		},
+		recipients: {
+			to: [{
+				email: addressee
+			}]
+		},
+		subject: `Register account for waluigi-servebeer.com`,
 		bodyHtml: this_body,
 	};
 	const sig_ok = await sendEmail(submitEmailDetails);

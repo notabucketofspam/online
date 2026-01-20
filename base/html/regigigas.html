@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" type="text/css" href="/css/great-scott.css"/>
+	<meta name="viewport" content="width=device-width, user-scalable=yes"/>
+	<title>Register account - waluigi-servebeer.com</title>
+	<style>
+		form > label {
+			display: block;
+			margin: 8px 0px;
+		}
+		label > span{
+			line-height:0;
+		}
+	</style>
+</head>
+<body>
+<div class="sef lard">
+	<h1 style="text-align:center;">Register account</h1>
+	<form id="reggie_forms_aime" style="justify-items:end;" class="lube lard">
+		<label>
+			Your email address:
+			<input type="email" name="email" maxlength="100" required autocomplete="email" placeholder="Enter your email" />
+		</label>
+		<label>
+			Your chosen <u>username</u>:
+			<input type="text" name="username" minlength="1" maxlength="50" required placeholder="username" autocomplete="username" />
+		</label>
+		<label>
+			Some kinda <em>new password</em>:
+			<input type="password" name="newpassword" required autocomplete="new-password" minlength="1" maxlength="128" placeholder="your new password" />
+		</label>
+		<label>
+			<span>the <strong>register account<br/>token</strong> included with<br/>the email that you got:</span>
+			<input type="text" name="token" required autocomplete="one-time-code" minlength="16" maxlength="16" placeholder="the register account token" />
+		</label>
+		<p><button type="submit">the submit button :^)</button></p>
+	</form>
+	<p style="text-align:center"><a href="/login/" class="bro">Go back to the login screen</a></p>
+</div>
+<script src="/js/everything.js"></script>
+<script>
+	document.getElementById("reggie_forms_aime").addEventListener('submit', async function (event) {
+		event.preventDefault();
+
+		const email = document.querySelector('#reggie_forms_aime [name="email"]').value;
+		const username = document.querySelector('#reggie_forms_aime [name="username"]').value;
+		const password = document.querySelector('#reggie_forms_aime [name="newpassword"]').value;
+		const token = document.querySelector('#reggie_forms_aime [name="token"]').value;
+
+		try {
+			const response = await fetch('/api/users/add', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({ email, username, password, token })
+			});
+			if (response.ok) {
+				alert_II("Ok cool. You can go log in on the login screen.");
+				document.getElementById('reggie_forms_aime').reset(); // Clear the form
+				//goto_smart('/login/');
+			} else {
+				const errorData = await response.json();
+				alert_II('FAIL: ' + (errorData.message || 'Unknown error'));
+			}
+		} catch (err) {
+			console.error(err);
+			alert_II("Error: " + err.message);
+		}
+	});
+</script>
+</body>
+</html>

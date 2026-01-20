@@ -66,8 +66,8 @@ As a rule of thumb:
 				<summary><h2>sign-up for free spam here</h2></summary>
 				<form id="api_users_add">
 					<div><label>email:<input type="email" name="email" maxlength="100" required autocomplete="email" /></label></div>
-					<div><label>username:<input type="text" name="username" minlength="1" maxlength="50" required autocomplete="username" /></label></div>
-					<div><label>password:<input type="password" name="password" minlength="1" maxlength="128" required autocomplete="new-password" /></label></div>
+					<!--<div><label>username:<input type="text" name="username" minlength="1" maxlength="50" required autocomplete="username" /></label></div>-->
+					<!--<div><label>password:<input type="password" name="password" minlength="1" maxlength="128" required autocomplete="new-password" /></label></div>-->
 					<button type="submit">sign-up</button>
 				</form>
 			</details>
@@ -154,20 +154,20 @@ document.getElementById('api_users_add').addEventListener('submit', async functi
 		event.preventDefault(); // Prevent the default form submission
 
 		const email = document.querySelector('#api_users_add [name="email"]').value;
-		const username = document.querySelector('#api_users_add [name="username"]').value;
-		const password = document.querySelector('#api_users_add [name="password"]').value;
+		//const username = document.querySelector('#api_users_add [name="username"]').value;
+		//const password = document.querySelector('#api_users_add [name="password"]').value;
 
 		try {
-				const response = await fetch('/api/users/add', {
+				const response = await fetch('/api/users/ask-for-token', {
 						method: 'POST',
 						headers: {
 								'Content-Type': 'application/json'
 						},
-						body: JSON.stringify({ email: email, username: username, password: password })
+						body: JSON.stringify({ email })
 				});
 
 				if (response.ok) {
-						alert_II('Signup successful!');
+						alert_II('Ok, now check your email inbox.');
 						document.getElementById('api_users_add').reset(); // Clear the form
 				} else {
 						const errorData = await response.json();

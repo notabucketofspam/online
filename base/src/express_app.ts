@@ -55,19 +55,28 @@ app.use(express.static(path.join(__dirname, "..", 'html')));
 
 // Route Handlers
 async function handleAdd(req: Request, res: Response) {
-		const { email, username, password } = req.body;
+	const { email, username, password, token } = req.body;
+	try {
+		const legalize_spare_drone_parts = await redisClient.get(`noob:${email}`);
+		if (legalize_spare_drone_parts === token) {
+			// the token is chill
 
-		try {
-				const result = await odb.addUser(username, password, email);
-				if (result) {
-						res.status(201).json({ message: 'User added successfully!' });
-				} else {
-						res.status(500).json({ message: 'Failed to add user (DB failed or returned null).' });
-				}
-		} catch (error: any) {
-				console.error(error);
-				res.status(500).json({ message: 'Failed to add user: ' + error.message });
+			const result = await odb.addUser(username, password, email);
+			if (result) {
+				// adding the user is ok
+				await redisClient.del(`noob:${email}`); // delete the used token
+				res.status(200).json({ message: 'User added successfully!' });
+			} else {
+				res.status(500).json({ message: 'Failed to add user (DB failed or returned null).' });
+			}
+		} else {
+			// invalid token
+			res.status(401).json({message: 'Invalid or expired token.'});
 		}
+	} catch (error: any) {
+		console.error(error);
+		res.status(500).json({ message: 'Failed to add user: ' + error.message });
+	}
 }
 
 declare module 'express-session' {
@@ -183,7 +192,7 @@ async function handleGetStorage(req: Request, res: Response) {
 }
 
 // ------------- this is the section with the password reset stuffs -----------------
-import {password_reset as email_pwr} from "./emain";
+import {password_reset as email_pwr, email_noob} from "./emain";
 
 function generate_reset_token(){
 	const token = crypto.generateKeySync('hmac',{length:64}).export().toString('hex');
@@ -201,24 +210,34 @@ async function handle_ask_for_token(req: Request, res: Response){
 
 	try{
 		const looks_legit = await odb.checkIfUserIsReal(email);
-
+		let keyfix = "pwrt";
+		
 		if (looks_legit) {
 			// this is a real person
-
-			const token = generate_reset_token();
-
-			// deal with redis and her shenanigans
-			const timeToKill = await redisClient.ttl(`pwrt:${email}`);
-
-			// we're only gonna send a token if it's been a lil while
-			if (timeToKill < 600) {
-				await redisClient.setEx(`pwrt:${email}`, 1000, token);
-
-				// sending the email now
-				await email_pwr(email, token);
-			}
 		} else {
 			// i dont know you
+
+			// we are assuming that mr. user wants to create a new account.
+			// because we are **efficient**, this is gonna mostly
+			// reuse the same bits as the "password reset" stuffs.
+			keyfix = "noob";
+		}
+
+		const token = generate_reset_token();
+
+		// deal with redis and her shenanigans
+		const timeToKill = await redisClient.ttl(`${keyfix}:${email}`);
+
+		// we're only gonna send a token if it's been a lil while
+		if (timeToKill < 600) {
+			await redisClient.setEx(`${keyfix}:${email}`, 1000, token);
+
+			// sending the email now
+			if (looks_legit){
+				await email_pwr(email, token);
+			} else {
+				await email_noob(email, token);
+			}
 		}
 
 		// you get a thumbs-up either way
