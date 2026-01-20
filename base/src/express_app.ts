@@ -265,22 +265,19 @@ async function handlePasswordReset(req: Request, res: Response){
 			const update_ok = await odb.updateUserPassword(email, password);
 			if (update_ok) {
 				// the password updated fine,
-				// so now we gotta clear any remaining sessions for this user
-			
-				/*
-				// TODO actually do this part
-				redisStore.all(async (err, sessions) => {
-					if (err) {
-						console.error('ERROR fetching all sessions for password reset', err);
-						res.status(500).json({message: "sorry nothing."});
-					} else {
-						const sessionsToDelete : string[] = [];
-						sessions.forEach((sess: SessionData) => {
-
-						});
+				// so now we gotta clear any remaining sessions for this user.
+				// this part's so bad ngl
+				const hella_keys = await redisClient.keys(`sess:*`);
+				for (const kock of hella_keys) {
+					const keezer = await redisClient.GET(kock);
+					if (typeof keezer === "string") {
+						const crunk = JSON.parse(keezer) as SessionData;
+						if (crunk.email === email) {
+							// thats him, officer
+							await redisClient.del(kock);						
+						}
 					}
-				});
-				*/
+				}
 
 				await redisClient.del(`pwrt:${email}`); // delete the used token
 				res.status(200).json({message: "aight you're good to go now :^)"});
