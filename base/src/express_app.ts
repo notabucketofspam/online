@@ -85,6 +85,7 @@ declare module 'express-session' {
 				username: string;
 				email: string;
 				storage: object;
+				id: string;
 		}
 }
 
@@ -266,20 +267,25 @@ async function handlePasswordReset(req: Request, res: Response){
 			if (update_ok) {
 				// the password updated fine,
 				// so now we gotta clear any remaining sessions for this user.
-				// this part's so bad ngl
-				const hella_keys = await redisClient.keys(`sess:*`);
-				for (const kock of hella_keys) {
-					const keezer = await redisClient.GET(kock);
-					if (typeof keezer === "string") {
-						const crunk = JSON.parse(keezer) as SessionData;
-						if (crunk.email === email) {
-							// thats him, officer
-							await redisClient.del(kock);						
-						}
-					}
-				}
+				// this part's not as bad as it used to be
+				redisStore.all((err, sessions) => {
+					if (err) {
+						console.error('Error fetching sessions:', err);
+					} else {
+						(sessions as SessionData[]).forEach(session => {
+							if (session?.email === email) {
+								redisStore.destroy(session?.id, (err) => {
+									if (err) {
+										console.error(`Error destroying session ${session?.id}:`, err);
+									}
+								}); // destroy
+							} // if email
+						}); // forEach
+					} // if err...else
+				}); // all
 
-				await redisClient.del(`pwrt:${email}`); // delete the used token
+				// delete the used token
+				await redisClient.del(`pwrt:${email}`);
 				res.status(200).json({message: "aight you're good to go now :^)"});
 			} else {
 				res.status(500).json({message: "something went wrong. idk why :/"});
@@ -296,6 +302,21 @@ async function handlePasswordReset(req: Request, res: Response){
 	}
 }
 
+/**
+ * please dont use this function
+ * @param req
+ * @param res
+ */
+function handleMemes (req : Request, res : Response) {
+	redisStore.all((err, sessions) => {
+		if (err) {
+			console.error('Error fetching sessions:', err);
+		} else {
+			console.log(sessions);
+		}
+	});
+}
+
 // Define Routes
 app.post('/api/users/add', handleAdd);
 app.post('/api/users/login', handleLogin);
@@ -305,6 +326,7 @@ app.post('/api/users/storage', isAuthenticated, handleSaveStorage); // Route to 
 app.get('/api/users/storage', isAuthenticated, handleGetStorage);   // Route to retrieve JSON storage
 app.post('/api/users/ask-for-token', handle_ask_for_token);
 app.post('/api/users/password-reset', handlePasswordReset);
+//app.get('/api/users/memes', handleMemes);
 
 // Export the Express app
 export default app;
