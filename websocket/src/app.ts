@@ -25,7 +25,7 @@ export default class ExtWSS extends ws.WebSocketServer {
   private pingFrame = Uint8Array.from([0x9]);
   private pongFrame = Uint8Array.from([0xA]);
   aliveClients: Map<ws.WebSocket, ClientMeta>;
-  private pingTimer: NodeJS.Timer;
+  private pingTimer: NodeJS.Timeout;
   constructor(options?: ws.ServerOptions, callback?: () => void) {
     super(options, callback);
     this.aliveClients = new Map();
