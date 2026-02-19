@@ -193,3 +193,15 @@ export async function updateUserPassword (email : string, password : string) {
 		throw error;
 	}
 }
+
+export async function deleteUser (userId : number) {
+	const sql = `DELETE FROM USERS WHERE USERID = :userId`;
+	const params = { userId };
+	try {
+		const result = await queryDatabase(sql, params, true);
+		return result.rowsAffected === 1;
+	} catch (error) {
+		console.error(error);
+		throw error;
+	}
+}

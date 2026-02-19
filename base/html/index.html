@@ -36,6 +36,10 @@ As a rule of thumb:
 		summary {
 			user-select: none;
 		}
+		summary.crab {
+			font-variant: small-caps;
+			text-transform: capitalize;
+		}
 	</style>
 </head>
 <body>	
@@ -51,6 +55,17 @@ As a rule of thumb:
 		<div id="auth-status-area" hidden>
 			<p>Welcome back, <b id="welcome-message"></b> !!</p>
 			<p><button id="logout-button" style="transform: matrix(3, 0, 0, 1, 60, 0)">Logout</button></p>
+			<p>
+				<details name="doot" class="dumb-box">
+					<summary class="crab">please, delete my account</summary>
+					<div style="text-align:center;">Are you sure that you want to delete your account?</div>
+					<details class="dumb-box">
+						<summary class="crab">Yes, I'm sure</summary>
+						<button id="delete_this" class="fr">delete</button>
+						<div style="text-align:center;"><small>ok.</small></div>
+					</details>
+				</details>
+			</p>
 		</div>
 
 		<div id="auth-forms-container" hidden>
@@ -66,8 +81,6 @@ As a rule of thumb:
 				<summary><h2>sign-up for free spam here</h2></summary>
 				<form id="api_users_add">
 					<div><label>email:<input type="email" name="email" maxlength="100" required autocomplete="email" /></label></div>
-					<!--<div><label>username:<input type="text" name="username" minlength="1" maxlength="50" required autocomplete="username" /></label></div>-->
-					<!--<div><label>password:<input type="password" name="password" minlength="1" maxlength="128" required autocomplete="new-password" /></label></div>-->
 					<button type="submit">sign-up</button>
 				</form>
 			</details>
@@ -88,8 +101,25 @@ As a rule of thumb:
 		</details>
 
 	</div>
+
+	<!---------------------- this is where all the javascript has ended up for now ----------------------->
 <script src="/js/everything.js"></script>
 <script>
+// ---- delete account ----
+document.getElementById('delete_this').addEventListener('click', async function(){
+	try {
+		const response = await fetch('/api/users/delete');
+		if (response.ok){
+			alert_II('ok');
+			updateUiForUser(null);
+			localStorage.removeItem("online_username");
+		} else {
+			alert_II('fail');
+		}
+	} catch(eeeee){
+		console.error(eeeee);
+	}
+});
 
 var welcomeMessage = document.getElementById('welcome-message');
 var logoutButton = document.getElementById('logout-button');

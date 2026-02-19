@@ -268,21 +268,7 @@ async function handlePasswordReset(req: Request, res: Response){
 				// the password updated fine,
 				// so now we gotta clear any remaining sessions for this user.
 				// this part's not as bad as it used to be
-				redisStore.all((err, sessions) => {
-					if (err) {
-						console.error('Error fetching sessions:', err);
-					} else {
-						(sessions as SessionData[]).forEach(session => {
-							if (session?.email === email) {
-								redisStore.destroy(session?.id, (err) => {
-									if (err) {
-										console.error(`Error destroying session ${session?.id}:`, err);
-									}
-								}); // destroy
-							} // if email
-						}); // forEach
-					} // if err...else
-				}); // all
+				clearSessionsByEmail(email);
 
 				// delete the used token
 				await redisClient.del(`pwrt:${email}`);
@@ -301,6 +287,27 @@ async function handlePasswordReset(req: Request, res: Response){
 		res.status(500).json({message:"some kinda snafu on our end. sorry pal."});
 	}
 }
+/**
+ * shall remove all of the sessions for a given user
+ * @param email
+ */
+function clearSessionsByEmail(email: string){
+	redisStore.all((err, sessions) => {
+		if (err) {
+			console.error('Error fetching sessions:', err);
+		} else {
+			(sessions as SessionData[]).forEach(session => {
+				if (session?.email === email) {
+					redisStore.destroy(session?.id, (err) => {
+						if (err) {
+							console.error(`Error destroying session ${session?.id}:`, err);
+						}
+					}); // destroy
+				} // if email
+			}); // forEach
+		} // if err...else
+	}); // all
+}
 
 /**
  * please dont use this function
@@ -317,6 +324,28 @@ function handleMemes (req : Request, res : Response) {
 	});
 }
 
+/**
+ * delete a user account
+ * @param req
+ * @param res
+ */
+async function handleDelete (req : Request, res : Response) {
+	try {
+		if (typeof req?.session?.userId === "number") {
+			const itWorked = await odb.deleteUser(req.session.userId);
+			if (itWorked){
+				if (typeof req?.session?.email === "string")
+					clearSessionsByEmail(req.session.email);
+				res.status(200).json({message: "account deleted" });
+			} else {
+				res.status(500).json({message: "couldn't delete account for some reason"});
+			}
+		}
+	} catch (err) {
+		res.status(500).json({message: "can't delete"});
+	}
+}
+
 // Define Routes
 app.post('/api/users/add', handleAdd);
 app.post('/api/users/login', handleLogin);
@@ -326,6 +355,7 @@ app.post('/api/users/storage', isAuthenticated, handleSaveStorage); // Route to 
 app.get('/api/users/storage', isAuthenticated, handleGetStorage);   // Route to retrieve JSON storage
 app.post('/api/users/ask-for-token', handle_ask_for_token);
 app.post('/api/users/password-reset', handlePasswordReset);
+app.get("/api/users/delete", isAuthenticated, handleDelete);
 //app.get('/api/users/memes', handleMemes);
 
 // Export the Express app
