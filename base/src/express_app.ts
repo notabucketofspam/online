@@ -1,6 +1,5 @@
 import express from 'express';
 import * as path from "node:path";
-//import { addUser, getUserByEmail, verifyPassword, updateJsonStorage, getJsonStorage } from './db'; // Import database functions
 import * as odb from "./db";
 import { Request, Response } from 'express';
 import session from 'express-session';
@@ -193,7 +192,7 @@ async function handleGetStorage(req: Request, res: Response) {
 }
 
 // ------------- this is the section with the password reset stuffs -----------------
-import {password_reset as email_pwr, email_noob} from "./emain";
+import * as emain from "./emain";
 
 function generate_reset_token(){
 	const token = crypto.generateKeySync('hmac',{length:64}).export().toString('hex');
@@ -233,11 +232,10 @@ async function handle_ask_for_token(req: Request, res: Response){
 		if (timeToKill < 600) {
 			await redisClient.setEx(`${keyfix}:${email}`, 1000, token);
 
-			// sending the email now
-			if (looks_legit){
-				await email_pwr(email, token);
-			} else {
-				await email_noob(email, token);
+			// sending the email now			
+			const not_ok = await emain.craft(email, token, keyfix);
+			if (not_ok) {
+				console.log('something went wrong with the email sending');
 			}
 		}
 

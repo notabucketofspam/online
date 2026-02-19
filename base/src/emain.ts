@@ -29,11 +29,22 @@ async function sendEmail(submitEmailDetails : models.SubmitEmailDetails) {
 		return 1;
 	}
 }
-const body_html = astext_II("./html/emall.html");
-export async function password_reset(addressee: string, token: string) {
-	const this_body = body_html.replace("this is where we put the password reset token", token);
 
-	// Create a request and dependent object(s).
+export async function craft(addressee:string, token: string, what_kind: string){
+	let bodyHtml = "";
+	let subject = "";
+
+	if (what_kind === 'pwrt') {
+		bodyHtml = astext_II("html/emall_pwrt.html").replace("this is where we put the password reset token", token);
+		subject = `Password reset for waluigi-servebeer.com`;
+	} else if (what_kind === 'noob'){
+		bodyHtml = astext_II("html/emall_adduser.html").replace("Reggie Fils-Aime", token);
+		subject = `Register account for waluigi-servebeer.com`;
+	} else {
+		// you gotta give me something to work with here, man
+		return 1;
+	}
+
 	const submitEmailDetails : models.SubmitEmailDetails = {
 		sender: {
 			senderAddress: {
@@ -46,30 +57,8 @@ export async function password_reset(addressee: string, token: string) {
 				email: addressee
 			}]
 		},
-		subject: `Password reset for waluigi-servebeer.com`,
-		bodyHtml: this_body,
-	};
-	const sig_ok = await sendEmail(submitEmailDetails);
-	return sig_ok;
-}
-
-const body_adduser = astext_II("html/emall_adduser.html");
-export async function email_noob(addressee:string, token: string){
-	const this_body = body_adduser.replace("Reggie Fils-Aime", token);
-	const submitEmailDetails : models.SubmitEmailDetails = {
-		sender: {
-			senderAddress: {
-				email: "noreply@waluigi-servebeer.com"
-			},
-			compartmentId: astext_II("./keys/compartment_id")
-		},
-		recipients: {
-			to: [{
-				email: addressee
-			}]
-		},
-		subject: `Register account for waluigi-servebeer.com`,
-		bodyHtml: this_body,
+		subject,
+		bodyHtml
 	};
 	const sig_ok = await sendEmail(submitEmailDetails);
 	return sig_ok;
