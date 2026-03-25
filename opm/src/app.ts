@@ -18,7 +18,7 @@ socket.on('message', (msg, rinfo)=>{
 });
 
 function tryToSend(port: number, address: string){
-	const sayWhat = Math.random().toString().padEnd(19, '0');
+	const sayWhat = Math.random().toString().padEnd(20, '0');
 	socket.send(sayWhat, port, address, (err, bytes)=>{
 		if (err){
 			cog(`error`, err);
@@ -37,4 +37,4 @@ const ImDoingMyPart = () => tryToSend(theRemotePort, theRemoteAddress);
 const theListenPort = asnumber("notkeys/listen_port.txt");
 socket.bind(theListenPort);
 
-setInterval(ImDoingMyPart, 300);
+setInterval(ImDoingMyPart, 2000);
