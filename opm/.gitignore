@@ -7,3 +7,5 @@ obj/***
 desktop.ini
 package-lock.json
 tsconfig.tsbuildinfo
+
+notkeys/***
