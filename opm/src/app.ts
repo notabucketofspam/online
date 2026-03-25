@@ -10,7 +10,7 @@ const socket = dgram.createSocket('udp6');
 
 socket.on('listening', ()=>{
 	const address = socket.address();
-	cog(`listening [${address.address}]${address.port}`);
+	cog(`listening [${address.address}]:${address.port}`);
 });
 
 socket.on('message', (msg, rinfo)=>{
