@@ -8,6 +8,10 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="opm/opm.esproj">
+    <Build />
+    <Deploy />
+  </Project>
   <Project Path="websocket/websocket.esproj">
     <Build />
     <Deploy />

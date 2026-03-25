@@ -1,0 +1,9 @@
+.vscode/***
+dist/***
+
+node_modules/***
+obj/***
+
+desktop.ini
+package-lock.json
+tsconfig.tsbuildinfo
