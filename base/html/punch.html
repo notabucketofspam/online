@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+<link rel="stylesheet" type="text/css" href="/css/great-scott.css"/>
+<meta name="viewport" content="width=device-width, user-scalable=yes"/>
+<title>Punch - waluigi-servebeer.com</title>
+<style>
+.notice-me {
+  font-variant:small-caps;
+  /*text-decoration:underline;*/
+  text-align:center;
+}
+form{
+  border: 1px solid black;
+  padding:3px;
+}
+ul.pls-no-gaps{
+  margin:0;
+}
+</style>
+</head>
+<body>
+<div class="sef lard">
+<h1 style="text-align:center">Punch</h1>
+
+<div class="fr" id="logged_in_as">Not logged in</div>
+<p>Your IP address is <b id="this-is-your-ip">0</b></p>
+
+<form id="post-punch-ad" class="lube">
+  <div class="notice-me">Post a new advertisement</div>
+  <hr/>
+  <div>
+    local port
+    <br/>
+    <input name="port" required type="number" min="1" max="65535" step="1" placeholder="2302" value=""/>
+  </div>
+  <!--<div>
+    punch port (leave empty)
+    <br/>
+    <input name="punch-port" readonly type="number" min="1" max="65535" step="1" placeholder=""/>    
+  </div>-->
+  <div>
+    service name (optional)
+    <br/>
+    <input name="sv_name" type="text" maxlength="20" placeholder="Halo CE server" value="" />
+  </div>
+  <p>
+    <button type="submit" style="display:block;justify-self:end;">Send</button>
+  </p>
+</form>
+
+<br/>
+
+<div>
+  <button id="get_punch_list">get PUNCH list</button>
+  <ol id="plist"></ol>
+</div>
+
+
+</div>
+<!-- end of the main stuff -->
+<script src="/js/everything.js"></script>
+<script>
+check_online((jazz)=>{
+  var logged_in_as = document.getElementById("logged_in_as");
+  if (jazz.username){
+    logged_in_as.innerHTML = `Logged in as <b>${jazz.username}</b>`;
+  }
+});
+
+var your_ip;
+(async()=>{
+  your_ip = (await (await fetch("/ip")).text());
+  document.getElementById("this-is-your-ip").innerText = your_ip;
+})();
+
+// post a new punch ad
+var form_ppa = document.getElementById("post-punch-ad");
+form_ppa.addEventListener("submit", async (ev)=>{
+  ev.preventDefault();
+  const port = document.querySelector('#post-punch-ad input[name="port"]').value;
+  //const punch_port = document.querySelector('#post-punch-ad input[name="punch-port"]').valueAsNumber;
+  const sv_name = document.querySelector('#post-punch-ad input[name="sv_name"]').value;
+  const fdat = {ip: your_ip, port, sv_name};
+  
+  const ppa_res = await fetch('/api/punch/ad',{
+    method: 'POST',
+    cache:'no-store',
+		headers: {
+				'Content-Type': 'application/json'
+		},
+    body: JSON.stringify(fdat)
+  });
+  console.log(ppa_res);
+  form_ppa.reset();
+});
+
+/**
+@typedef {Record<string,Record<string,string>>} PunchList
+*/
+
+// get the punch list
+document.getElementById('get_punch_list').addEventListener('click', async (ev)=>{
+  const plist = document.getElementById("plist");
+  const res = await fetch('/api/punch/list');
+  if (res.ok){
+    /** @type PunchList */
+    let pstuff = await res.json();
+    cog(pstuff);
+
+    let real_trash = '';
+    if (Object.keys(pstuff).length === 0){
+      real_trash = `<li>sorry nothing</li>`;
+    } else {
+      real_trash = Object.keys(pstuff).map(keycard=>
+        `<li>
+          <b>${keycard.substring(6)}</b>
+          <ul class="pls-no-gaps">
+          ${Object.entries(pstuff[keycard]).map(
+            ([k,v])=>
+            `<li>
+              service name: ${v.split(',')[1]||'<small>sorry nothing</small>'}
+              <ul class="pls-no-gaps">
+                <li>address: ${k}</li>
+                <li>PUNCH port: ${v.split(',')[0]}</li>
+              </ul>
+            </li>`
+          ).join('')}
+          </ul>
+        </li>`
+      ).join('');
+    }
+
+    plist.innerHTML = real_trash;
+
+  } else {
+    plist.innerHTML = await res.text();
+  }
+});
+
+</script>
+</body>
+</html>
