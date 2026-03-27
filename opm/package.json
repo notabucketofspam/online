@@ -2,7 +2,7 @@
   "name": "opm",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/app.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc --build",
@@ -11,9 +11,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "eslint": "^10.1.0",
     "typescript": "^6.0.2"
   }
 }
