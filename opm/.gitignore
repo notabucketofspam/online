@@ -1,0 +1,16 @@
+# nodejs
+node_modules/***
+package-lock.json
+
+# tsc
+obj/***
+tsconfig.tsbuildinfo
+*.d.ts
+*.map
+app.js
+
+# windows
+desktop.ini
+
+# secrets et al.
+notkeys/***
