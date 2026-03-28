@@ -55,7 +55,7 @@ server.on('request', async (req, res)=>{
 			if (typeof socket === 'undefined'){
 				// no socket already, so we gotta make a new one
 				const fam = net.isIPv6(punch.addr) ? 'udp6' : 'udp4';
-				socket = await createSocket(fam);
+				socket = await createSocket(fam, punch.punchPort);
 				socketPort = socket.address().port;
 				sockets.set(socketPort, socket);
 			} else {
