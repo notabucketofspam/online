@@ -19,6 +19,10 @@ form{
 ul.pls-no-gaps{
   margin:0;
 }
+li.berty{
+  border: 3px double black;
+}
+
 </style>
 </head>
 <body>
@@ -34,7 +38,7 @@ ul.pls-no-gaps{
   <div>
     local port
     <br/>
-    <input name="port" required type="number" min="1" max="65535" step="1" placeholder="2302" value=""/>
+    <input name="port" required type="number" min="1" max="65535" step="1" placeholder="2302" value="2302"/>
   </div>
   <!--<div>
     punch port (leave empty)
@@ -44,7 +48,7 @@ ul.pls-no-gaps{
   <div>
     service name (optional)
     <br/>
-    <input name="sv_name" type="text" maxlength="20" placeholder="Halo CE server" value="" />
+    <input name="serviceName" type="text" maxlength="20" placeholder="Halo CE server" value="Halo CE server" />
   </div>
   <p>
     <button type="submit" style="display:block;justify-self:end;">Send</button>
@@ -62,83 +66,124 @@ ul.pls-no-gaps{
 </div>
 <!-- end of the main stuff -->
 <script src="/js/everything.js"></script>
+
 <script>
-check_online((jazz)=>{
-  var logged_in_as = document.getElementById("logged_in_as");
-  if (jazz.username){
-    logged_in_as.innerHTML = `Logged in as <b>${jazz.username}</b>`;
-  }
-});
-
-var your_ip;
-(async()=>{
-  your_ip = (await (await fetch("/ip")).text());
-  document.getElementById("this-is-your-ip").innerText = your_ip;
-})();
-
-// post a new punch ad
-var form_ppa = document.getElementById("post-punch-ad");
-form_ppa.addEventListener("submit", async (ev)=>{
-  ev.preventDefault();
-  const port = document.querySelector('#post-punch-ad input[name="port"]').value;
-  //const punch_port = document.querySelector('#post-punch-ad input[name="punch-port"]').valueAsNumber;
-  const sv_name = document.querySelector('#post-punch-ad input[name="sv_name"]').value;
-  const fdat = {ip: your_ip, port, sv_name};
-  
-  const ppa_res = await fetch('/api/punch/ad',{
-    method: 'POST',
-    cache:'no-store',
-		headers: {
-				'Content-Type': 'application/json'
-		},
-    body: JSON.stringify(fdat)
-  });
-  console.log(ppa_res);
-  form_ppa.reset();
-});
-
-/**
-@typedef {Record<string,Record<string,string>>} PunchList
-*/
-
-// get the punch list
-document.getElementById('get_punch_list').addEventListener('click', async (ev)=>{
-  const plist = document.getElementById("plist");
-  const res = await fetch('/api/punch/list');
-  if (res.ok){
-    /** @type PunchList */
-    let pstuff = await res.json();
-    cog(pstuff);
-
-    let real_trash = '';
-    if (Object.keys(pstuff).length === 0){
-      real_trash = `<li>sorry nothing</li>`;
-    } else {
-      real_trash = Object.keys(pstuff).map(keycard=>
-        `<li>
-          <b>${keycard.substring(6)}</b>
-          <ul class="pls-no-gaps">
-          ${Object.entries(pstuff[keycard]).map(
-            ([k,v])=>
-            `<li>
-              service name: ${v.split(',')[1]||'<small>sorry nothing</small>'}
-              <ul class="pls-no-gaps">
-                <li>address: ${k}</li>
-                <li>PUNCH port: ${v.split(',')[0]}</li>
-              </ul>
-            </li>`
-          ).join('')}
-          </ul>
-        </li>`
-      ).join('');
+  check_online((jazz) => {
+    var logged_in_as = document.getElementById("logged_in_as");
+    if (jazz.username) {
+      logged_in_as.innerHTML = `Logged in as <b>${jazz.username}</b>`;
     }
+  });
 
-    plist.innerHTML = real_trash;
+  var your_ip;
+  (async () => {
+    your_ip = (await (await fetch("/ip")).text());
+    document.getElementById("this-is-your-ip").innerText = your_ip;
+  })();
 
-  } else {
-    plist.innerHTML = await res.text();
+  // post a new punch ad
+  var form_ppa = document.getElementById("post-punch-ad");
+  form_ppa.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const addr = String(your_ip);
+    const port = Number(document.querySelector('#post-punch-ad input[name="port"]').value);
+    const serviceName = String(document.querySelector('#post-punch-ad input[name="serviceName"]').value);
+
+    const punchPort = await callOPM(addr,port,0,serviceName,'in');
+
+    // post the punch listing on the global server
+    const ppa_res = await fetch('/api/punch/ad', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({addr, port, serviceName, punchPort})
+    });
+    console.log(ppa_res);
+    form_ppa.reset();
+  });
+
+  /**
+  @typedef {Record<string,Record<string,string>>} PunchList
+  */
+
+  // get the punch list
+  document.getElementById('get_punch_list').addEventListener('click', getPunchList);
+
+  /**
+  @param {PointerEvent} ev
+  */
+  async function getPunchList (ev) {
+    const plist = document.getElementById("plist");
+    const res = await fetch('/api/punch/list');
+    if (res.ok) {
+      /** @type PunchList */
+      let pstuff = await res.json();
+      cog(pstuff);
+
+      let real_trash = '';
+      if (Object.keys(pstuff).length === 0) {
+        real_trash = `<li>sorry nothing</li>`;
+      } else {
+        real_trash = Object.keys(pstuff).map(keycard => `
+          <li>
+            <b>${keycard.substring(6)}</b>
+            <ul class="pls-no-gaps">
+            ${Object.entries(pstuff[keycard]).map(make_sv).join('')}
+            </ul>
+          </li>
+        `).join('');
+      }
+
+      plist.innerHTML = real_trash;
+
+    } else {
+      plist.innerHTML = await res.text();
+    }
   }
-});
+  getPunchList(null);
+
+  var P0 = x => x.split(',')[0];
+  var P1 = x => x.split(',')[1];
+
+  /**
+  @param {string[]} k,v
+  */
+  var make_sv = ([k, v]) =>
+    `<li class="berty">
+  service name: ${P1(v) || '<small>sorry nothing</small>'}
+  <ul class="pls-no-gaps">
+    <li>address: ${P0(k)}</li>
+    <li>Port: ${P1(k)}</li>
+    <li>PUNCH port: ${P0(v)}</li>
+    <li>
+      <button onclick="callOPM('${P0(k)}',${P1(k)},${P0(v)},'${P1(v)}','out')">Connect</button>
+      <button onclick="callOPM('${P0(k)}',${P1(k)},${P0(v)},'${P1(v)}','stop')">STOP</button>
+    </li>
+  </ul>
+</li>`;
+
+  /**
+  @param {string} addr
+  @param {number} port
+  @param {number} punchPort
+  @param {string} serviceName
+  @param {'in'|'out'|'stop'} flavor
+  */
+  async function callOPM (addr, port, punchPort, serviceName, flavor) {
+    const res = await fetch('http://localhost:39111', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      body: JSON.stringify({addr, port, punchPort, serviceName, flavor})
+    });
+    const tea = await res.text();
+    console.log(tea);
+    return tea;
+  }
 
 </script>
 </body>

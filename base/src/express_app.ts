@@ -368,60 +368,48 @@ async function getPunchHtml(req: Request, res: Response){
 	res.sendFile(path.join(__dirname, "..", 'html','punch.html'));
 }
 
-function rui (k: number) {
-  return Math.trunc(Math.random() * k);
-}
-
-function randomPunchPort(){
-	return (39100 + rui(500));
+interface Punch {
+	// the IP address for someone
+	addr: string;
+	// this is the port for the service that client wants to advertise (ex: 2302)
+	port: number;
+	// this is the port that we're gonna be punching (ex: 39420)
+	punchPort : number;
+	// this is the name of the server, for display purposes
+	serviceName : string;
+	// which way are we swingin'?
+	flavor:'out'|'in'|'stop';
 }
 
 async function postPunchAd(req: Request, res: Response){
-	const expireTime = 600;
+	// absurdly long just for testing
+	const expireTime = 8e8;
 
 	try{
 		if (typeof req?.session?.username === 'string'){
-			// know the Redis key
-			const ad_username = req.session.username;
-			const redKeycard = `PUNCH:${ad_username}`;
 
-			// know the hash field
-			const h_field = `[${req.body?.ip}]:${req.body?.port}`;
+			const punch = req.body as Punch;
+
+			// redis hash key / field / value
+			const redKeycard = `PUNCH:${req.session.username}`;
+			const hashField = `${punch.addr},${punch.port}`;
+			const hashValue = `${punch.punchPort},${punch.serviceName}`;
 
 			// check to see if we're just doing a refresh
-			const httl = await redisClient.hTTL(redKeycard, h_field);
-			if (httl && httl[0] && httl[0] > 0){
-				// we're just gonna refresh the ttl
-				const hexpire_ok = await redisClient.hExpire(redKeycard, h_field, expireTime);
-				if (hexpire_ok[0]){
-					res.status(200).json({msg:hexpire_ok[0]});
-					return;
-				}
-			}
-			// we gotta put in a new punch
-			// check to make sure that this port isnt already being used by punch
-			let p_port = randomPunchPort();
-			const hvals = await redisClient.hVals(redKeycard);
-			goto_top: while(1){
-				for (const val of hvals) {
-					let just_the_port = val.split(',')[0];
-					if (Number(just_the_port) === p_port){
-						p_port = randomPunchPort();
-						continue goto_top;
-					}
-				}
-				break goto_top;
-			}
-			
-			// know the hash value
-			const ad_name = req.body?.sv_name;
-			const h_value = `${p_port},${ad_name}`;
-			// put it together
-			const ad_hash: Record<string, string> = {};
-			ad_hash[h_field] = h_value;
+			//const httl = await redisClient.hTTL(redKeycard, hashField);
+			//if (httl && httl[0] && httl[0] > 0){
+			//	// we're just gonna refresh the ttl
+			//	const hexpire_ok = await redisClient.hExpire(redKeycard, hashField, expireTime);
+			//	if (hexpire_ok[0]){
+			//		res.status(200).json({msg:hexpire_ok[0]});
+			//		return;
+			//	}
+			//}
 
+			// for right now, we're gonna assume that we can't do refreshes
+			
 			// put it right in the machine
-			const hsetex_ok = await redisClient.hSetEx(redKeycard, ad_hash, {expiration:{type:'EX',value:expireTime}});
+			const hsetex_ok = await redisClient.hSetEx(redKeycard, {[hashField]: hashValue}, {expiration:{type:'EX',value:expireTime}});
 			res.status(200).json({msg:hsetex_ok});
 		} else {
 			res.status(500).json({msg:"problem with req.session"});
@@ -438,11 +426,10 @@ async function getPunchList(req: Request, res: Response){
 
 		// for right now, only show punches from the same user
 		const punchKeys = await redisClient.keys(`PUNCH:${req?.session?.username}`);
+
 		const resbody: Record<string, Record<string, string>> = {};
 		for (const key of punchKeys){
 			const hash_real = await redisClient.hGetAll(key);
-			//console.log(key);
-			//console.log(hash_real);
 			resbody[key] = hash_real;
 		}
 		res.status(200).json(resbody);
