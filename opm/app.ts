@@ -102,6 +102,105 @@ server.once('listening',()=>{
 });
 server.listen(httpPort, 'localhost');
 
+// ==================================================================
+// actually gotta talk to the waluigi-servebeer.com server for a sec
+// authorization and authentication and all that
+import https from 'node:https';
+const useLocalhost = fs.existsSync('notkeys/use-localhost.txt')&&Boolean(asnumber('notkeys/use-localhost.txt'));
+const useHostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
+const http_request = useLocalhost ? http.request : https.request;
+
+// try to log in with cookie, if we have one.
+// failing that, log in with email and password
+if (fs.existsSync('notkeys/cookie.txt')) {
+	loginWithCookie();
+} else {
+	loginWithUserCredentials();
+}
+
+// we actually *do* have a cookie, so let's try to use that instead
+function loginWithCookie(){
+	const loginReqOptions : http.RequestOptions = {
+		hostname: useHostname,
+		path: '/api/users/info',
+		method: 'GET',
+		headers: {
+			'Cookie': astext('notkeys/cookie.txt')
+		}
+	};
+	const loginReq = http_request(loginReqOptions, res => {
+		//cog(`HTTP ${res.statusCode}`);
+		//cog(res.headers);
+
+		if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
+			// the cookie didn't work, so now we gotta log in with credentials
+			loginWithUserCredentials();
+		}
+		// we honestly don't care about the rest of it
+
+	});
+	loginReq.end();
+}
+
+
+// we dont have a cookie, so we need to log in and then get the cookie
+function loginWithUserCredentials(){
+	const loginBody = JSON.stringify({email: astext('notkeys/email.txt'), password: astext('notkeys/password.txt')});
+	const loginReqOptions: http.RequestOptions = {
+		hostname: useHostname,
+		path: '/api/users/login',
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'Content-Length': Buffer.byteLength(loginBody)
+		}
+	};
+
+	const loginReq = http_request(loginReqOptions, res=>{
+		//cog(`HTTP ${res.statusCode}`);
+		//cog(res.headers);
+
+		if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
+			throw new Error('credential error');
+		}
+
+		// check the cookie header
+		const setCookie = res.headers['set-cookie'];
+		if (typeof setCookie === 'undefined' || typeof setCookie[0] === 'undefined') {
+			throw new Error('login problem');
+		}
+		const scMatch = setCookie[0].match(/connect\.sid=.*?;/g);
+		if (scMatch === null || typeof scMatch[0] === 'undefined'){
+			throw new Error("problem with the 'set-cookie' HTTP header (it's not your fault)");
+		}
+		let schism = scMatch[0];
+		while (schism.endsWith(';')){
+			// get rid of the trailing semicolon(s)
+			schism = schism.slice(0, -1);
+		}
+
+		// record the cookie for future use
+		fs.writeFileSync('notkeys/cookie.txt', schism, {encoding:'utf8'});
+
+		res.setEncoding('utf8');
+		let somedata = "";
+		const ondata = (chunk:any)=>{
+			somedata += chunk;
+		};
+		res.on("data", ondata);
+		res.once('end', () => {
+			res.off('data', ondata);
+			//cog(`BODY: ${somedata}`);
+		});
+	});
+
+	loginReq.once('error', err=>{
+		console.error(err);
+	});
+	loginReq.write(loginBody);
+	loginReq.end();
+}
+
 // ============================================================
 // the udp stuff
 
