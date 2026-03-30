@@ -2,13 +2,16 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Launch Program",
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
-      "skipFiles": [ "<node_internals>/**" ],
-      "program": "${workspaceFolder}/app.js",
       "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/dist/opm.js",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "console": "externalTerminal"
     }
-  ]
+  ],
+  "compounds": []
 }

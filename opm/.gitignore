@@ -5,9 +5,7 @@ package-lock.json
 # tsc
 obj/***
 tsconfig.tsbuildinfo
-*.d.ts
-*.map
-app.js
+dist/***
 
 # windows
 desktop.ini
