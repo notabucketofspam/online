@@ -41,9 +41,9 @@ li.berty{
     <input name="port" required type="number" min="1" max="65535" step="1" placeholder="2302" value="2302"/>
   </div>
   <!--<div>
-    punch port (leave empty)
+    punch port <span style="position:absolute;background-color:white;">&nbsp;(pls leave empty if you're hosting)</span>
     <br/>
-    <input name="punch-port" readonly type="number" min="1" max="65535" step="1" placeholder=""/>    
+    <input name="punchPort" type="number" min="1" max="65535" step="1" placeholder=""/>    
   </div>-->
   <div>
     service name (optional)
@@ -87,9 +87,14 @@ li.berty{
     ev.preventDefault();
     const addr = String(your_ip);
     const port = Number(document.querySelector('#post-punch-ad input[name="port"]').value);
+    //let punchPort = Number(document.querySelector('#post-punch-ad input[name="punchPort"]').value);
     const serviceName = String(document.querySelector('#post-punch-ad input[name="serviceName"]').value);
 
-    const punchPort = await callOPM(addr,port,0,serviceName,'in');
+    //punchPort = await callOPM(addr,port,punchPort,serviceName,'in');
+
+    // we dont need punchPort
+    // i'll explain later
+    let punchPort = 0;
 
     // post the punch listing on the global server
     const ppa_res = await fetch('/api/punch/ad', {
