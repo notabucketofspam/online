@@ -18,6 +18,7 @@ redisClient.on('error', (err) => console.log('Redis Client Error', err));
 const app = express();
 
 app.set("x-powered-by", false);
+app.set('trust proxy', true);
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -36,7 +37,9 @@ function getSecret() {
 
 // Configure session middleware with RedisStore
 const redisStore = new RedisStore({ client: redisClient });
-app.use(session({
+
+// session time
+const sessionParser = session({
 		store: redisStore,
 		secret: getSecret(),
 		resave: false,
@@ -47,7 +50,8 @@ app.use(session({
 				path: "/api",
 				maxAge: 8.64e9, // 100 days
 		}
-}));
+});
+app.use(sessionParser);
 
 // Serve static files (like your index.html)
 app.use(express.static(path.join(__dirname, "..", 'html')));
@@ -444,5 +448,41 @@ app.get("/punch", getPunchHtml);
 app.post("/api/punch/ad", isAuthenticated, postPunchAd);
 app.get("/api/punch/list", isAuthenticated, getPunchList);
 
+// ===========================================================
+// websocket server
+import ws from 'ws';
+
+let wss = new ws.WebSocketServer;
+
+// we need the server returned by app.listen()
+export function initWSS (server : ws.ServerOptions["server"]) {
+	wss = new ws.WebSocketServer({
+		server,
+		clientTracking: true,
+		autoPong: true,
+		path: '/wss'
+	});
+	wss.once('listening', once_wss_listening);
+	wss.on('connection', wss_onconnection);
+}
+function once_wss_listening(){
+	console.log('WSS on');
+}
+function wss_onconnection (ws : ws.WebSocket, req : Request) {
+	
+	function ws_onmessage (message : ws.RawData, isBinary: boolean){
+		if (isBinary){
+
+		}
+	}
+	ws.on('message', ws_onmessage);
+
+	function ws_onceclose (code : number, reason : Buffer) {
+		ws.off('message', ws_onmessage);
+	}
+	ws.once('close', ws_onceclose);
+
+}
+
 // Export the Express app
-export default app;
+export {app as express_app};

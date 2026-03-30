@@ -2,7 +2,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import * as oracledb from 'oracledb';
 import * as cron from 'cron';
-import app from './express_app'; // Import the Express app
+import { express_app, initWSS } from './express_app'; // Import the Express app
 import { setPool, checkPlease } from './db'; // Import the setPool function
 
 const astext = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
@@ -32,9 +32,11 @@ async function init() {
 				setPool(pool);
 
 				const port = 39600;
-				app.listen(port, () => {
+				const server_real = express_app.listen(port, () => {
 						console.log(`listening on ${port}`);
 				});
+				initWSS(server_real);
+
 				job.start();
 
 		} catch (err) { console.error(err); }
