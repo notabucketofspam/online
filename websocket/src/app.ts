@@ -26,9 +26,13 @@ export default class ExtWSS extends ws.WebSocketServer {
   private pongFrame = Uint8Array.from([0xA]);
   aliveClients: Map<ws.WebSocket, ClientMeta>;
   private pingTimer: NodeJS.Timeout;
+
+
   constructor(options?: ws.ServerOptions, callback?: () => void) {
     super(options, callback);
     this.aliveClients = new Map();
+
+    // pingTimer
     this.pingTimer = setInterval(() => {
       for (const [client, clientMeta] of this.aliveClients.entries()) {
         if (!clientMeta.isAlive) {
@@ -41,9 +45,14 @@ export default class ExtWSS extends ws.WebSocketServer {
         this.aliveClients.get(client)!.isAlive = false;
         client.send(this.pingFrame);
       }
-    }, 30000);
+    }, 30000); // end pingTimer
+
+
+    // onconnection
     this.on("connection", (client, request) => {
       this.aliveClients.set(client, { isAlive: true });
+
+
       client.on("message", (data, isBinary) => {
         if (isBinary && (data as Buffer).length === 1 && (data as Buffer)[0] === this.pongFrame[0]) {
           this.aliveClients.get(client)!.isAlive = true;
@@ -51,12 +60,19 @@ export default class ExtWSS extends ws.WebSocketServer {
           this.emit("message", client, data, isBinary);
         }
       });
+
+
       client.once("close", () => {
         client.off("message", () => void 0);
         this.aliveClients.delete(client);
       });
-    });
-  }
+
+    }); // end onconnection
+
+
+  } // end constructor
+
+
   terminate() {
     clearInterval(this.pingTimer);
     for (const client of this.clients) {
@@ -68,6 +84,7 @@ export default class ExtWSS extends ws.WebSocketServer {
     this.off("connection", () => void 0);
     this.close();
   }
+
 }
 
 const wss = new ws.WebSocketServer({ port: 39601 });
