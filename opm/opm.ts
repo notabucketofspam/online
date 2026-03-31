@@ -6,120 +6,65 @@ const asnumber = (x: string) => Number(astext(x));
 const cog = console.log;
 
 // ===========================================================
-// http server
+// some more setup i guess
 import http from "node:http";
 import net from "node:net";
 import dgram from 'node:dgram';
-const server = http.createServer({noDelay:true});
+import https from 'node:https';
+
+// Now that I think about it a bit more,
+// we don't really need the local HTTP server at all.
+// OPM would always communicate with wsbc via WebSockets anyways.
 
 interface Punch {
-	// the IP address for someone
+	/**the IP address for someone */
 	addr: string;
-	// this is the port for the service that client wants to advertise (ex: 2302)
+	/** this is the port for the service that client wants to advertise (ex: 2302) */
 	port: number;
-	// this is the port that we're gonna be punching (ex: 39420)
-	punchPort : number;
-	// this is the name of the server, for display purposes
+	/**this is the name of the server, for display purposes */
 	serviceName : string;
-	// which way are we swingin'?
-	flavor:'out'|'in'|'stop';
+	/**Who posted this?*/
+	username: string;
 }
 
-const sockets = new Map<number, dgram.Socket>();
-
-let someInterval : NodeJS.Timeout | null = null;
-
-server.on('request', async (req, res)=>{
-	if (req.method === "POST") {
-    req.setEncoding("utf8");
-    let somedata = "";
-
-		const ondata = (chunk:any)=>{
-      somedata += chunk;
-    };
-    req.on("data", ondata);
-		req.once('end', async ()=>{
-			req.off('data', ondata);
-
-			res.statusCode = 200;
-			res.setHeader('Content-Type', 'text/plain');
-			res.setHeader('Access-Control-Allow-Origin', '*');
-
-			// do stuff with the data
-			const punch:Punch = JSON.parse(somedata);
-			cog(somedata);
-
-			// do we need to make a new socket?
-			let socketPort : number;
-			let socket = sockets.get(punch.punchPort);
-			if (typeof socket === 'undefined'){
-				// no socket already, so we gotta make a new one
-				const fam = net.isIPv6(punch.addr) ? 'udp6' : 'udp4';
-				socket = await createSocket(fam, punch.punchPort);
-				socketPort = socket.address().port;
-				sockets.set(socketPort, socket);
-			} else {
-				// we already have a socket
-				socketPort = socket.address().port;
-			}
-
-			if (punch.flavor === 'in') {
-				// the customer just wants to know what our socket port is
-				res.write(String(socketPort));
-
-			} else if (punch.flavor === 'out'){
-				// and now we gotta talk to someone outside the home
-				someInterval = setInterval(()=>{
-					tryToSend(socket, socketPort, punch.addr);
-				}, 5000);
-				res.write('OK');
-
-			} else if (punch.flavor === 'stop') {
-				// we want to stop everything
-				if (someInterval) {
-					clearInterval(someInterval);
-				}
-				socket.close();
-				socket.off('error', onSocketError);
-				socket.off('message', onSocketMessage);
-				sockets.delete(socketPort);
-				res.write('OK');
-			}
-			
-			// give the customer back a response
-			res.end();
-		});
-	} else {
-		res.statusCode = 500;
-    res.setHeader('Content-Type', 'text/plain');
-    res.end('sorry nothing');
-	}
-});
-
-const httpPort = 39111;
-server.once('listening',()=>{
-	cog(`listen http on ${httpPort}`);
-});
-server.listen(httpPort, 'localhost');
+// ===========================================================
+/**what are we hosting here?*/
+let services: Punch[] = [];
+if (fs.existsSync('notkeys/services.json')) {
+	// we remembered to write it down before we left
+	const services_json = astext('notkeys/services.json');
+	services = JSON.parse(services_json) as Punch[];
+	cog("Hosting these services:");
+	cog(services);
+} else {
+	// i got nothin
+	fs.writeFileSync('notkeys/services.json', '[]', {encoding: 'utf8'});
+}
 
 // ==================================================================
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
-import https from 'node:https';
 const useLocalhost = fs.existsSync('notkeys/use-localhost.txt')&&Boolean(asnumber('notkeys/use-localhost.txt'));
 const useHostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
 const http_request = useLocalhost ? http.request : https.request;
 
+type PromiseResolve = (value : unknown) => void;
+type PromiseReject = (reason ?: any) => void;
+
 // try to log in with cookie, if we have one.
-// failing that, log in with email and password
-if (fs.existsSync('notkeys/cookie.txt')) {
-	loginWithCookie();
-} else {
-	loginWithUserCredentials();
+// failing that, log in with email and password.
+function init_login(){
+	return new Promise((resolve, reject) => {
+		if (fs.existsSync('notkeys/cookie.txt')) {
+			loginWithCookie(resolve, reject);
+		} else {
+			loginWithUserCredentials(resolve, reject);
+		}
+	});
 }
 
 // we actually *do* have a cookie, so let's try to use that instead
-function loginWithCookie(){
+function loginWithCookie(resolve: PromiseResolve, reject: PromiseReject){
 	const loginReqOptions : http.RequestOptions = {
 		hostname: useHostname,
 		path: '/api/users/info',
@@ -134,17 +79,19 @@ function loginWithCookie(){
 
 		if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
 			// the cookie didn't work, so now we gotta log in with credentials
-			loginWithUserCredentials();
+			return loginWithUserCredentials(resolve, reject);
+		} else {
+			cog('cookie login successful');
+			// we honestly don't care about the rest of it
+			resolve(0);
 		}
-		// we honestly don't care about the rest of it
 
 	});
 	loginReq.end();
 }
 
-
 // we dont have a cookie, so we need to log in and then get the cookie
-function loginWithUserCredentials(){
+function loginWithUserCredentials(resolve: PromiseResolve, reject: PromiseReject){
 	const loginBody = JSON.stringify({email: astext('notkeys/email.txt'), password: astext('notkeys/password.txt')});
 	const loginReqOptions: http.RequestOptions = {
 		hostname: useHostname,
@@ -191,6 +138,8 @@ function loginWithUserCredentials(){
 		res.once('end', () => {
 			res.off('data', ondata);
 			//cog(`BODY: ${somedata}`);
+			cog('credential login successful');
+			resolve(0);
 		});
 	});
 
@@ -202,60 +151,160 @@ function loginWithUserCredentials(){
 }
 
 // ============================================================
+// websocket client
+const wsProtocol = useLocalhost ? 'ws' : 'wss';
+/**will probably be IPv6 */
+let wsClient6: WebSocket;
+
+
+/** will be IPv4 or unused */
+let wsClient4: WebSocket;
+
+
+let wsUrlJr = `${wsProtocol}://6.${useHostname}/wss`;
+const wsClients = {
+
+};
+
+const refreshTime = 10000;
+let wsRefreshTimer: NodeJS.Timeout;
+function refreshListings(){
+	try{
+		// send a ping frame
+		wsClient6.send(Buffer.from([0x9]));
+		// send the actual listings
+		wsClient6.send(JSON.stringify(services));
+	} catch (err){
+		console.error(err);
+	}
+}
+function init_websocket(){
+	let wsUrl = `${wsProtocol}://${useHostname}/wss`;
+	if (!useLocalhost){
+		wsUrl = `${wsProtocol}://4.${useHostname}/wss`;
+		let wsUrlJr = `${wsProtocol}://6.${useHostname}/wss`;
+		wsClient4 = new WebSocket(wsUrlJr);
+		wsClient4.addEventListener('close', onceWsClose, {once:true});
+		wsClient4.addEventListener('open', onceWsOpen, {once:true});
+	}
+	//cog(wsUrl);
+	wsClient6 = new WebSocket(wsUrl);
+	wsClient6.addEventListener('close', onceWsClose, {once:true});
+	wsClient6.addEventListener('open', onceWsOpen, {once:true});
+}
+
+// -------------------------------------- websocket event listeners
+
+async function onWsMessage (ev : MessageEvent) {
+	// we shall open a udp socket and send something
+	// to the specified address and port
+	cog(ev.data);
+	if (typeof ev.data === 'string') {
+		// the server wants us to reach out to someone
+		const punch = JSON.parse(ev.data) as Punch;
+
+		// make a new UDP socket
+		const fam = net.isIPv6(punch.addr) ? 'udp6' : 'udp4';
+		const socket = await createUdpSocket(fam);
+
+		// send messages to the other person
+		let timer_wah : NodeJS.Timeout | null = null;
+		timer_wah = setInterval(() => {
+			socket.send('', punch.port, punch.addr, (err, bytes)=>{
+				if (err) {
+					cog(err);
+				} else {
+					// we still dont care tbh
+				}
+			});
+		}, 1000);
+
+		// ... but we dont wanna do that *forever*, tho
+		setTimeout(() => {
+			if (timer_wah) {
+				clearTimeout(timer_wah);
+			}
+			if (socket){
+				socket.close();
+			}
+		}, 15000);
+
+	} else {
+		// probs a pong frame, so just ignore
+	}
+}
+
+function onWsError (ev : Event) {
+	console.error('ws error', ev);
+}
+
+let wsCopiumTimer: NodeJS.Timeout;
+function onceWsClose(ev: CloseEvent){
+	let ws = ev.target as WebSocket;
+	cog('ws closed', `[code: ${ev.code}]`, `[reason: ${ev.reason}]`, `[clean? ${ev.wasClean}]`);
+	ws.removeEventListener('message', onWsMessage);
+	ws.removeEventListener('error', onWsError);
+	if (wsRefreshTimer){		
+		clearInterval(wsRefreshTimer);
+	}
+	// and now we have to wait and see if the server goes back up
+	wsCopiumTimer = setInterval(() =>{
+		ws.removeEventListener('open', onceWsOpen);
+		ws.removeEventListener('close', onceWsClose);
+		cog('attempting to cope...');
+		init_websocket();
+	}, 10000);
+}
+
+function onceWsOpen (ev: Event) {
+	cog('ws open');
+	let ws = ev.target as WebSocket;
+	ws.addEventListener('error', onWsError);
+	ws.addEventListener('message', onWsMessage);
+	ws.send(JSON.stringify({'Cookie': astext('notkeys/cookie.txt')}));
+	refreshListings();
+	wsRefreshTimer = setInterval(refreshListings, refreshTime);
+	if (wsCopiumTimer!) {
+		clearTimeout(wsCopiumTimer);
+	}
+}
+
+
+// ============================================================
 // the udp stuff
 
-async function createSocket (family : 'udp4' | 'udp6', bindPort = 0) {
+async function createUdpSocket (family : 'udp4' | 'udp6') {
 	const socket = dgram.createSocket(family);
 
-	socket.on('error', onSocketError);
-	socket.on('message', onSocketMessage);
-	socket.once('close', onceSocketClose);
+	socket.on('error', onUdpSocketError);
+	socket.once('close', function () {
+		cog(`socket closed`);
+		socket.off('error', onUdpSocketError);
+	});
 	// prevent some kinda race condition
-	const promise = new Promise<dgram.Socket>((resolve, reject) => {
+	const promise = new Promise<void>((resolve, reject) => {
 		socket.once('listening', () => {
-			onceSocketListening(socket);
-			resolve(socket);
+			const address = socket.address();
+			cog(`udp socket listening on ${address.address},${address.port}`);
+			resolve();
 		});
 	});
 
-	socket.bind(bindPort);
+	socket.bind();
 	await promise;
 
 	return socket;
 }
 
-function onceSocketListening(socket: dgram.Socket){
-	const address = socket.address();
-	cog(`udp socket listening on ${address.address},${address.port}`);
-}
-
-function onSocketError (err : Error) {
+function onUdpSocketError (err : Error) {
 	console.error(`socket error: ${err}`);
 }
 
-function onSocketMessage (msg : Buffer, rinfo : dgram.RemoteInfo) {	
-	cog(`we got ${msg} from ${rinfo.address},${rinfo.port}`);
+// ============================================================
+// final bit of setup
+async function init_real(){
+	await init_login();
+	init_websocket();
 }
+init_real();
 
-function onceSocketClose () {
-	cog(`socket closed`);
-}
-
-function tryToSend(socket: dgram.Socket, destPort: number, destAddr: string){
-	try{
-		const sayWhat = Math.random().toString().padEnd(20, '0');
-		socket.send(sayWhat, destPort, destAddr, (err, bytes)=>{
-			if (err){
-				cog(`error`, err);
-			} else {
-				cog(`sending ${sayWhat} to ${destAddr},${destPort}`);
-			}
-		});
-	} catch(err){
-		console.error(`error`, err);
-	}
-}
-
-//const ImDoingMyPart = () => tryToSend(theRemotePort, theRemoteAddress);
-
-//setInterval(ImDoingMyPart, 2000);
