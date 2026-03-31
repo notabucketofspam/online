@@ -363,8 +363,12 @@ app.get("/api/users/delete", isAuthenticated, handleDelete);
 
 // =================================== this is all the punch stuff
 
+var cog = console.log;
+
 async function get_ip(req: Request, res: Response){
 	const xff = req.header('X-Forwarded-For');
+	res.setHeader('Content-Type', 'text/plain');
+	res.setHeader('Access-Control-Allow-Origin', '*');
 	res.status(200).send(xff);
 }
 
@@ -373,116 +377,182 @@ async function getPunchHtml(req: Request, res: Response){
 }
 
 interface Punch {
-	// the IP address for someone
+	/**the IP address for someone */
 	addr: string;
-	// this is the port for the service that client wants to advertise (ex: 2302)
+	/** this is the port for the service that client wants to advertise (ex: 2302) */
 	port: number;
-	// this is the port that we're gonna be punching (ex: 39420)
-	punchPort : number;
-	// this is the name of the server, for display purposes
+	/**this is the name of the server, for display purposes */
 	serviceName : string;
-	// which way are we swingin'?
-	flavor:'out'|'in'|'stop';
-}
-
-async function postPunchAd(req: Request, res: Response){
-	// absurdly long just for testing
-	const expireTime = 8e8;
-
-	try{
-		if (typeof req?.session?.username === 'string'){
-
-			const punch = req.body as Punch;
-
-			// redis hash key / field / value
-			const redKeycard = `PUNCH:${req.session.username}`;
-			const hashField = `${punch.addr},${punch.port}`;
-			const hashValue = `${punch.punchPort},${punch.serviceName}`;
-
-			// check to see if we're just doing a refresh
-			//const httl = await redisClient.hTTL(redKeycard, hashField);
-			//if (httl && httl[0] && httl[0] > 0){
-			//	// we're just gonna refresh the ttl
-			//	const hexpire_ok = await redisClient.hExpire(redKeycard, hashField, expireTime);
-			//	if (hexpire_ok[0]){
-			//		res.status(200).json({msg:hexpire_ok[0]});
-			//		return;
-			//	}
-			//}
-
-			// for right now, we're gonna assume that we can't do refreshes
-			
-			// put it right in the machine
-			const hsetex_ok = await redisClient.hSetEx(redKeycard, {[hashField]: hashValue}, {expiration:{type:'EX',value:expireTime}});
-			res.status(200).json({msg:hsetex_ok});
-		} else {
-			res.status(500).json({msg:"problem with req.session"});
-		}
-	} catch(err){
-		console.error(err);
-		res.status(500).json({msg:"error sorry"});
-	}
+	/**Who posted this?*/
+	username: string;
 }
 
 async function getPunchList(req: Request, res: Response){
 	try {
-		//const punchKeys = await redisClient.keys("PUNCH:*");
+		let filteredView: Punch[] = [];
+		let username = req.session.username;
+		if (typeof username !== 'undefined'){
+			const all_services = getPunchServices();
 
-		// for right now, only show punches from the same user
-		const punchKeys = await redisClient.keys(`PUNCH:${req?.session?.username}`);
-
-		const resbody: Record<string, Record<string, string>> = {};
-		for (const key of punchKeys){
-			const hash_real = await redisClient.hGetAll(key);
-			resbody[key] = hash_real;
+			// until we add support for "Trust someone else who isn't me",
+			// we gotta limit PUNCH to only same-user.
+			filteredView = all_services.filter(punch=>punch.username === username);
+		} else {
+			// if the username ain't real, then we ignore him
 		}
-		res.status(200).json(resbody);
+
+		res.status(200).json(filteredView);
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({msg:"error sorry"});
 	}
 }
 
+async function askToJoin(req: Request, res: Response){
+	try{
+		let username = req.session.username;
+		let reqAddr = req.header('X-Forwarded-For');
+		if (typeof username === 'undefined' || typeof reqAddr === 'undefined') {
+			// it's junk
+		} else {
+			// we got a live one
+
+		}
+
+		res.status(200).json({msg:'ok'});
+	} catch(err){
+		console.error(err);
+		res.status(500).json({msg:"error with join"});
+	}
+}
+
 app.get("/ip", get_ip);
 app.get("/punch", getPunchHtml);
-app.post("/api/punch/ad", isAuthenticated, postPunchAd);
 app.get("/api/punch/list", isAuthenticated, getPunchList);
+app.post("/api/punch/join", isAuthenticated, askToJoin);
 
 // ===========================================================
 // websocket server
 import ws from 'ws';
+import Stream from 'node:stream';
+import http from 'node:http';
 
-let wss = new ws.WebSocketServer;
+let wss: ws.WebSocketServer;
+
+interface ClientData{
+	/**The session ID*/
+	sid: string;
+	/**All the services that the client wants to list*/
+	services: Punch[];
+}
+
+const clientMap: WeakMap<ws, ClientData> = new WeakMap();
 
 // we need the server returned by app.listen()
 export function initWSS (server : ws.ServerOptions["server"]) {
+	//const http_server = server as http.Server;
+	//http_server.on('upgrade', (req, socket, head) => {
+	//	console.log(req.headers);
+	//});
 	wss = new ws.WebSocketServer({
 		server,
+		host: 'localhost',
 		clientTracking: true,
 		autoPong: true,
 		path: '/wss'
 	});
-	wss.once('listening', once_wss_listening);
+	wss.on('wsClientError', wss_onwsClientError);
+	//wss.once('listening', wss_oncelistening);
 	wss.on('connection', wss_onconnection);
 }
-function once_wss_listening(){
-	console.log('WSS on');
-}
-function wss_onconnection (ws : ws.WebSocket, req : Request) {
-	
-	function ws_onmessage (message : ws.RawData, isBinary: boolean){
-		if (isBinary){
 
+function wss_oncelistening(){
+	console.log('WSS OK', wss.address());
+}
+
+function wss_onconnection (ws : ws.WebSocket, req : Request) {
+	//console.log(ws);
+	//console.log('session', req.session);
+	//console.log(req.headers);
+	const xff = req.headersDistinct['x-forwarded-for']?.at(0);
+	
+	async function ws_onmessage (message : ws.RawData, isBinary: boolean){
+		if (!isBinary){
+			const rawMessage = message.toString();
+			const parsedMessage = JSON.parse(rawMessage);
+
+			if (typeof parsedMessage['Cookie'] !== 'undefined'){
+				// client wants to set the session id
+				let sid: string = parsedMessage['Cookie'];
+				if (sid.includes('connect.sid=')){
+					sid = sid.replace('connect.sid=','');
+				}
+				sid = decodeURIComponent(sid);
+				const rx = /s:(.*?)\./;
+				sid = rx.exec(sid)?.[1] ?? sid;
+				const services: Punch[] = [];
+				clientMap.set(ws, {sid, services});
+
+			} else {
+				// client is listing services
+				let clientData = clientMap.get(ws);
+				if (typeof clientData !== 'undefined'){
+					const sid = clientData.sid;
+
+					const session: SessionData | undefined = await redisStore.get(sid);
+					//console.log(session);
+					let username = session?.username ?? '';
+					const services: Punch[] = parsedMessage;
+					services.forEach(punch=>{
+						//cog(punch);
+						if (xff){
+							punch.addr = xff;
+						}
+						punch.username = username;
+					});
+					clientMap.set(ws, {sid, services});
+				} else {
+					// clientData is undefined
+				}
+			}
+		} else {
+			// it's just a ping message
 		}
 	}
 	ws.on('message', ws_onmessage);
 
 	function ws_onceclose (code : number, reason : Buffer) {
 		ws.off('message', ws_onmessage);
+		clientMap.delete(ws);
 	}
 	ws.once('close', ws_onceclose);
-
 }
+
+
+function wss_onwsClientError (err : Error, socket: Stream.Duplex, request: http.IncomingMessage){
+	console.error('WebSocket client error', err);
+	console.error(socket);
+	console.error(request);
+}
+
+function getPunchServices(): Punch[]{
+	const all_services: Punch[] = [];
+	// Set.prototype.map wasn't working for some reason
+	wss.clients.forEach(ws=>{
+		let clientData = clientMap.get(ws);
+		cog(clientData);
+		if (typeof clientData !== 'undefined'){
+		let services_perchance = clientData.services;
+			all_services.push(...services_perchance);
+		}
+	});
+	return all_services;
+}
+
+//app.get('/wss', (req, res)=>{
+//	cog("wss.shouldHandle", wss.shouldHandle(req));
+//});
+
 
 // Export the Express app
 export {app as express_app};
