@@ -272,10 +272,10 @@ function onceWsClose(ev: CloseEvent){
 		clearInterval(wsClients[ws.url]?.refreshTimer);
 	}
 	// and now we have to wait and see if the server goes back up
-	wsClients[ws.url]!.copiumTimer = setInterval(() =>{
+	//wsClients[ws.url]!.copiumTimer = setInterval(() =>{
 		cog(`[${ws.url}] attempting to cope...`);
 		reinit_websocket(ws);
-	}, refreshTime);
+	//}, refreshTime);
 }
 
 function onceWsOpen (ev: Event) {
