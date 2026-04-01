@@ -148,6 +148,24 @@ export async function getJsonStorage(userId: number): Promise<object | null> {
 		}
 }
 
+type Trusts = [string, string[]];
+export async function getTrusts(): Promise<Map<string, string[]> | null> {
+		const sql = `SELECT username, JSON_QUERY(storage, '$.trusts')
+    FROM users WHERE JSON_EXISTS(storage, '$.trusts')`;
+		const params = {};
+		try {
+				const result = await queryDatabase(sql, params, false);
+				if (result && result.rows && result.rows.length > 0) {
+					const rows = result.rows as Trusts[];					
+					return new Map(rows);
+				}
+				return null;
+		} catch (error) {
+				console.error("Error retrieving JSON storage:", error);
+				throw error;
+		}
+}
+
 export async function checkPlease() {
 		const sql = "insert into misc values (default, default)";
 		const params = {};

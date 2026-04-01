@@ -393,10 +393,20 @@ async function getPunchList(req: Request, res: Response){
 		let username = req.session.username;
 		if (typeof username !== 'undefined'){
 			const all_services = getPunchServices();
+			// result is a map: a guy, and who said guy trusts 
+			const result = await odb.getTrusts();
+			//console.log(result);
 
-			// until we add support for "Trust someone else who isn't me",
-			// we gotta limit PUNCH to only same-user.
-			filteredView = all_services.filter(punch=>punch.username === username);
+			if (result !== null){
+				// only display services for users whom trust this user
+				filteredView = all_services.filter(punch=>
+					result.get(punch.username)?.includes(username) || punch.username === username
+				);
+			} else {
+				// result was null, so for now we'll just limit it to same-username punches
+				filteredView = all_services.filter(punch=>punch.username === username);					
+			}
+
 		} else {
 			// if the username ain't real, then we ignore him
 		}
@@ -408,18 +418,55 @@ async function getPunchList(req: Request, res: Response){
 	}
 }
 
+
 async function askToJoin(req: Request, res: Response){
 	try{
-		let username = req.session.username;
-		let reqAddr = req.header('X-Forwarded-For');
-		if (typeof username === 'undefined' || typeof reqAddr === 'undefined') {
+		const reqUsername = req.session.username;
+		const reqAddr = req.header('X-Forwarded-For');		
+		const reqPunch: Punch = req.body;
+		if (typeof reqUsername === 'undefined' || typeof reqAddr === 'undefined' || typeof reqPunch === 'undefined') {
 			// it's junk
+			res.status(500).json({msg:"error with request"});
 		} else {
 			// we got a live one
+			
+			// get the client who is hosting this service
+			const wsClient = getClientByService(reqPunch);
+			if (typeof wsClient !== 'undefined') {
+				const punchOut : Punch = {
+					addr: reqAddr,
+					port: reqPunch.port,
+					serviceName: reqPunch.serviceName,
+					username: reqUsername
+				};
 
+				if (reqUsername === reqPunch.username){
+					// same-user, so we don't have to check the database for trust issues
+					wsClient.send(JSON.stringify(punchOut));
+					res.status(200).json({msg:'ok'});
+				} else {
+					// check odb for trust
+					const result = await odb.getTrusts();
+					if (result !== null){
+						const isTrusted = result.get(reqPunch.username)?.includes(reqUsername);
+						if (isTrusted) {
+							// our guy is trusted
+							wsClient.send(JSON.stringify(punchOut));
+							res.status(200).json({msg:'ok'});
+						} else {
+							// user isnt trusted
+							res.status(500).json({msg:"Target user doesn't trust you yet."});
+						}
+					} else {
+						// result was null
+						res.status(500).json({msg:"database error"});
+					}
+				}
+			} else {
+				// couldn't find a websocket client advertising this service
+				res.status(500).json({msg:"Unable to find opponent"});
+			}
 		}
-
-		res.status(200).json({msg:'ok'});
 	} catch(err){
 		console.error(err);
 		res.status(500).json({msg:"error with join"});
@@ -444,6 +491,8 @@ interface ClientData{
 	sid: string;
 	/**All the services that the client wants to list*/
 	services: Punch[];
+	/** the IP address of this client*/
+	addr: string;
 }
 
 const clientMap: WeakMap<ws, ClientData> = new WeakMap();
@@ -475,6 +524,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 	//console.log('session', req.session);
 	//console.log(req.headers);
 	const xff = req.headersDistinct['x-forwarded-for']?.at(0);
+	const addr = xff??'';
 	
 	async function ws_onmessage (message : ws.RawData, isBinary: boolean){
 		if (!isBinary){
@@ -491,7 +541,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 				const rx = /s:(.*?)\./;
 				sid = rx.exec(sid)?.[1] ?? sid;
 				const services: Punch[] = [];
-				clientMap.set(ws, {sid, services});
+				clientMap.set(ws, {sid, services, addr});
 
 			} else {
 				// client is listing services
@@ -505,12 +555,10 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 					const services: Punch[] = parsedMessage;
 					services.forEach(punch=>{
 						//cog(punch);
-						if (xff){
-							punch.addr = xff;
-						}
+						punch.addr = addr;
 						punch.username = username;
 					});
-					clientMap.set(ws, {sid, services});
+					clientMap.set(ws, {sid, services, addr});
 				} else {
 					// clientData is undefined
 				}
@@ -540,13 +588,34 @@ function getPunchServices(): Punch[]{
 	// Set.prototype.map wasn't working for some reason
 	wss.clients.forEach(ws=>{
 		let clientData = clientMap.get(ws);
-		cog(clientData);
+		//cog(clientData);
 		if (typeof clientData !== 'undefined'){
 		let services_perchance = clientData.services;
 			all_services.push(...services_perchance);
 		}
 	});
 	return all_services;
+}
+
+function getClientByService(search: Punch): ws | undefined {
+	let foundClient: ws | undefined;
+
+	searching: for (const client of wss.clients){		
+		let clientData = clientMap.get(client);
+		if (typeof clientData !== 'undefined'){
+			for (const service of clientData.services) {
+				if (service.addr === search.addr &&
+				service.port === search.port && 
+				service.serviceName === search.serviceName &&
+				service.username === search.username){
+					foundClient = client;
+					break searching;
+				}
+			}
+		}
+	}
+
+	return foundClient;
 }
 
 //app.get('/wss', (req, res)=>{
