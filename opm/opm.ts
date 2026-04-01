@@ -152,45 +152,67 @@ function loginWithUserCredentials(resolve: PromiseResolve, reject: PromiseReject
 
 // ============================================================
 // websocket client
-const wsProtocol = useLocalhost ? 'ws' : 'wss';
-/**will probably be IPv6 */
-let wsClient6: WebSocket;
 
+interface WsClientInfo {
+	ws: WebSocket;
+	services: Punch[];
+	copiumTimer?: NodeJS.Timeout;
+	refreshTimer?: NodeJS.Timeout;
+}
 
-/** will be IPv4 or unused */
-let wsClient4: WebSocket;
+/** 
+ * we need two different websockets bc WSBC uses
+ * the 'X-Forwarded-For' HTTP header to determine our IP
+ */
+const wsClients: Record<string, WsClientInfo> = {};
 
+/** do this once at startup*/
+function init_websockets() {	
+	let wsUrl6 = `ws://localhost/wss`;
 
-let wsUrlJr = `${wsProtocol}://6.${useHostname}/wss`;
-const wsClients = {
+	if (!useLocalhost) {
+		wsUrl6 = `wss://6.waluigi-servebeer.com/wss`;
 
-};
+		let wsUrl4 = `wss://4.waluigi-servebeer.com/wss`;
+		let ws4 = new WebSocket(wsUrl4)
+		ws4.addEventListener('close', onceWsClose, {once:true});
+		ws4.addEventListener('open', onceWsOpen, {once:true});	
+		wsClients[wsUrl4] = {ws: ws4, services: services.filter(punch=>punch.addr.includes('.'))};
+	}
+	let ws6 = new WebSocket(wsUrl6);
+	ws6.addEventListener('close', onceWsClose, {once:true});
+	ws6.addEventListener('open', onceWsOpen, {once:true});
+	wsClients[wsUrl6] = {ws: ws6, services: services.filter(punch=>punch.addr.includes(':'))};
+}
+
+/** this will be called every-so-often when we're attempting to cope */
+function reinit_websocket(ws: WebSocket) {	
+	ws.removeEventListener('open', onceWsOpen);
+	ws.removeEventListener('close', onceWsClose);
+
+	let wsUrl = ws.url;
+	let newWs = new WebSocket(wsUrl);
+	newWs.addEventListener('open', onceWsOpen, {once:true});
+	newWs.addEventListener('close', onceWsClose, {once: true});
+
+	wsClients[wsUrl]!.ws = newWs;
+}
 
 const refreshTime = 10000;
-let wsRefreshTimer: NodeJS.Timeout;
-function refreshListings(){
+/**
+ * this is how we tell WSBC that we are hosting stuff
+ * @param ws
+ */
+function refreshListings(ws: WebSocket){
 	try{
 		// send a ping frame
-		wsClient6.send(Buffer.from([0x9]));
+		ws.send(Buffer.from([0x9]));
 		// send the actual listings
-		wsClient6.send(JSON.stringify(services));
+		const _services = wsClients[ws.url]?.services ?? [];
+		ws.send(JSON.stringify(_services));
 	} catch (err){
 		console.error(err);
 	}
-}
-function init_websocket(){
-	let wsUrl = `${wsProtocol}://${useHostname}/wss`;
-	if (!useLocalhost){
-		wsUrl = `${wsProtocol}://4.${useHostname}/wss`;
-		let wsUrlJr = `${wsProtocol}://6.${useHostname}/wss`;
-		wsClient4 = new WebSocket(wsUrlJr);
-		wsClient4.addEventListener('close', onceWsClose, {once:true});
-		wsClient4.addEventListener('open', onceWsOpen, {once:true});
-	}
-	//cog(wsUrl);
-	wsClient6 = new WebSocket(wsUrl);
-	wsClient6.addEventListener('close', onceWsClose, {once:true});
-	wsClient6.addEventListener('open', onceWsOpen, {once:true});
 }
 
 // -------------------------------------- websocket event listeners
@@ -235,40 +257,48 @@ async function onWsMessage (ev : MessageEvent) {
 }
 
 function onWsError (ev : Event) {
-	console.error('ws error', ev);
+	let ws = ev.target as WebSocket;
+	console.error(`[${ws.url}] error:`, ev);
 }
 
-let wsCopiumTimer: NodeJS.Timeout;
 function onceWsClose(ev: CloseEvent){
 	let ws = ev.target as WebSocket;
-	cog('ws closed', `[code: ${ev.code}]`, `[reason: ${ev.reason}]`, `[clean? ${ev.wasClean}]`);
+
+	cog(`[${ws.url}] closed: [code: ${ev.code}] [reason: ${ev.reason}] [clean? ${ev.wasClean}]`);
+
 	ws.removeEventListener('message', onWsMessage);
 	ws.removeEventListener('error', onWsError);
-	if (wsRefreshTimer){		
-		clearInterval(wsRefreshTimer);
+	if (wsClients[ws.url]?.refreshTimer){		
+		clearInterval(wsClients[ws.url]?.refreshTimer);
 	}
 	// and now we have to wait and see if the server goes back up
-	wsCopiumTimer = setInterval(() =>{
-		ws.removeEventListener('open', onceWsOpen);
-		ws.removeEventListener('close', onceWsClose);
-		cog('attempting to cope...');
-		init_websocket();
-	}, 10000);
+	wsClients[ws.url]!.copiumTimer = setInterval(() =>{
+		cog(`[${ws.url}] attempting to cope...`);
+		reinit_websocket(ws);
+	}, refreshTime);
 }
 
 function onceWsOpen (ev: Event) {
-	cog('ws open');
 	let ws = ev.target as WebSocket;
+
+	cog(`[${ws.url}] open`);
+
 	ws.addEventListener('error', onWsError);
 	ws.addEventListener('message', onWsMessage);
+
+	// we need to send login info to the server,
+	// but we can't do that with the default WebSocket constructor,
+	// since it doesn't let us set our own headers
 	ws.send(JSON.stringify({'Cookie': astext('notkeys/cookie.txt')}));
-	refreshListings();
-	wsRefreshTimer = setInterval(refreshListings, refreshTime);
-	if (wsCopiumTimer!) {
-		clearTimeout(wsCopiumTimer);
+
+	refreshListings(ws);
+	wsClients[ws.url]!.refreshTimer = setInterval(()=>{
+		refreshListings(ws);
+	}, refreshTime);
+	if (wsClients[ws.url]?.copiumTimer) {
+		clearTimeout(wsClients[ws.url]?.copiumTimer);
 	}
 }
-
 
 // ============================================================
 // the udp stuff
@@ -278,7 +308,7 @@ async function createUdpSocket (family : 'udp4' | 'udp6') {
 
 	socket.on('error', onUdpSocketError);
 	socket.once('close', function () {
-		cog(`socket closed`);
+		cog(`udp socket closed`);
 		socket.off('error', onUdpSocketError);
 	});
 	// prevent some kinda race condition
@@ -297,14 +327,14 @@ async function createUdpSocket (family : 'udp4' | 'udp6') {
 }
 
 function onUdpSocketError (err : Error) {
-	console.error(`socket error: ${err}`);
+	console.error(`udp socket error: ${err}`);
 }
 
 // ============================================================
 // final bit of setup
 async function init_real(){
 	await init_login();
-	init_websocket();
+	init_websockets();
 }
 init_real();
 
