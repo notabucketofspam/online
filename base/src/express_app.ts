@@ -393,22 +393,26 @@ async function getPunchList(req: Request, res: Response){
 		let username = req.session.username;
 		if (typeof username !== 'undefined'){
 			const all_services = getPunchServices();
-			// result is a map: a guy, and who said guy trusts 
-			const result = await odb.getTrusts();
-			//console.log(result);
 
-			if (result !== null){
-				// only display services for users whom trust this user
-				filteredView = all_services.filter(punch=>
-					result.get(punch.username)?.includes(username) || punch.username === username
-				);
+			if (all_services.length !== 0) {
+				// we have some services
+
+				// result is a Map<username, names of other users that he trusts>
+				const result = await odb.getTrusts();
+				if (result !== null){
+					// only display services for users whom trust this user
+					filteredView = all_services.filter(punch=>
+						result.get(punch.username)?.includes(username) || punch.username === username
+					);
+				} else {
+					// result was null, so for now we'll just limit it to same-username punches
+					filteredView = all_services.filter(punch=>punch.username === username);					
+				}
 			} else {
-				// result was null, so for now we'll just limit it to same-username punches
-				filteredView = all_services.filter(punch=>punch.username === username);					
+				// we've got no services
 			}
-
 		} else {
-			// if the username ain't real, then we ignore him
+			// the username ain't real, so we ignore him
 		}
 
 		res.status(200).json(filteredView);
@@ -499,10 +503,6 @@ const clientMap: WeakMap<ws, ClientData> = new WeakMap();
 
 // we need the server returned by app.listen()
 export function initWSS (server : ws.ServerOptions["server"]) {
-	//const http_server = server as http.Server;
-	//http_server.on('upgrade', (req, socket, head) => {
-	//	console.log(req.headers);
-	//});
 	wss = new ws.WebSocketServer({
 		server,
 		host: 'localhost',
@@ -520,9 +520,6 @@ function wss_oncelistening(){
 }
 
 function wss_onconnection (ws : ws.WebSocket, req : Request) {
-	//console.log(ws);
-	//console.log('session', req.session);
-	//console.log(req.headers);
 	const xff = req.headersDistinct['x-forwarded-for']?.at(0);
 	const addr = xff??'';
 	
@@ -547,14 +544,12 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 				// client is listing services
 				let clientData = clientMap.get(ws);
 				if (typeof clientData !== 'undefined'){
+					// check session info
 					const sid = clientData.sid;
-
 					const session: SessionData | undefined = await redisStore.get(sid);
-					//console.log(session);
 					let username = session?.username ?? '';
 					const services: Punch[] = parsedMessage;
 					services.forEach(punch=>{
-						//cog(punch);
 						punch.addr = addr;
 						punch.username = username;
 					});
@@ -588,7 +583,6 @@ function getPunchServices(): Punch[]{
 	// Set.prototype.map wasn't working for some reason
 	wss.clients.forEach(ws=>{
 		let clientData = clientMap.get(ws);
-		//cog(clientData);
 		if (typeof clientData !== 'undefined'){
 		let services_perchance = clientData.services;
 			all_services.push(...services_perchance);
@@ -617,11 +611,6 @@ function getClientByService(search: Punch): ws | undefined {
 
 	return foundClient;
 }
-
-//app.get('/wss', (req, res)=>{
-//	cog("wss.shouldHandle", wss.shouldHandle(req));
-//});
-
 
 // Export the Express app
 export {app as express_app};
