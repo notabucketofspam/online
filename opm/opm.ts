@@ -258,13 +258,13 @@ async function onWsMessage (ev : MessageEvent) {
 
 function onWsError (ev : Event) {
 	let ws = ev.target as WebSocket;
-	console.error(`[${ws.url}] error:`, ev);
+	console.error(`[${ws.url}]`, ev);
 }
 
 function onceWsClose(ev: CloseEvent){
 	let ws = ev.target as WebSocket;
 
-	cog(`[${ws.url}] closed: [code: ${ev.code}] [reason: ${ev.reason}] [clean? ${ev.wasClean}]`);
+	cog(`[${ws.url}] closed: [code: ${ev.code}] [reason: ${ev.reason||'none'}] [clean: ${ev.wasClean}]`);
 
 	ws.removeEventListener('message', onWsMessage);
 	ws.removeEventListener('error', onWsError);
