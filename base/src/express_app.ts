@@ -426,8 +426,9 @@ async function getPunchList(req: Request, res: Response){
 async function askToJoin(req: Request, res: Response){
 	try{
 		const reqUsername = req.session.username;
-		const reqAddr = req.header('X-Forwarded-For');		
-		const reqPunch: Punch = req.body;
+		const reqAddr = req.header('X-Forwarded-For');
+		const contentType = req.header('Content-Type');		
+		const reqPunch: Punch = (contentType === 'text/plain') ? JSON.parse(req.body) : req.body;
 		if (typeof reqUsername === 'undefined' || typeof reqAddr === 'undefined' || typeof reqPunch === 'undefined') {
 			// it's junk
 			res.status(500).json({msg:"error with request"});
