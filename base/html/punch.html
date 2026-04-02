@@ -7,39 +7,52 @@
 <meta name="viewport" content="width=device-width, user-scalable=yes"/>
 <title>Punch - waluigi-servebeer.com</title>
 <style>
-.notice-me {
-  font-variant:small-caps;
-  text-align:center;
+  .notice-me {
+    font-variant: small-caps;
+    text-align: center;
+  }
+
+  li.service {
+    border: 1px solid black;
+    padding: 3px;
+    list-style-type: none;
+  }
+
+  ul#trusted_users {
+    margin: 0;
+    padding: 0;
+  }
+
+ul#trusted_users > li {
+  list-style-type: none;
 }
 
-li.service {
-  border: 1px solid black;
-  padding: 3px;
-  list-style-type:none;
+ul#trusted_users > li > button {
+  margin-right: 5px;
+  display: inline-block;
+  width: 21px;
+  height: 21px;
+  padding:0;
 }
-ul.timatum {
-  margin: 0;
-}
-
 </style>
 </head>
 <body>
 <div class="sef lard">
 <h1 class="notice-me">Punch</h1>
 
-<div class="fr">
+<div class="fr" id="some_super_jank_sidebar_thing">
   <div id="logged_in_as">Not logged in</div>
   <hr/>
   <div id="trust_stuff">
     <span>Here are the users that you trust:</span>
-    <ul class="timatum" id="trusted_users"></ul>
+    <ul id="trusted_users"></ul>
     <hr/>
     <div>
       Add a trusted user:
       <br/>
       <form id="form_addTrust">
         <label>
-          <input type="text" maxlength="50" placeholder="username" />
+          <input autocomplete="country-name" required name="trustee" type="text" maxlength="50" placeholder="username" />
         </label>
         <br/>
         <button type="submit">Submit</button>
@@ -47,6 +60,7 @@ ul.timatum {
     </div>
   </div>
 </div>
+
 <div class="lube">
   <div class="lube">Your IPv4 address is <b id="your_ipv4">0.0.0.0</b></div>
   <div class="lube">Your IPv6 address is <b id="your_ipv6">::</b></div>
@@ -63,7 +77,7 @@ ul.timatum {
   check_online(async (jazz) => {
     var logged_in_as = document.getElementById("logged_in_as");
     if (jazz.username) {
-      logged_in_as.innerHTML = `Logged in as <b>${jazz.username}</b>`;      
+      logged_in_as.innerHTML = `Logged in as <b>${jazz.username}</b>`;
       await showTrusts();
     } else {
       document.getElementById("trust_stuff").setAttribute("hidden", '');
@@ -74,24 +88,49 @@ ul.timatum {
   /**
     who do you trust?
   */
-  async function showTrusts(){
+  async function showTrusts () {
     const trusted_users = document.getElementById('trusted_users');
     const the_store = await get_storage();
-    trusts = the_store['storage']['trusts']||[''];
-    const insertable = trusts.map(name => `<li>${name}</li>`).join('');
+    trusts = the_store['storage']['trusts'] || [''];
+    const insertable = trusts.map(write_trustee).join('');
     trusted_users.insertAdjacentHTML('beforeend', insertable);
   }
 
-  document.getElementById("form_addTrust").addEventListener('submit', async(ev)=>{
-    
+  function write_trustee (name) {
+    return `<li id="trust_${name}"><button onclick="untrust('${name}')"><b>&#x1F5D1;&#xFE0F;</b></button> <span>${name}</span></li>`
+  }
+
+  document.getElementById("form_addTrust").addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const form = ev.target;
+    const input = document.querySelector('#form_addTrust input[name="trustee"]');
+    const trustee = input.value;
+    if (!trusts.includes(trustee)) {
+      trusts.push(trustee);
+      const trusted_users = document.getElementById('trusted_users');
+      trusted_users.insertAdjacentHTML('beforeend', write_trustee(trustee));
+      await post_storage({trusts});
+      alert_II("I'm glad you have people in your life you can trust.");
+    } else {
+      alert_II("You can't double-trust someone.");
+    }
+    form.reset();
   });
+
+  async function untrust (name) {
+    var thatsHimOfficer = document.getElementById(`trust_${name}`);
+    thatsHimOfficer.remove();
+    trusts = trusts.filter((x) => x !== name);
+    await post_storage({trusts});
+    alert_II(`<span style="white-space:nowrap;">It's a shame things didn't work out between you two.</span>`);
+  }
 
   var useLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '';
 
   /**
   Display the IP address of the user
   */
-  async function writeIpAddr() {
+  async function writeIpAddr () {
     if (useLocalhost) {
       // we are at home, feeling cozy
       var addr_real = (await (await fetch("/ip")).text());
@@ -140,7 +179,7 @@ ul.timatum {
       //cog(all_services);
 
       // actually putting pen to paper here
-      if (all_services.length === 0){
+      if (all_services.length === 0) {
         plist.innerHTML = '<li>sorry nothing</li>';
       } else {
         var services_html = all_services.map(makeServiceListing).join('');
@@ -157,7 +196,7 @@ ul.timatum {
   /**
   @param {Punch} punch
   */
-  function makeServiceListing(punch) {
+  function makeServiceListing (punch) {
     var service = `
     <li class='service'>
       <ul>
@@ -178,19 +217,19 @@ ul.timatum {
   @param {string} serviceName
   @param {string} username
   */
-  async function pleaseLetMeJoin(addr, port, serviceName, username){
+  async function pleaseLetMeJoin (addr, port, serviceName, username) {
     /**@type Punch*/
     const punch = {addr, port, serviceName, username};
-    var contentType = useLocalhost?'application/json':'text/plain';
-    var base_url = useLocalhost?'':`${window.location.protocol}//${punch.addr.includes(":")?6:4}.${window.location.hostname}`;
+    var contentType = useLocalhost ? 'application/json' : 'text/plain';
+    var base_url = useLocalhost ? '' : `${window.location.protocol}//${punch.addr.includes(":") ? 6 : 4}.${window.location.hostname}`;
     var fetch_url = base_url + '/api/punch/join';
 
     const res = await fetch(fetch_url, {
       method: 'POST',
-			headers: {'Content-Type': contentType},
+      headers: {'Content-Type': contentType},
       body: JSON.stringify(punch)
     });
-    if (res.ok){
+    if (res.ok) {
       const resdat = await res.json();
       console.log(resdat);
       alert_II('ok');
