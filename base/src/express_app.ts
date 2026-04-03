@@ -399,6 +399,9 @@ interface Punch {
 	serviceName : string;
 	/**Who posted this?*/
 	username: string;
+	/**The joining client shall send this. Please don't use in production bc
+	 * it can be easily spoofed. Trust no one, not even yourself.*/
+	unsafeAddr?: string;
 }
 
 async function getPunchList(req: Request, res: Response){
@@ -436,24 +439,33 @@ async function getPunchList(req: Request, res: Response){
 	}
 }
 
+const allowJoinUnsafeAddr = fs.existsSync('keys/allow-unsafe-addr.txt');
 
 async function askToJoin(req: Request, res: Response){
 	try{
 		const reqUsername = req.session.username;
 		const reqAddr = req.header('X-Forwarded-For');
-		const contentType = req.header('Content-Type');		
-		const reqPunch: Punch = (contentType === 'text/plain') ? JSON.parse(req.body) : req.body;
-		if (typeof reqUsername === 'undefined' || typeof reqAddr === 'undefined' || typeof reqPunch === 'undefined') {
+		const contentType = req.header('Content-Type');
+		//console.log(reqAddr);
+		//console.log('content type', contentType);
+		//console.log(req.body);
+		if (typeof reqUsername === 'undefined' || typeof reqAddr === 'undefined' || typeof req.body === 'undefined') {
 			// it's junk
 			res.status(500).json({msg:"error with request"});
 		} else {
 			// we got a live one
+
+			const reqPunch: Punch = (contentType === 'text/plain') ? JSON.parse(req.body) : req.body;
+			let unsafeAddr: string | undefined;
+			if (allowJoinUnsafeAddr && typeof reqPunch.unsafeAddr === 'string') {
+				unsafeAddr = reqPunch.unsafeAddr;
+			}
 			
 			// get the client who is hosting this service
 			const wsClient = getClientByService(reqPunch);
 			if (typeof wsClient !== 'undefined') {
 				const punchOut : Punch = {
-					addr: reqAddr,
+					addr: unsafeAddr??reqAddr,
 					port: reqPunch.port,
 					serviceName: reqPunch.serviceName,
 					username: reqUsername
