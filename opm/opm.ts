@@ -220,6 +220,7 @@ function refreshListings(ws: WebSocket){
 async function onWsMessage (ev : MessageEvent) {
 	// we shall open a udp socket and send something
 	// to the specified address and port
+	let ws = ev.target as WebSocket;
 	cog(ev.data);
 	if (typeof ev.data === 'string') {
 		// the server wants us to reach out to someone
@@ -232,11 +233,12 @@ async function onWsMessage (ev : MessageEvent) {
 		// send messages to the other person
 		let timer_wah : NodeJS.Timeout | null = null;
 		timer_wah = setInterval(() => {
-			socket.send('', punch.port, punch.addr, (err, bytes)=>{
+			socket.send('\x00\x2F\x00', punch.port, punch.addr, (err, bytes)=>{
 				if (err) {
-					cog(err);
+					cog(`[${ws.url}]`, err);
 				} else {
 					// we still dont care tbh
+					cog(`[${ws.url}] OK ${bytes}`);
 				}
 			});
 		}, 1000);
@@ -272,10 +274,10 @@ function onceWsClose(ev: CloseEvent){
 		clearInterval(wsClients[ws.url]?.refreshTimer);
 	}
 	// and now we have to wait and see if the server goes back up
-	//wsClients[ws.url]!.copiumTimer = setInterval(() =>{
 		cog(`[${ws.url}] attempting to cope...`);
-		reinit_websocket(ws);
-	//}, refreshTime);
+		setTimeout(() => {
+			reinit_websocket(ws);
+		}, 2000);
 }
 
 function onceWsOpen (ev: Event) {
