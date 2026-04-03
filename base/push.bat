@@ -1,0 +1,2 @@
+@echo off
+mexec "./push"
