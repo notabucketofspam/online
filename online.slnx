@@ -16,4 +16,8 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="wireguard/wireguard.esproj">
+    <Build />
+    <Deploy />
+  </Project>
 </Solution>
