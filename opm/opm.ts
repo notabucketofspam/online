@@ -350,11 +350,11 @@ function onUdpMessage(msg: Buffer, rinfo: dgram.RemoteInfo){
 	let theEnd = punchMsg.length;
 	if (msg.compare(punchMsg, 0, theEnd, 0, theEnd)){
 		// forward this to factorio
-		factorio.send(msg, fport, faddress,(err, bytes)=>{
+		factorio.send(msg, fport, '127.0.0.1',(err, bytes)=>{
 			if (err){
-				cog(err);
+				cog('factorio', err);
 			} else {
-				cog(bytes);
+				cog('factorio sends', bytes);
 			}
 		});
 	} else {
@@ -364,8 +364,9 @@ function onUdpMessage(msg: Buffer, rinfo: dgram.RemoteInfo){
 }
 
 let factorio: dgram.Socket;
-let faddress: string;
+// where do your clients want to send their data?
 let fport = 34197;
+let factorio_dynamic_port: number;
 
 // ============================================================
 // final bit of setup
@@ -373,18 +374,19 @@ async function init_real(){
 	await init_login();
 	init_websockets();
 
-	factorio = await createUdpSocket('udp4', fport);
+	factorio = await createUdpSocket('udp4');
 	factorio.on('message', (msg: Buffer, rinfo: dgram.RemoteInfo)=>{
-		faddress = rinfo.address;
 		punchSocket.send(msg, wirePort, remoteAddr, (err, bytes)=>{
 			if (err){
-				cog(err);
+				cog('ps', err);
 			} else {
-				cog(bytes);
+				cog('punchsocket sent #bytes', bytes);
 			}
 		});
 	});
 
 }
 init_real();
+
+
 
