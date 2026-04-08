@@ -215,6 +215,13 @@ function refreshListings(ws: WebSocket){
 	}
 }
 
+// debug info for now
+const wirePort = 53111;
+let realDestPort = 0;
+const punchMsg = Buffer.from("PUNCH");
+let punchSocket: dgram.Socket;
+let remoteAddr: string;
+
 // -------------------------------------- websocket event listeners
 
 async function onWsMessage (ev : MessageEvent) {
@@ -228,12 +235,17 @@ async function onWsMessage (ev : MessageEvent) {
 
 		// make a new UDP socket
 		const fam = net.isIPv6(punch.addr) ? 'udp6' : 'udp4';
-		const socket = await createUdpSocket(fam);
+		const socket = await createUdpSocket(fam, wirePort);
+		
+		socket.on('message', onUdpMessage);
+		punchSocket = socket;
+		realDestPort = punch.port;
+		remoteAddr = punch.addr;
 
 		// send messages to the other person
 		let timer_wah : NodeJS.Timeout | null = null;
 		timer_wah = setInterval(() => {
-			socket.send('\x00\x2F\x00', punch.port, punch.addr, (err, bytes)=>{
+			socket.send(punchMsg, wirePort, punch.addr, (err, bytes)=>{
 				if (err) {
 					cog(`[${ws.url}]`, err);
 				} else {
@@ -241,17 +253,17 @@ async function onWsMessage (ev : MessageEvent) {
 					cog(`[${ws.url}] OK ${bytes}`);
 				}
 			});
-		}, 1000);
+		}, 5000);
 
 		// ... but we dont wanna do that *forever*, tho
-		setTimeout(() => {
-			if (timer_wah) {
-				clearTimeout(timer_wah);
-			}
-			if (socket){
-				socket.close();
-			}
-		}, 15000);
+		//setTimeout(() => {
+		//	if (timer_wah) {
+		//		clearTimeout(timer_wah);
+		//	}
+		//	if (socket){
+		//		socket.close();
+		//	}
+		//}, 15000);
 
 	} else {
 		// probs a pong frame, so just ignore
@@ -305,13 +317,14 @@ function onceWsOpen (ev: Event) {
 // ============================================================
 // the udp stuff
 
-async function createUdpSocket (family : 'udp4' | 'udp6') {
+async function createUdpSocket (family : 'udp4' | 'udp6', port: number = 0) {
 	const socket = dgram.createSocket(family);
 
 	socket.on('error', onUdpSocketError);
 	socket.once('close', function () {
 		cog(`udp socket closed`);
 		socket.off('error', onUdpSocketError);
+		//socket.off('message', onUdpMessage);
 	});
 	// prevent some kinda race condition
 	const promise = new Promise<void>((resolve, reject) => {
@@ -322,7 +335,8 @@ async function createUdpSocket (family : 'udp4' | 'udp6') {
 		});
 	});
 
-	socket.bind();
+
+	socket.bind(port);
 	await promise;
 
 	return socket;
@@ -332,11 +346,45 @@ function onUdpSocketError (err : Error) {
 	console.error(`udp socket error: ${err}`);
 }
 
+function onUdpMessage(msg: Buffer, rinfo: dgram.RemoteInfo){
+	let theEnd = punchMsg.length;
+	if (msg.compare(punchMsg, 0, theEnd, 0, theEnd)){
+		// forward this to factorio
+		factorio.send(msg, fport, faddress,(err, bytes)=>{
+			if (err){
+				cog(err);
+			} else {
+				cog(bytes);
+			}
+		});
+	} else {
+		// it's just a hole-punch
+		cog('hole punch');
+	}
+}
+
+let factorio: dgram.Socket;
+let faddress: string;
+let fport = 34197;
+
 // ============================================================
 // final bit of setup
 async function init_real(){
 	await init_login();
 	init_websockets();
+
+	factorio = await createUdpSocket('udp4', fport);
+	factorio.on('message', (msg: Buffer, rinfo: dgram.RemoteInfo)=>{
+		faddress = rinfo.address;
+		punchSocket.send(msg, wirePort, remoteAddr, (err, bytes)=>{
+			if (err){
+				cog(err);
+			} else {
+				cog(bytes);
+			}
+		});
+	});
+
 }
 init_real();
 
