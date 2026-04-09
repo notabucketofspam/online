@@ -20,16 +20,13 @@ declare module 'ProperNouns' {
 		copiumTimer?: NodeJS.Timeout;
 		refreshTimer?: NodeJS.Timeout;
 	}
-
-	export declare interface WsEventData {
-		flavour: 'punch';
-		body: Punch 
-	}
-	export declare interface WsEventData {
-		flavour: 'wire-info';
-		body: WireInfo;
-	}
 	
+	export interface WsEventData {
+		request_id: string;
+		flavour: 'client-open'|'server-open'|'peer-punch-port';
+		wx: WireInfo;
+	}
+
 	/**More specific connection info*/
 	export interface WireInfo {
 		/**the port for the app that we want to punch for*/
@@ -37,7 +34,7 @@ declare module 'ProperNouns' {
 		/**our punch peer's IP address*/
 		remote_addr: string;
 		/**The punch peer's punch port*/
-		remote_port?: number;
+		remote_port: number;
 	}
 
 	/**Two (2) UDP sockets*/

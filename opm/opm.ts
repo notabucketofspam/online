@@ -214,6 +214,8 @@ const postingAds = fs.existsSync('notkeys/is-advertiser.txt');
 
 import {WsEventData} from 'ProperNouns';
 
+const socketMap: Map<string, UdpPair> = new Map();
+
 async function onWsMessage (ev : MessageEvent) {
 	// we shall open a udp socket and send something
 	// to the specified address and port
@@ -221,23 +223,45 @@ async function onWsMessage (ev : MessageEvent) {
 	cog(ev.data);
 	if (typeof ev.data === 'string') {
 		const ev_data: WsEventData = JSON.parse(ev.data);
+		const {request_id, flavour, wx} = ev_data;
 
-		if (ev_data['flavour'] === 'punch') {
-			// WSBC (the game coordinator) wants us (the server) to reach out to someone
-			const punch = ev_data.body;
+		if (flavour === 'client-open' || flavour === 'server-open') {
+			// WSBC (the game coordinator) wants us to reach out to someone
 		
 			// make some new UDP sockets
-			const wx: WireInfo = {
-				app_port: punch.port,
-				remote_addr: punch.addr
+			const udp_pair = await createUdpPair(wx);
+			const punch_port = udp_pair.punch_socket.address().port;
+			
+			if (flavour === 'client-open') {
+				// temporarily keep track of stuff
+				socketMap.set(request_id, udp_pair);
+			} else if (flavour === 'server-open') {
+				// associate this punch_socket with a remote client
+				udp_pair.punch_socket.connect(wx.remote_port, wx.remote_addr, ()=>{
+					// its probably fine
+				});
+			}
+
+			// tell WSBC about our punch_port
+			const wsbc_reply = {
+				request_id,
+				flavour,
+				punch_port
 			};
-			const {factorio_socket, punch_socket} = await createUdpPair(wx);
-			const punch_port = punch_socket.address().port;
+			ws.send(JSON.stringify(wsbc_reply));
+		} else if (flavour === 'peer-punch-port') {
+			// we are a client, and we've just received the server's punch port
 
-		} else if (ev_data['flavour'] === 'wire-info') {
-
+			const udp_pair = socketMap.get(request_id);
+			if (typeof udp_pair !== 'undefined' ){
+				// associate our punch_socket with the server
+				udp_pair.punch_socket.connect(wx.remote_port, wx.remote_addr, ()=>{} );
+				// get rid of the temp data
+				socketMap.delete(request_id);
+			}
+		} else {
+			// this shouldn't happen
 		}
-
 		
 	} else {
 		// probs a pong frame, so just ignore
