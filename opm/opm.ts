@@ -16,16 +16,7 @@ import https from 'node:https';
 // we don't really need the local HTTP server at all.
 // OPM would always communicate with wsbc via WebSockets anyways.
 
-interface Punch {
-	/**the IP address for someone */
-	addr: string;
-	/** this is the port for the service that client wants to advertise (ex: 2302) */
-	port: number;
-	/**this is the name of the server, for display purposes */
-	serviceName : string;
-	/**Who posted this?*/
-	username: string;
-}
+import {Punch} from 'ProperNouns';
 
 // ===========================================================
 /**what are we hosting here?*/
@@ -153,12 +144,10 @@ function loginWithUserCredentials(resolve: PromiseResolve, reject: PromiseReject
 // ============================================================
 // websocket client
 
-interface WsClientInfo {
-	ws: WebSocket;
-	services: Punch[];
-	copiumTimer?: NodeJS.Timeout;
-	refreshTimer?: NodeJS.Timeout;
-}
+import {WsClientInfo} from 'ProperNouns';
+
+/**stupid fix bc the 'X-Forwarded-For' header kept getting messed up*/
+const allowUnsafeAddr = fs.existsSync('notkeys/allow-unsafe-addr.txt')&&Boolean(asnumber('notkeys/allow-unsafe-addr.txt'));
 
 /** 
  * we need two different websockets bc WSBC uses
@@ -169,20 +158,24 @@ const wsClients: Record<string, WsClientInfo> = {};
 /** do this once at startup*/
 function init_websockets() {	
 	let wsUrl6 = `ws://localhost/wss`;
+	let ws6_services = services;
 
-	if (!useLocalhost) {
+	if (!useLocalhost && !allowUnsafeAddr) {
 		wsUrl6 = `wss://6.waluigi-servebeer.com/wss`;
+		ws6_services = services.filter(punch=>punch.addr.includes(':'));
 
 		let wsUrl4 = `wss://4.waluigi-servebeer.com/wss`;
 		let ws4 = new WebSocket(wsUrl4)
 		ws4.addEventListener('close', onceWsClose, {once:true});
 		ws4.addEventListener('open', onceWsOpen, {once:true});	
 		wsClients[wsUrl4] = {ws: ws4, services: services.filter(punch=>punch.addr.includes('.'))};
+	} else if (!useLocalhost && allowUnsafeAddr){
+		wsUrl6 = `wss://waluigi-servebeer.com/wss`;
 	}
 	let ws6 = new WebSocket(wsUrl6);
 	ws6.addEventListener('close', onceWsClose, {once:true});
 	ws6.addEventListener('open', onceWsOpen, {once:true});
-	wsClients[wsUrl6] = {ws: ws6, services: services.filter(punch=>punch.addr.includes(':'))};
+	wsClients[wsUrl6] = {ws: ws6, services: ws6_services};
 }
 
 /** this will be called every-so-often when we're attempting to cope */
@@ -215,14 +208,11 @@ function refreshListings(ws: WebSocket){
 	}
 }
 
-// debug info for now
-const wirePort = 53111;
-let realDestPort = 0;
-const punchMsg = Buffer.from("PUNCH");
-let punchSocket: dgram.Socket;
-let remoteAddr: string;
+const postingAds = fs.existsSync('notkeys/is-advertiser.txt');
 
 // -------------------------------------- websocket event listeners
+
+import {WsEventData} from 'ProperNouns';
 
 async function onWsMessage (ev : MessageEvent) {
 	// we shall open a udp socket and send something
@@ -230,33 +220,25 @@ async function onWsMessage (ev : MessageEvent) {
 	let ws = ev.target as WebSocket;
 	cog(ev.data);
 	if (typeof ev.data === 'string') {
-		// the server wants us to reach out to someone
-		const punch = JSON.parse(ev.data) as Punch;
+		const ev_data: WsEventData = JSON.parse(ev.data);
 
-		// make a new UDP socket
-		const fam = net.isIPv6(punch.addr) ? 'udp6' : 'udp4';
-		const address = net.isIPv6(punch.addr) ? '::1' : '127.0.0.1';
-
-		const socket = await createUdpSocket(fam,{address});
+		if (ev_data['flavour'] === 'punch') {
+			// WSBC (the game coordinator) wants us (the server) to reach out to someone
+			const punch = ev_data.body;
 		
-		//socket.on('message', onUdpMessage);
-		punchSocket = socket;
-		realDestPort = punch.port;
-		remoteAddr = punch.addr;
+			// make some new UDP sockets
+			const wx: WireInfo = {
+				app_port: punch.port,
+				remote_addr: punch.addr
+			};
+			const {factorio_socket, punch_socket} = await createUdpPair(wx);
+			const punch_port = punch_socket.address().port;
 
-		// send messages to the other person
-		let timer_wah : NodeJS.Timeout | null = null;
-		timer_wah = setInterval(() => {
-			socket.send(punchMsg, wirePort, punch.addr, (err, bytes)=>{
-				if (err) {
-					cog(`[${ws.url}]`, err);
-				} else {
-					// we still dont care tbh
-					cog(`[${ws.url}] OK ${bytes}`);
-				}
-			});
-		}, 5000);
+		} else if (ev_data['flavour'] === 'wire-info') {
 
+		}
+
+		
 	} else {
 		// probs a pong frame, so just ignore
 	}
@@ -316,7 +298,6 @@ async function createUdpSocket (family : 'udp4' | 'udp6', options: dgram.BindOpt
 	socket.once('close', function () {
 		cog(`udp socket closed`);
 		socket.off('error', onUdpSocketError);
-		//socket.off('message', onUdpMessage);
 	});
 	// prevent some kinda race condition
 	const promise = new Promise<void>((resolve, reject) => {
@@ -340,16 +321,10 @@ function onUdpSocketError (err : Error) {
 // ===========================================================
 // please don't shake the lightbulb
 
-interface WireInfo {
-	/**the port for the app that we want to punch for*/
-	app_port: number;
-	/**our punch peer's IP address*/
-	remote_addr: string;
-	/**The punch peer's punch port*/
-	remote_port: number;
-}
+import {WireInfo, UdpPair} from 'ProperNouns';
 
-const postingAds = fs.existsSync('notkeys/is-advertiser.txt');
+/**This is what we use for PersistentKeepalive */
+const punchMsg = Buffer.from("PUNCH");
 
 async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 	
@@ -392,7 +367,12 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 
 		// kill punch socket
 		punch_socket.off('message', ps_onmessage);
-		punch_socket.close();
+		try {
+			punch_socket.disconnect();
+		} catch(err){}
+		punch_socket.close(()=>{
+			cog('punch socket closed');
+		});
 		punch_socket.unref();
 	}
 	let DeathTimer = setTimeout(destroyUdpPair, 60000);
@@ -404,7 +384,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 		// filter out keepalives
 		if (msg.compare(punchMsg)){
 			// forward this to factorio
-			factorio_socket.send(msg, factorio_dynamic_port, factorio_address,(err, bytes)=>{
+			factorio_socket.send(msg, factorio_dynamic_port, factorio_address, (err, bytes)=>{
 				if (err) cog('factorio_socket', err);					
 			});
 		}
@@ -413,7 +393,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 
 	// punch sending helper function
 	function ps_send(msg: Buffer){
-		punch_socket.send(msg, wx.remote_port, wx.remote_addr,(err, bytes)=>{
+		punch_socket.send(msg, (err, bytes)=>{
 			if (err) cog('punch_socket', err);					
 		});
 	}
@@ -427,36 +407,11 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 	return {factorio_socket, punch_socket};
 }
 
-interface UdpPair {
-	/**socket that communicates with the app*/
-	factorio_socket: dgram.Socket;
-	/**The socket that talks to people outside the home.*/
-	punch_socket: dgram.Socket;
-}
-
-// ===========================================================
-
-let factorio: dgram.Socket;
-// where do your clients want to send their data?
-let fport = 34197;
-
 // ============================================================
 // final bit of setup
 async function init_real(){
 	await init_login();
 	init_websockets();
-
-	factorio = await createUdpSocket('udp4',{address:'127.0.0.1'});
-	factorio.on('message', (msg: Buffer, rinfo: dgram.RemoteInfo)=>{
-		punchSocket.send(msg, wirePort, remoteAddr, (err, bytes)=>{
-			if (err){
-				cog('ps', err);
-			} else {
-				cog('punchsocket sent #bytes', bytes);
-			}
-		});
-	});
-
 }
 init_real();
 
