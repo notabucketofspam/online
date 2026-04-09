@@ -381,7 +381,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 	
 	// if we don't receive a message from our punch peer in time, assume
 	// that we had a disconnect
-	let DeathTimer = setTimeout(function destroyUdpPair() {
+	function destroyUdpPair() {
 		// clear the keepalive
 		clearTimeout(PersistentKeepalive);
 
@@ -394,11 +394,12 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 		punch_socket.off('message', ps_onmessage);
 		punch_socket.close();
 		punch_socket.unref();
-
-	}, 60000);
+	}
+	let DeathTimer = setTimeout(destroyUdpPair, 60000);
 
 	// received a message from our punch peer
 	function ps_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
+		// the connection is still alive (for now)
 		DeathTimer.refresh();
 		// filter out keepalives
 		if (msg.compare(punchMsg)){
