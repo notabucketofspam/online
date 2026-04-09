@@ -235,9 +235,11 @@ async function onWsMessage (ev : MessageEvent) {
 
 		// make a new UDP socket
 		const fam = net.isIPv6(punch.addr) ? 'udp6' : 'udp4';
-		const socket = await createUdpSocket(fam, wirePort);
+		const address = net.isIPv6(punch.addr) ? '::1' : '127.0.0.1';
+
+		const socket = await createUdpSocket(fam,{address});
 		
-		socket.on('message', onUdpMessage);
+		//socket.on('message', onUdpMessage);
 		punchSocket = socket;
 		realDestPort = punch.port;
 		remoteAddr = punch.addr;
@@ -254,16 +256,6 @@ async function onWsMessage (ev : MessageEvent) {
 				}
 			});
 		}, 5000);
-
-		// ... but we dont wanna do that *forever*, tho
-		//setTimeout(() => {
-		//	if (timer_wah) {
-		//		clearTimeout(timer_wah);
-		//	}
-		//	if (socket){
-		//		socket.close();
-		//	}
-		//}, 15000);
 
 	} else {
 		// probs a pong frame, so just ignore
@@ -317,7 +309,7 @@ function onceWsOpen (ev: Event) {
 // ============================================================
 // the udp stuff
 
-async function createUdpSocket (family : 'udp4' | 'udp6', port: number = 0) {
+async function createUdpSocket (family : 'udp4' | 'udp6', options: dgram.BindOptions) {
 	const socket = dgram.createSocket(family);
 
 	socket.on('error', onUdpSocketError);
@@ -335,8 +327,7 @@ async function createUdpSocket (family : 'udp4' | 'udp6', port: number = 0) {
 		});
 	});
 
-
-	socket.bind(port);
+	socket.bind(options);
 	await promise;
 
 	return socket;
@@ -346,27 +337,107 @@ function onUdpSocketError (err : Error) {
 	console.error(`udp socket error: ${err}`);
 }
 
-function onUdpMessage(msg: Buffer, rinfo: dgram.RemoteInfo){
-	let theEnd = punchMsg.length;
-	if (msg.compare(punchMsg, 0, theEnd, 0, theEnd)){
-		// forward this to factorio
-		factorio.send(msg, fport, '127.0.0.1',(err, bytes)=>{
-			if (err){
-				cog('factorio', err);
-			} else {
-				cog('factorio sends', bytes);
-			}
-		});
-	} else {
-		// it's just a hole-punch
-		cog('hole punch');
-	}
+// ===========================================================
+// please don't shake the lightbulb
+
+interface WireInfo {
+	/**the port for the app that we want to punch for*/
+	app_port: number;
+	/**our punch peer's IP address*/
+	remote_addr: string;
+	/**The punch peer's punch port*/
+	remote_port: number;
 }
+
+const postingAds = fs.existsSync('notkeys/is-advertiser.txt');
+
+async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
+	
+	/**
+	 * if we are a server, we use this to pretend to be a client (ie, let it be random).
+	 * if we are a client, this mocks the server's port (ie, 34197).
+	 */
+	let pseudo_port = postingAds ? 0 : wx.app_port;
+	
+	// set up factorio listener
+	const factorio_address = '127.0.0.1';
+	let factorio_dynamic_port = 0;
+	const factorio_socket = await createUdpSocket('udp4', {
+		port: pseudo_port, 
+		address: factorio_address
+	});
+
+	// received a message from factorio.exe
+	function fs_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
+		factorio_dynamic_port = rinfo.port;
+		ps_send(msg);
+	}
+	factorio_socket.on('message', fs_onmessage);
+
+	// set up punch listener
+	const fam = net.isIPv6(wx.remote_addr) ? 'udp6' : 'udp4';
+	const address = net.isIPv6(wx.remote_addr) ? '::1' : '127.0.0.1';
+	const punch_socket = await createUdpSocket(fam, {address});
+	
+	// if we don't receive a message from our punch peer in time, assume
+	// that we had a disconnect
+	let DeathTimer = setTimeout(function destroyUdpPair() {
+		// clear the keepalive
+		clearTimeout(PersistentKeepalive);
+
+		// kill factorio socket
+		factorio_socket.off('message', fs_onmessage);
+		factorio_socket.close();
+		factorio_socket.unref();
+
+		// kill punch socket
+		punch_socket.off('message', ps_onmessage);
+		punch_socket.close();
+		punch_socket.unref();
+
+	}, 60000);
+
+	// received a message from our punch peer
+	function ps_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
+		DeathTimer.refresh();
+		// filter out keepalives
+		if (msg.compare(punchMsg)){
+			// forward this to factorio
+			factorio_socket.send(msg, factorio_dynamic_port, factorio_address,(err, bytes)=>{
+				if (err) cog('factorio_socket', err);					
+			});
+		}
+	}
+	punch_socket.on('message', ps_onmessage);
+
+	// punch sending helper function
+	function ps_send(msg: Buffer){
+		punch_socket.send(msg, wx.remote_port, wx.remote_addr,(err, bytes)=>{
+			if (err) cog('punch_socket', err);					
+		});
+	}
+
+	// keep the hole punched
+	let PersistentKeepalive = setInterval(() => {
+		ps_send(punchMsg);
+	}, 25000);
+
+	// give the audience what they want
+	return {factorio_socket, punch_socket};
+}
+
+interface UdpPair {
+	/**socket that communicates with the app*/
+	factorio_socket: dgram.Socket;
+	/**The socket that talks to people outside the home.*/
+	punch_socket: dgram.Socket;
+}
+
+// ===========================================================
 
 let factorio: dgram.Socket;
 // where do your clients want to send their data?
 let fport = 34197;
-let factorio_dynamic_port: number;
 
 // ============================================================
 // final bit of setup
@@ -374,7 +445,7 @@ async function init_real(){
 	await init_login();
 	init_websockets();
 
-	factorio = await createUdpSocket('udp4');
+	factorio = await createUdpSocket('udp4',{address:'127.0.0.1'});
 	factorio.on('message', (msg: Buffer, rinfo: dgram.RemoteInfo)=>{
 		punchSocket.send(msg, wirePort, remoteAddr, (err, bytes)=>{
 			if (err){
