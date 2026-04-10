@@ -235,6 +235,9 @@ async function onWsMessage (ev : MessageEvent) {
 			if (flavour === 'client-open') {
 				// temporarily keep track of stuff
 				socketMap.set(request_id, udp_pair);
+				setTimeout(function(){
+					socketMap.delete(request_id);
+				}, 10000);
 			} else if (flavour === 'server-open') {
 				// associate this punch_socket with a remote client
 				udp_pair.punch_socket.connect(wx.remote_port, wx.remote_addr, ()=>{
@@ -256,8 +259,6 @@ async function onWsMessage (ev : MessageEvent) {
 			if (typeof udp_pair !== 'undefined' ){
 				// associate our punch_socket with the server
 				udp_pair.punch_socket.connect(wx.remote_port, wx.remote_addr, ()=>{} );
-				// get rid of the temp data
-				socketMap.delete(request_id);
 			}
 		} else {
 			// this shouldn't happen
