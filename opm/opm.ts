@@ -3,6 +3,11 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 const astext = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
 const asnumber = (x: string) => Number(astext(x));
+const asbool = (x: string) =>{
+	const pnx = path.normalize(x);
+	return fs.existsSync(pnx)&&Boolean(Number(fs.readFileSync(pnx,{encoding:"utf8"})));
+}
+	
 const cog = console.log;
 
 // ===========================================================
@@ -21,6 +26,16 @@ import {Punch} from 'ProperNouns';
 // ===========================================================
 /**what are we hosting here?*/
 let services: Punch[] = [];
+/**Are you qualified to advertise with WSBC?*/
+const postingAds = fs.existsSync('notkeys/is-advertiser.txt');
+/**zilchware */
+const empty_service: Punch = {
+	addr: "",
+	port: 0,
+	serviceName: "",
+	username: ""
+};
+
 if (fs.existsSync('notkeys/services.json')) {
 	// we remembered to write it down before we left
 	const services_json = astext('notkeys/services.json');
@@ -29,14 +44,16 @@ if (fs.existsSync('notkeys/services.json')) {
 	cog(services);
 } else {
 	// i got nothin
-	fs.writeFileSync('notkeys/services.json', '[]', {encoding: 'utf8'});
+	cog("You have elected to host zero services.");
+	services = [empty_service ];
+	//fs.writeFileSync('notkeys/services.json', '[]', {encoding: 'utf8'});
 }
 
 // ==================================================================
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
-const useLocalhost = fs.existsSync('notkeys/use-localhost.txt')&&Boolean(asnumber('notkeys/use-localhost.txt'));
-const useHostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
+const useLocalhost = asbool('notkeys/use-localhost.txt');
+const the_hostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
 const http_request = useLocalhost ? http.request : https.request;
 
 type PromiseResolve = (value : unknown) => void;
@@ -57,7 +74,7 @@ function init_login(){
 // we actually *do* have a cookie, so let's try to use that instead
 function loginWithCookie(resolve: PromiseResolve, reject: PromiseReject){
 	const loginReqOptions : http.RequestOptions = {
-		hostname: useHostname,
+		hostname: the_hostname,
 		path: '/api/users/info',
 		method: 'GET',
 		headers: {
@@ -83,9 +100,12 @@ function loginWithCookie(resolve: PromiseResolve, reject: PromiseReject){
 
 // we dont have a cookie, so we need to log in and then get the cookie
 function loginWithUserCredentials(resolve: PromiseResolve, reject: PromiseReject){
-	const loginBody = JSON.stringify({email: astext('notkeys/email.txt'), password: astext('notkeys/password.txt')});
+	const loginBody = JSON.stringify({
+		email: astext('notkeys/email.txt'), 
+		password: astext('notkeys/password.txt')
+	});
 	const loginReqOptions: http.RequestOptions = {
-		hostname: useHostname,
+		hostname: the_hostname,
 		path: '/api/users/login',
 		method: 'POST',
 		headers: {
@@ -147,7 +167,7 @@ function loginWithUserCredentials(resolve: PromiseResolve, reject: PromiseReject
 import {WsClientInfo} from 'ProperNouns';
 
 /**stupid fix bc the 'X-Forwarded-For' header kept getting messed up*/
-const allowUnsafeAddr = fs.existsSync('notkeys/allow-unsafe-addr.txt')&&Boolean(asnumber('notkeys/allow-unsafe-addr.txt'));
+const allowUnsafeAddr = asbool('notkeys/allow-unsafe-addr.txt');
 
 /** 
  * we need two different websockets bc WSBC uses
@@ -201,14 +221,12 @@ function refreshListings(ws: WebSocket){
 		// send a ping frame
 		ws.send(Buffer.from([0x9]));
 		// send the actual listings
-		const _services = wsClients[ws.url]?.services ?? [];
+		const _services = wsClients[ws.url]?.services ?? [empty_service];
 		ws.send(JSON.stringify(_services));
 	} catch (err){
 		console.error(err);
 	}
 }
-
-const postingAds = fs.existsSync('notkeys/is-advertiser.txt');
 
 // -------------------------------------- websocket event listeners
 
