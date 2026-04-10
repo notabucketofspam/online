@@ -441,6 +441,39 @@ async function getPunchList(req: Request, res: Response){
 
 const allowJoinUnsafeAddr = fs.existsSync('keys/allow-unsafe-addr.txt');
 
+interface WsEventData {
+	request_id: string;
+	flavour: 'client-open'|'server-open'|'peer-punch-port';
+	wx: WireInfo;
+}
+
+/**More specific connection info*/
+interface WireInfo {
+	/**the port for the app that we want to punch for*/
+	app_port: number;
+	/**our punch peer's IP address*/
+	remote_addr: string;
+	/**The punch peer's punch port*/
+	remote_port: number;
+}
+
+interface WsPairMeta {
+	client_addr: string;
+	client_port: number;
+	server_addr: string;
+	server_port: number;
+	app_port: number;
+}
+
+interface WsPair {
+	wsClient: ws;
+	wsServer: ws;
+	wsMeta: WsPairMeta;
+}
+
+/**temporarily remember the WebSockets involved in the punch port peer pairing process*/
+const joinMap: Map<string, WsPair> = new Map();
+
 async function askToJoin(req: Request, res: Response){
 	try{
 		const reqUsername = req.session.username;
@@ -461,20 +494,34 @@ async function askToJoin(req: Request, res: Response){
 				unsafeAddr = reqPunch.unsafeAddr;
 			}
 			
-			// get the client who is hosting this service
-			const wsClient = getClientByService(reqPunch);
-			if (typeof wsClient !== 'undefined') {
-				const punchOut : Punch = {
-					addr: unsafeAddr??reqAddr,
-					port: reqPunch.port,
-					serviceName: reqPunch.serviceName,
-					username: reqUsername
+			// search for client with matching username and IP
+			const search: Punch = {
+				addr: reqAddr,
+				port: 0,
+				serviceName: '',
+				username: reqUsername
+			};
+			const wsClient = getClientByService(search);
+
+			// get the server who is hosting this service
+			const wsServer = getClientByService(reqPunch);
+
+			if (typeof wsClient !== 'undefined' && typeof wsServer !== 'undefined' ) {
+				const request_id = generate_reset_token();
+				const client_open: WsEventData = {
+					request_id: request_id ,
+					flavour: 'client-open',
+					wx: {
+						app_port: reqPunch.port ,
+						remote_addr: reqPunch.addr ,
+						remote_port: 0
+					}
 				};
 
+				let shouldSend = false;
 				if (reqUsername === reqPunch.username){
 					// same-user, so we don't have to check the database for trust issues
-					wsClient.send(JSON.stringify(punchOut));
-					res.status(200).json({msg:'ok'});
+					shouldSend = true;
 				} else {
 					// check odb for trust
 					const result = await odb.getTrusts();
@@ -482,8 +529,7 @@ async function askToJoin(req: Request, res: Response){
 						const isTrusted = result.get(reqPunch.username)?.includes(reqUsername);
 						if (isTrusted) {
 							// our guy is trusted
-							wsClient.send(JSON.stringify(punchOut));
-							res.status(200).json({msg:'ok'});
+							shouldSend = true;
 						} else {
 							// user isnt trusted
 							res.status(500).json({msg:"Target user doesn't trust you yet."});
@@ -492,6 +538,22 @@ async function askToJoin(req: Request, res: Response){
 						// result was null
 						res.status(500).json({msg:"database error"});
 					}
+				}
+				if (shouldSend){
+					wsClient.send(JSON.stringify(client_open));
+					const wsMeta: WsPairMeta = {
+						client_addr: reqAddr,
+						client_port: 0,
+						server_addr: reqPunch.addr,
+						server_port: 0,
+						app_port: reqPunch.port
+					};
+					joinMap.set(request_id, {wsClient, wsServer, wsMeta});
+					res.status(200).json({msg:'ok'});
+					// eventually delete the temp data in joinMap
+					setTimeout(function(){
+						joinMap.delete(request_id);
+					}, 10000);
 				}
 			} else {
 				// couldn't find a websocket client advertising this service
@@ -546,6 +608,12 @@ function wss_oncelistening(){
 	console.log('WSS OK', wss.address());
 }
 
+interface WsbcReply {
+	request_id: string;
+	flavour: WsEventData['flavour'];
+	punch_port: number;
+}
+
 function wss_onconnection (ws : ws.WebSocket, req : Request) {
 	const xff = req.headersDistinct['x-forwarded-for']?.at(0);
 	const addr = xff??'';
@@ -567,6 +635,52 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 				const services: Punch[] = [];
 				clientMap.set(ws, {sid, services, addr});
 
+			} else if (typeof parsedMessage['request_id'] !== 'undefined'){
+				// client is doing the join handshake thing
+				const ev_data: WsbcReply = parsedMessage;				
+				const {request_id, flavour, punch_port} = ev_data;
+				
+				const wsPair = joinMap.get(request_id);
+				if (typeof wsPair !== 'undefined') {
+					const {wsClient, wsServer, wsMeta} = wsPair;
+					if (flavour === 'client-open') {
+						// client has opened the udp socket
+						wsMeta.client_port = punch_port;
+						const server_open: WsEventData = {
+							request_id: request_id,
+							flavour: 'server-open',
+							wx: {
+								app_port: wsMeta.app_port,
+								remote_addr: wsMeta.client_addr,
+								remote_port: wsMeta.client_port
+							}
+						};
+
+						// now we need to tell the server to open a udp socket
+						wsServer.send(JSON.stringify(server_open ));					
+					} else if (flavour === 'server-open'){
+						// server is telling us her punch_port
+						wsMeta.server_port = punch_port;
+						const peer_punch_port: WsEventData = {
+							request_id: request_id,
+							flavour: 'peer-punch-port',
+							wx: {
+								app_port: wsMeta.app_port,
+								remote_addr: wsMeta.server_addr,
+								remote_port: wsMeta.server_port
+							}
+						};
+
+						// and now we tell the client about the server's punch port
+						wsClient.send(JSON.stringify(peer_punch_port) );
+					} else if (flavour === 'peer-punch-port') {
+						// this shouldn't happen
+					} else {
+						// this also shouldn't happen
+					}
+				} else {
+					// wsPair is undefined
+				}
 			} else {
 				// client is listing services
 				let clientData = clientMap.get(ws);
@@ -611,7 +725,7 @@ function getPunchServices(): Punch[]{
 	wss.clients.forEach(ws=>{
 		let clientData = clientMap.get(ws);
 		if (typeof clientData !== 'undefined'){
-		let services_perchance = clientData.services;
+		let services_perchance = clientData.services.filter(punch=>punch.port);
 			all_services.push(...services_perchance);
 		}
 	});
@@ -626,7 +740,7 @@ function getClientByService(search: Punch): ws | undefined {
 		if (typeof clientData !== 'undefined'){
 			for (const service of clientData.services) {
 				if (service.addr === search.addr &&
-				service.port === search.port && 
+				service.port === search.port &&
 				service.serviceName === search.serviceName &&
 				service.username === search.username){
 					foundClient = client;
