@@ -56,7 +56,7 @@ const useLocalhost = asbool('notkeys/use-localhost.txt');
 const the_hostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
 const http_request = useLocalhost ? http.request : https.request;
 
-type PromiseResolve = (value : unknown) => void;
+type PromiseResolve<T> = (value : T) => void;
 type PromiseReject = (reason ?: any) => void;
 
 // try to log in with cookie, if we have one.
@@ -71,8 +71,8 @@ function init_login(){
 	});
 }
 
-// we actually *do* have a cookie, so let's try to use that instead
-function loginWithCookie(resolve: PromiseResolve, reject: PromiseReject){
+/** we actually *do* have a cookie, so let's try to use that instead */
+function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseReject){
 	const loginReqOptions : http.RequestOptions = {
 		hostname: the_hostname,
 		path: '/api/users/info',
@@ -91,15 +91,15 @@ function loginWithCookie(resolve: PromiseResolve, reject: PromiseReject){
 		} else {
 			cog('cookie login successful');
 			// we honestly don't care about the rest of it
-			resolve(0);
+			resolve();
 		}
 
 	});
 	loginReq.end();
 }
 
-// we dont have a cookie, so we need to log in and then get the cookie
-function loginWithUserCredentials(resolve: PromiseResolve, reject: PromiseReject){
+/**we dont have a cookie, so we need to log in and then get the cookie */
+function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: PromiseReject){
 	const loginBody = JSON.stringify({
 		email: astext('notkeys/email.txt'), 
 		password: astext('notkeys/password.txt')
@@ -150,7 +150,7 @@ function loginWithUserCredentials(resolve: PromiseResolve, reject: PromiseReject
 			res.off('data', ondata);
 			//cog(`BODY: ${somedata}`);
 			cog('credential login successful');
-			resolve(0);
+			resolve();
 		});
 	});
 
