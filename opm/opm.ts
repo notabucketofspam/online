@@ -372,17 +372,19 @@ function onceWsOpen (ev: Event) {
 
 async function createUdpSocket (family : 'udp4' | 'udp6', options: dgram.BindOptions) {
 	const socket = dgram.createSocket(family);
+	let udp_info = ``;
 
 	socket.on('error', onUdpSocketError);
 	socket.once('close', function onceUdpClose() {
-		cog(`udp socket closed`);
+		cog(`udp socket closed on ${udp_info}`);
 		socket.off('error', onUdpSocketError);
 	});
 	// prevent some kinda race condition
 	const promise = new Promise<void>((resolve, reject) => {
 		socket.once('listening', function onceUdpListening() {
 			const address = socket.address();
-			cog(`udp socket listening on [${address.address}]:${address.port}`);
+			udp_info = `[${address.address}]:${address.port}`;
+			cog(`udp socket listening on ${udp_info}`);
 			resolve();
 		});
 	});
