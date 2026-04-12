@@ -2,7 +2,7 @@
 import * as path from "node:path";
 import * as fs from "node:fs";
 const astext = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
-const asnumber = (x: string) => Number(astext(x));
+const existsSync = (x: string) => fs.existsSync(path.normalize(x));
 const asbool = (x: string) =>{
 	const pnx = path.normalize(x);
 	return fs.existsSync(pnx)&&Boolean(Number(fs.readFileSync(pnx,{encoding:"utf8"})));
@@ -31,7 +31,10 @@ fs.mkdirSync('notkeys', {recursive:true});
 /**what are we hosting here?*/
 let services: Punch[] = [];
 /**Are you qualified to advertise with WSBC?*/
-const postingAds = fs.existsSync('notkeys/is-advertiser.txt');
+let postingAds = false;
+if (asbool('notkeys/is-advertiser.txt')){
+	postingAds = true;
+}
 /**zilchware */
 const empty_service: Punch = {
 	addr: "",
@@ -40,24 +43,27 @@ const empty_service: Punch = {
 	username: ""
 };
 
-if (fs.existsSync('notkeys/services.json')) {
-	// we remembered to write it down before we left
-	const services_json = astext('notkeys/services.json');
-	services = JSON.parse(services_json) as Punch[];
-	cog("Hosting these services:");
-	cog(services);
-} else {
-	// i got nothin
-	cog("You have elected to host zero services.");
-	services = [empty_service ];
-	//fs.writeFileSync('notkeys/services.json', '[]', {encoding: 'utf8'});
+function init_ads(){
+	if (existsSync('notkeys/services.json')) {
+		// by default, we post ads if we have them
+		postingAds = true;
+		// we remembered to write it down before we left
+		const services_json = astext('notkeys/services.json');
+		services = JSON.parse(services_json) as Punch[];
+		cog("Hosting these services:");
+		cog(services);
+	} else {
+		// i got nothin
+		cog("You have elected to host zero services.");
+		services = [empty_service ];
+	}
 }
 
 // ==================================================================
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
 const useLocalhost = asbool('notkeys/use-localhost.txt');
-const the_hostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
+const wsbc_hostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
 const http_request = useLocalhost ? http.request : https.request;
 
 type PromiseResolve<T> = (value : T) => void;
@@ -66,10 +72,8 @@ type PromiseReject = (reason ?: any) => void;
 // try to log in with cookie, if we have one.
 // failing that, log in with email and password.
 async function init_login(){
-		//const resolve = ()=>{};
-		//const reject = resolve;
 	return new Promise(async (resolve, reject) => {
-		if (fs.existsSync('notkeys/cookie.txt')) {
+		if (existsSync('notkeys/cookie.txt')) {
 			await loginWithCookie(resolve, reject);
 		} else {
 			await loginWithUserCredentials(resolve, reject);
@@ -80,7 +84,7 @@ async function init_login(){
 /** we actually *do* have a cookie, so let's try to use that instead */
 async function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseReject){
 	const loginReqOptions : http.RequestOptions = {
-		hostname: the_hostname,
+		hostname: wsbc_hostname,
 		path: '/api/users/info',
 		method: 'GET',
 		headers: {
@@ -114,7 +118,7 @@ async function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: P
 		password: user_password
 	});
 	const loginReqOptions: http.RequestOptions = {
-		hostname: the_hostname,
+		hostname: wsbc_hostname,
 		path: '/api/users/login',
 		method: 'POST',
 		headers: {
@@ -193,7 +197,11 @@ async function getLoginCredentials(){
 import {WsClientInfo} from 'ProperNouns';
 
 /**stupid fix bc the 'X-Forwarded-For' header kept getting messed up*/
-const allowUnsafeAddr = asbool('notkeys/allow-unsafe-addr.txt');
+let allowUnsafeAddr = true;
+if (!asbool('notkeys/allow-unsafe-addr.txt') ){
+	allowUnsafeAddr = false;
+}
+const ws_protocol = useLocalhost ? `ws:` : `wss:`;
 
 /** 
  * we need two different websockets bc WSBC uses
@@ -203,20 +211,18 @@ const wsClients: Record<string, WsClientInfo> = {};
 
 /** do this once at startup*/
 function init_websockets() {	
-	let wsUrl6 = `ws://localhost/wss`;
+	let wsUrl6 = `${ws_protocol}//${wsbc_hostname}/wss`;
 	let ws6_services = services;
 
 	if (!useLocalhost && !allowUnsafeAddr) {
-		wsUrl6 = `wss://6.waluigi-servebeer.com/wss`;
+		wsUrl6 = `${ws_protocol}//6.${wsbc_hostname}/wss`;
 		ws6_services = services.filter(punch=>punch.addr.includes(':'));
 
-		let wsUrl4 = `wss://4.waluigi-servebeer.com/wss`;
+		let wsUrl4 = `${ws_protocol}//4.${wsbc_hostname}/wss`;
 		let ws4 = new WebSocket(wsUrl4)
 		ws4.addEventListener('close', onceWsClose, {once:true});
 		ws4.addEventListener('open', onceWsOpen, {once:true});	
 		wsClients[wsUrl4] = {ws: ws4, services: services.filter(punch=>punch.addr.includes('.'))};
-	} else if (!useLocalhost && allowUnsafeAddr){
-		wsUrl6 = `wss://waluigi-servebeer.com/wss`;
 	}
 	let ws6 = new WebSocket(wsUrl6);
 	ws6.addEventListener('close', onceWsClose, {once:true});
@@ -237,7 +243,7 @@ function reinit_websocket(ws: WebSocket) {
 	wsClients[wsUrl]!.ws = newWs;
 }
 
-const refreshTime = 10000;
+const refreshTime = 20000;
 /**
  * this is how we tell WSBC that we are hosting stuff
  * @param ws
@@ -486,9 +492,8 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 // final bit of setup
 async function init_real(){
 	await init_login();
+	init_ads();
 	init_websockets();
 }
 init_real();
-
-
 
