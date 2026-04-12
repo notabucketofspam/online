@@ -92,8 +92,6 @@ async function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseRej
 		}
 	};
 	const loginReq = http_request(loginReqOptions, async (res) => {
-		//cog(`HTTP ${res.statusCode}`);
-		//cog(res.headers);
 
 		if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
 			// the cookie didn't work, so now we gotta log in with credentials
@@ -128,8 +126,6 @@ async function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: P
 	};
 
 	const loginReq = http_request(loginReqOptions, res=>{
-		//cog(`HTTP ${res.statusCode}`);
-		//cog(res.headers);
 
 		if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
 			throw new Error('credential error');
@@ -161,7 +157,6 @@ async function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: P
 		res.on("data", ondata);
 		res.once('end', () => {
 			res.off('data', ondata);
-			//cog(`BODY: ${somedata}`);
 			cog('credential login successful');
 			resolve();
 		});
