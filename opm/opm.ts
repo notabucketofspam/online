@@ -24,6 +24,10 @@ import https from 'node:https';
 import {Punch} from 'ProperNouns';
 
 // ===========================================================
+// services
+
+fs.mkdirSync('notkeys', {recursive:true});
+
 /**what are we hosting here?*/
 let services: Punch[] = [];
 /**Are you qualified to advertise with WSBC?*/
