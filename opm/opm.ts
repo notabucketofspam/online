@@ -258,9 +258,10 @@ async function onWsMessage (ev : MessageEvent) {
 				}, 10000);
 			} else if (flavour === 'server-open') {
 				// associate this punch_socket with a remote client
-				udp_pair.punch_socket.connect(wx.remote_port, wx.remote_addr, ()=>{
-					// its probably fine
-				});
+				udp_pair.remote_info.port = wx.remote_port;
+				udp_pair.remote_info.address = wx.remote_addr;
+				// send an initial message
+				udp_pair.ps_send(punchMsg);
 			}
 
 			// tell WSBC about our punch_port
@@ -276,7 +277,10 @@ async function onWsMessage (ev : MessageEvent) {
 			const udp_pair = socketMap.get(request_id);
 			if (typeof udp_pair !== 'undefined' ){
 				// associate our punch_socket with the server
-				udp_pair.punch_socket.connect(wx.remote_port, wx.remote_addr, ()=>{} );
+				udp_pair.remote_info.port = wx.remote_port;
+				udp_pair.remote_info.address = wx.remote_addr;
+				// send an initial message
+				udp_pair.ps_send(punchMsg);
 			}
 		} else {
 			// this shouldn't happen
@@ -338,15 +342,15 @@ async function createUdpSocket (family : 'udp4' | 'udp6', options: dgram.BindOpt
 	const socket = dgram.createSocket(family);
 
 	socket.on('error', onUdpSocketError);
-	socket.once('close', function () {
+	socket.once('close', function onceUdpClose() {
 		cog(`udp socket closed`);
 		socket.off('error', onUdpSocketError);
 	});
 	// prevent some kinda race condition
 	const promise = new Promise<void>((resolve, reject) => {
-		socket.once('listening', () => {
+		socket.once('listening', function onceUdpListening() {
 			const address = socket.address();
-			cog(`udp socket listening on ${address.address},${address.port}`);
+			cog(`udp socket listening on [${address.address}]:${address.port}`);
 			resolve();
 		});
 	});
@@ -410,12 +414,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 
 		// kill punch socket
 		punch_socket.off('message', ps_onmessage);
-		try {
-			punch_socket.disconnect();
-		} catch(err){}
-		punch_socket.close(()=>{
-			cog('punch socket closed');
-		});
+		punch_socket.close();
 		punch_socket.unref();
 	}
 	let DeathTimer = setTimeout(destroyUdpPair, 60000);
@@ -434,10 +433,18 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 	}
 	punch_socket.on('message', ps_onmessage);
 
+	/**punch_socket.connect() says `ENETUNREACH`, so we use this instead*/
+	const remote_info: dgram.RemoteInfo = {
+		address: wx.remote_addr,
+		family: net.isIPv6(wx.remote_addr) ? 'IPv4' : 'IPv6',
+		port: wx.remote_port,
+		size: 0
+	};
+
 	// punch sending helper function
-	function ps_send(msg: Buffer){
-		punch_socket.send(msg, (err, bytes)=>{
-			if (err) cog('punch_socket', err);					
+	const ps_send = (msg: Buffer) => {
+		punch_socket.send(msg, remote_info.port, remote_info.address, (err, bytes)=>{
+			if (err) cog('punch_socket', err);
 		});
 	}
 
@@ -447,7 +454,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 	}, 25000);
 
 	// give the audience what they want
-	return {factorio_socket, punch_socket};
+	return {factorio_socket, punch_socket, remote_info, ps_send};
 }
 
 // ============================================================

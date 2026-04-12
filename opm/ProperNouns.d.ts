@@ -43,6 +43,10 @@ declare module 'ProperNouns' {
 		factorio_socket: dgram.Socket;
 		/**The socket that talks to people outside the home.*/
 		punch_socket: dgram.Socket;
+		/**Info about the punch peer*/
+		remote_info: dgram.RemoteInfo ;
+		/**Helper function to send stuff via punch */
+		ps_send: (msg: Buffer) => void;
 	}
 
 }
