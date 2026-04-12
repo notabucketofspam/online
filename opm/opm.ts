@@ -198,8 +198,8 @@ import {WsClientInfo} from 'ProperNouns';
 
 /**stupid fix bc the 'X-Forwarded-For' header kept getting messed up*/
 let allowUnsafeAddr = true;
-if (!asbool('notkeys/allow-unsafe-addr.txt') ){
-	allowUnsafeAddr = false;
+if (existsSync('notkeys/allow-unsafe-addr.txt')){
+	allowUnsafeAddr = asbool('notkeys/allow-unsafe-addr.txt');
 }
 const ws_protocol = useLocalhost ? `ws:` : `wss:`;
 
