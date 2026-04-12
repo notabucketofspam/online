@@ -65,18 +65,20 @@ type PromiseReject = (reason ?: any) => void;
 
 // try to log in with cookie, if we have one.
 // failing that, log in with email and password.
-function init_login(){
-	return new Promise((resolve, reject) => {
+async function init_login(){
+		//const resolve = ()=>{};
+		//const reject = resolve;
+	return new Promise(async (resolve, reject) => {
 		if (fs.existsSync('notkeys/cookie.txt')) {
-			loginWithCookie(resolve, reject);
+			await loginWithCookie(resolve, reject);
 		} else {
-			loginWithUserCredentials(resolve, reject);
+			await loginWithUserCredentials(resolve, reject);
 		}
 	});
 }
 
 /** we actually *do* have a cookie, so let's try to use that instead */
-function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseReject){
+async function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseReject){
 	const loginReqOptions : http.RequestOptions = {
 		hostname: the_hostname,
 		path: '/api/users/info',
@@ -85,13 +87,13 @@ function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseReject){
 			'Cookie': astext('notkeys/cookie.txt')
 		}
 	};
-	const loginReq = http_request(loginReqOptions, res => {
+	const loginReq = http_request(loginReqOptions, async (res) => {
 		//cog(`HTTP ${res.statusCode}`);
 		//cog(res.headers);
 
 		if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
 			// the cookie didn't work, so now we gotta log in with credentials
-			return loginWithUserCredentials(resolve, reject);
+			return await loginWithUserCredentials(resolve, reject);
 		} else {
 			cog('cookie login successful');
 			// we honestly don't care about the rest of it
@@ -103,10 +105,13 @@ function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseReject){
 }
 
 /**we dont have a cookie, so we need to log in and then get the cookie */
-function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: PromiseReject){
+async function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: PromiseReject){
+	
+	const {user_email, user_password} = await getLoginCredentials();
+
 	const loginBody = JSON.stringify({
-		email: astext('notkeys/email.txt'), 
-		password: astext('notkeys/password.txt')
+		email: user_email, 
+		password: user_password
 	});
 	const loginReqOptions: http.RequestOptions = {
 		hostname: the_hostname,
@@ -163,6 +168,23 @@ function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: Promise
 	});
 	loginReq.write(loginBody);
 	loginReq.end();
+}
+
+import * as readline from "node:readline/promises";
+import * as process from "node:process";
+/**We don't wanna save the username/password to disk as plaintext*/
+async function getLoginCredentials(){
+	const rl = readline.createInterface({
+		input: process.stdin,
+		output: process.stdout,
+		prompt: ''
+	});
+	rl.write("Gotta login to your account on waluigi-servebeer.com\r\n");
+	const user_email = await rl.question("What's your account's email address?\r\n");
+	const user_password = await rl.question("Ok cool. And what's your password?\r\n");
+	rl.write("Thank you !!!\r\n");
+	rl.close();
+	return {user_email, user_password};
 }
 
 // ============================================================
