@@ -383,7 +383,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 	
 	// set up factorio listener
 	const factorio_address = '127.0.0.1';
-	let factorio_dynamic_port = 0;
+	let factorio_dynamic_port = postingAds ? wx.app_port : 0 ;
 	const factorio_socket = await createUdpSocket('udp4', {
 		port: pseudo_port, 
 		address: factorio_address
@@ -398,8 +398,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 
 	// set up punch listener
 	const fam = net.isIPv6(wx.remote_addr) ? 'udp6' : 'udp4';
-	const address = net.isIPv6(wx.remote_addr) ? '::1' : '127.0.0.1';
-	const punch_socket = await createUdpSocket(fam, {address});
+	const punch_socket = await createUdpSocket(fam, {});
 	
 	// if we don't receive a message from our punch peer in time, assume
 	// that we had a disconnect
