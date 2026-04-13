@@ -26,13 +26,13 @@ import {Punch} from 'ProperNouns';
 // ===========================================================
 // services
 
-fs.mkdirSync('notkeys', {recursive:true});
+fs.mkdirSync('opm-data', {recursive:true});
 
 /**what are we hosting here?*/
 let services: Punch[] = [];
 /**Are you qualified to advertise with WSBC?*/
 let postingAds = false;
-if (asbool('notkeys/is-advertiser.txt')){
+if (asbool('opm-data/is-advertiser.txt')){
 	postingAds = true;
 }
 /**zilchware */
@@ -44,11 +44,11 @@ const empty_service: Punch = {
 };
 
 function init_ads(){
-	if (existsSync('notkeys/services.json')) {
+	if (existsSync('opm-data/services.json')) {
 		// by default, we post ads if we have them
 		postingAds = true;
 		// we remembered to write it down before we left
-		const services_json = astext('notkeys/services.json');
+		const services_json = astext('opm-data/services.json');
 		services = JSON.parse(services_json) as Punch[];
 		cog("Hosting these services:");
 		cog(services);
@@ -62,7 +62,7 @@ function init_ads(){
 // ==================================================================
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
-const useLocalhost = asbool('notkeys/use-localhost.txt');
+const useLocalhost = asbool('opm-data/use-localhost.txt');
 const wsbc_hostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
 const http_request = useLocalhost ? http.request : https.request;
 
@@ -73,7 +73,7 @@ type PromiseReject = (reason ?: any) => void;
 // failing that, log in with email and password.
 async function init_login(){
 	return new Promise(async (resolve, reject) => {
-		if (existsSync('notkeys/cookie.txt')) {
+		if (existsSync('opm-data/cookie.txt')) {
 			await loginWithCookie(resolve, reject);
 		} else {
 			await loginWithUserCredentials(resolve, reject);
@@ -88,7 +88,7 @@ async function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseRej
 		path: '/api/users/info',
 		method: 'GET',
 		headers: {
-			'Cookie': astext('notkeys/cookie.txt')
+			'Cookie': astext('opm-data/cookie.txt')
 		}
 	};
 	const loginReq = http_request(loginReqOptions, async (res) => {
@@ -147,7 +147,7 @@ async function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: P
 		}
 
 		// record the cookie for future use
-		fs.writeFileSync('notkeys/cookie.txt', schism, {encoding:'utf8'});
+		fs.writeFileSync('opm-data/cookie.txt', schism, {encoding:'utf8'});
 
 		res.setEncoding('utf8');
 		let somedata = "";
@@ -193,8 +193,8 @@ import {WsClientInfo} from 'ProperNouns';
 
 /**stupid fix bc the 'X-Forwarded-For' header kept getting messed up*/
 let allowUnsafeAddr = true;
-if (existsSync('notkeys/allow-unsafe-addr.txt')){
-	allowUnsafeAddr = asbool('notkeys/allow-unsafe-addr.txt');
+if (existsSync('opm-data/allow-unsafe-addr.txt')){
+	allowUnsafeAddr = asbool('opm-data/allow-unsafe-addr.txt');
 }
 const ws_protocol = useLocalhost ? `ws:` : `wss:`;
 
@@ -351,7 +351,7 @@ function onceWsOpen (ev: Event) {
 	// we need to send login info to the server,
 	// but we can't do that with the default WebSocket constructor,
 	// since it doesn't let us set our own headers
-	ws.send(JSON.stringify({'Cookie': astext('notkeys/cookie.txt')}));
+	ws.send(JSON.stringify({'Cookie': astext('opm-data/cookie.txt')}));
 
 	refreshListings(ws);
 	wsClients[ws.url]!.refreshTimer = setInterval(()=>{
