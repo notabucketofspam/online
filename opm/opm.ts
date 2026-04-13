@@ -265,7 +265,7 @@ async function onWsMessage (ev : MessageEvent) {
 	// we shall open a udp socket and send something
 	// to the specified address and port
 	let ws = ev.target as WebSocket;
-	cog(ev.data);
+	//cog(ev.data);
 	if (typeof ev.data === 'string') {
 		const ev_data: WsEventData = JSON.parse(ev.data);
 		const {request_id, flavour, wx} = ev_data;
@@ -308,6 +308,9 @@ async function onWsMessage (ev : MessageEvent) {
 				udp_pair.remote_info.address = wx.remote_addr;
 				// send an initial message
 				udp_pair.ps_send(punchMsg);
+				// alert user about punch success
+				cog(`Ok cool.`);
+				cog(`Now go back to your game and try to connect to 127.0.0.1`);
 			}
 		} else {
 			// this shouldn't happen
