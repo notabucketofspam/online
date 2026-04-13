@@ -72,7 +72,7 @@ type PromiseReject = (reason ?: any) => void;
 // try to log in with cookie, if we have one.
 // failing that, log in with email and password.
 async function init_login(){
-	return new Promise(async (resolve, reject) => {
+	return await new Promise<void>(async (resolve, reject) => {
 		if (existsSync('opm-data/cookie.txt')) {
 			await loginWithCookie(resolve, reject);
 		} else {
