@@ -14,6 +14,7 @@
 
   ol#plist {
     padding-left: 0;
+    list-style-type:none;
   }
 
   li.service {
@@ -68,6 +69,35 @@
       float: none;
     }
   }
+  h2:has(+ ul), h2:has(+ ol), h2:has(+ details){
+    margin-bottom:0;
+  }
+  h2 + ul, h2 + ol{
+    margin-top:0;
+  }
+  .pls-no-gap{
+    margin-top:0px;
+    margin-bottom:0px;
+  }
+
+div.necessary-documentation{
+  details {
+    border: 3px double black;
+    margin-bottom:4px;
+  }
+  details>summary>h3{
+    margin:0;
+    display:inline-block;
+  }
+  summary{
+    user-select: none;
+    cursor: default;
+    padding:2px;
+  }
+}
+code{
+  background-color: #ddda;
+}
 </style>
 </head>
 <body>
@@ -100,7 +130,116 @@
   </div>
 </div>
 
+<h2>Table of Services</h2>
 <ol id="plist"></ol>
+
+<hr/>
+
+<div class="necessary-documentation">
+  <h2>Software downloads</h2>
+  <ul>
+    <li>
+      Option #1: run an unsigned .exe (by yours truly)
+      <ul>
+        <li>
+          <a target="_blank" download="opm.zip" href="/dlc/opm/opm.zip">
+            <b>opm.zip</b> | The opm.exe file is right here
+          </a> (but it's compressed tho)
+        </li>
+      </ul>
+    </li>
+    <li>
+      Option #2: use Node.js&reg;
+      <ul>
+        <li><a target="_blank" href="https://nodejs.org/en/download"><b>Node.js</b> | Download &amp; install</a></li>
+        <li><a target="_blank" download="opm.js" href="/dlc/opm/opm.js"><b>opm.js</b> | The actual js file you need for Punch</a></li>
+        <li>
+          <a target="_blank" download="opm-node.bat" href="/dlc/opm/opm-node.bat">
+            <b>opm-node.bat</b> | a batch script to help you run <b>opm.js</b>
+          </a>
+          <ul><li>please keep it in the same folder as <b>opm.js</b></li></ul>
+        </li>
+      </ul>
+    </li>
+    <li>If you are unsure, go with <u>Option #1</u></li>
+  </ul>
+
+  <h2>Instructions</h2>
+  <details>
+    <summary><h3>Client</h3><br/>I want to connect to my friend's video game server</summary>
+    <ol class="">
+      <li>
+        Download opm (the Punch software)
+        <ul>
+          <li>
+            Choose one of the options above
+          </li>
+        </ul>
+      </li>
+      <li>
+        Run opm
+        <ul>
+          <li>When appropriately prompted, enter the email &amp; password for your <u>waluigi-servebeer.com</u> account</li>
+          <li>Leave opm running</li>
+        </ul>
+      </li>
+      <li>
+        Find your friend's video game server in the Table of Services
+        <ul>
+          <li>
+            Click that
+            <button style="display:inline-block;line-height:12px;padding-top:1px;padding-bottom:0;">
+              &#x2b06;&#xfe0f;Connect
+            </button> button
+          </li>
+        </ul>
+      </li>
+      <li>In your video game, connect to the IP address <code>127.0.0.1</code></li>
+    </ol>
+  </details>
+  <details>
+    <summary><h3>Host</h3><br/>I am hosting a video game server</summary>
+    <ol class="">
+      <li>
+        Add your friends' <u>waluigi-servebeer.com</u> account usernames to your list of <b>trusted users</b>
+        <ul><li>If you don't do this, then your friend can't see any services you're listing</li></ul>
+      </li>
+      <li>
+        Download opm (the Punch software)
+        <ul>
+          <li>
+            Choose one of the options above
+          </li>
+        </ul>
+      </li>
+      <li>
+        Run opm
+        <ul>
+          <li>When appropriately prompted, enter the email &amp; password for your <u>waluigi-servebeer.com</u> account</li>
+        </ul>
+      </li>
+      <li>Close opm</li>
+      <li>
+        Add your <code>services.json</code> file
+        <ul>
+          <li>
+            <a target="_blank" download="services.json" href="/dlc/opm/services.json">
+              <b><code>services.json</code></b> | Download &amp; edit this sample
+            </a>
+          </li>
+          <li>Make sure there's no <i>trailing comma</i> at the end of your list of services</li>
+          <li>Put your <code>services.json</code> file in the <code>opm-data</code> folder</li>
+        </ul>
+      </li>
+      <li>
+        Run opm again
+        <ul>
+          <li>Hopefully everything <span style="font-variant:small-caps">Just Works&trade;</span></li>
+        </ul>
+      </li>
+    </ol>
+  </details>
+</div>
 
 </div>
 <!-- end of the main stuff -->
@@ -236,6 +375,12 @@
       } else {
         var services_html = all_services.map(makeServiceListing).join('');
         plist.innerHTML = services_html;
+        setTimeout(function(){
+          var buttons = document.getElementsByClassName('let_me_connect');
+          Array.from(buttons).forEach(function(button){
+            button.addEventListener('click', do_connect);
+          });
+        });
       }
 
     } else {
@@ -244,6 +389,25 @@
     }
   }
   getPunchList();
+  
+  /**
+   * @param {PointerEvent } ev
+   */
+  async function do_connect(ev){
+    /**@type HTMLButtonElement*/
+    var button = ev.target;
+    // console.log(button.dataset);
+    button.setAttribute('disabled','');
+    /**@type Punch*/
+    var punch = {
+      addr: button.dataset.addr,
+      port: button.dataset.port,
+      serviceName: button.dataset.serviceName,
+      username: button.dataset.username
+    };
+    await pleaseLetMeJoin(punch.addr, punch.port, punch.serviceName, punch.username);
+    button.innerHTML = `Attempting to connect...`;
+  }
 
   /**
   @param {Punch} punch
@@ -257,7 +421,12 @@
         <li>ServiceName: ${punch.serviceName}</li>
         <li>username: ${punch.username}</li>
       </ul>
-      <button onclick="pleaseLetMeJoin('${punch.addr}',${punch.port},'${punch.serviceName}','${punch.username}')">Connect</button>
+      <button class="let_me_connect"
+      data-addr="${punch.addr}"
+      data-port="${punch.port}"
+      data-service-name="${punch.serviceName}"
+      data-username="${punch.username}"
+      >Connect</button>
     </li>
     `;
     return service;
@@ -297,11 +466,16 @@
     } else if (res.ok) {
       const resdat = await res.json();
       console.log(resdat);
-      // alert_II('ok');
+      alert_II('Now connecting...<br/>Check OPM console window for details.');
     } else {
       let restext = await res.text();
       console.log(restext);
-      alert_II(restext);
+      let real_text = restext;
+      try{
+        let real_json = JSON.parse(restext);
+        real_text = real_json?.msg;
+      }catch(err){}
+      alert_II(`Problem:<br/>${real_text}`);
     }
   }
 </script>
