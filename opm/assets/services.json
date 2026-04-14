@@ -1,0 +1,10 @@
+[
+  {
+    "port": 34197,
+    "serviceName": "Factorio"
+  },
+  {
+    "port": 0,
+    "serviceName": "something else idk"
+  }
+]

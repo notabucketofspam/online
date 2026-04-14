@@ -9,7 +9,7 @@ CD dist
 CD ..
 
 REM push to remote
-SET what_files=assets/opm-node.bat dist/opm.js dist/opm.zip
+SET what_files=assets/opm-node.bat assets/services.json dist/opm.js dist/opm.zip
 pscp %what_files% OCI-cool:/httpd/dlc/opm/
 
 ECHO DONE
