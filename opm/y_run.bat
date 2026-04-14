@@ -1,4 +1,4 @@
 @echo off
 title opm
-node .
+node dist/opm.js
 pause
