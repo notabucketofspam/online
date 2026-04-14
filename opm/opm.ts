@@ -209,15 +209,15 @@ function init_websockets() {
 	let wsUrl6 = `${ws_protocol}//${wsbc_hostname}/wss`;
 	let ws6_services = services;
 
-	if (!useLocalhost && !allowUnsafeAddr) {
+	if (!useLocalhost && postingAds) {
 		wsUrl6 = `${ws_protocol}//6.${wsbc_hostname}/wss`;
-		ws6_services = services.filter(punch=>punch.addr.includes(':'));
+		ws6_services = services;
 
 		let wsUrl4 = `${ws_protocol}//4.${wsbc_hostname}/wss`;
 		let ws4 = new WebSocket(wsUrl4)
 		ws4.addEventListener('close', onceWsClose, {once:true});
 		ws4.addEventListener('open', onceWsOpen, {once:true});	
-		wsClients[wsUrl4] = {ws: ws4, services: services.filter(punch=>punch.addr.includes('.'))};
+		wsClients[wsUrl4] = {ws: ws4, services: services};
 	}
 	let ws6 = new WebSocket(wsUrl6);
 	ws6.addEventListener('close', onceWsClose, {once:true});

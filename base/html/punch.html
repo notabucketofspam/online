@@ -30,13 +30,12 @@
       padding-left: 20px;
       margin: 0;
     }
-
-    li.service > button {
-      display: block;
+    li.service div{display:flex;}
+    li.service button {
       margin: 0 auto;
-      width: 90%;
+      width: 49%;
     }
-      li.service > button::before {
+      li.service button::before {
         content: '\2B06\FE0F';
       }
 
@@ -165,7 +164,7 @@ code{
   </ul>
 
   <h2>Instructions</h2>
-  <details>
+  <details open>
     <summary><h3>Client</h3><br/>I want to connect to my friend's video game server</summary>
     <ol class="">
       <li>
@@ -197,7 +196,7 @@ code{
       <li>In your video game, connect to the IP address <code>127.0.0.1</code></li>
     </ol>
   </details>
-  <details>
+  <details open>
     <summary><h3>Host</h3><br/>I am hosting a video game server</summary>
     <ol class="">
       <li>
@@ -373,8 +372,11 @@ code{
       if (all_services.length === 0) {
         plist.innerHTML = '<li>sorry nothing</li>';
       } else {
-        var services_html = all_services.map(makeServiceListing).join('');
-        plist.innerHTML = services_html;
+        var services_html = all_services.forEach(punch=>{
+          var insert_me = makeServiceListing(punch);
+          plist.insertAdjacentHTML('beforeend', insert_me);
+        });
+        // plist.innerHTML = services_html;
         setTimeout(function(){
           var buttons = document.getElementsByClassName('let_me_connect');
           Array.from(buttons).forEach(function(button){
@@ -409,26 +411,56 @@ code{
     button.innerHTML = `Attempting to connect...`;
   }
 
+  /**@param {string} addr
+   * @returns number
+   */
+  function toFam(addr){
+    return addr.includes(':')?6:addr.includes('.')?4:9;
+  }
+
   /**
   @param {Punch} punch
   */
   function makeServiceListing (punch) {
-    var service = `
-    <li class='service'>
-      <ul>
-        <li>Address: ${punch.addr}</li>
-        <li>Port: ${punch.port}</li>
-        <li>ServiceName: ${punch.serviceName}</li>
-        <li>username: ${punch.username}</li>
-      </ul>
+    var service_proto = {
+      port: punch.port,
+      serviceName: punch.serviceName,
+      username: punch.username
+    };    
+    var sp_tag = encodeURIComponent(JSON.stringify(service_proto));
+
+    var service = ``;
+    var already_here = document.getElementById(sp_tag);
+    if (already_here) {
+      var not_service = `
       <button class="let_me_connect"
       data-addr="${punch.addr}"
       data-port="${punch.port}"
       data-service-name="${punch.serviceName}"
       data-username="${punch.username}"
-      >Connect</button>
+      >Connect via IPv${toFam(punch.addr)}</button>
+      `;
+      already_here.querySelector('button').insertAdjacentHTML('afterend', not_service);
+      
+    } else {
+    service = `
+    <li class="service" id="${sp_tag}">
+      <ul>
+        <li>Port: ${punch.port}</li>
+        <li>ServiceName: ${punch.serviceName}</li>
+        <li>username: ${punch.username}</li>
+      </ul>
+      <div>
+      <button class="let_me_connect"
+      data-addr="${punch.addr}"
+      data-port="${punch.port}"
+      data-service-name="${punch.serviceName}"
+      data-username="${punch.username}"
+      >Connect via IPv${toFam(punch.addr)}</button>
+      </div>
     </li>
     `;
+    }
     return service;
   }
 
