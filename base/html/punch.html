@@ -11,7 +11,7 @@
     font-variant: small-caps;
     text-align: center;
   }
-
+/* stuff for the table of services*/
   ol#plist {
     padding-left: 0;
     list-style-type:none;
@@ -25,20 +25,21 @@
     overflow-x: visible;
     margin-bottom: 3px;
   }
+  li.service > ul {
+    padding-left: 20px;
+    margin: 0;
+  }
 
-    li.service > ul {
-      padding-left: 20px;
-      margin: 0;
-    }
-    li.service div{display:flex;}
-    li.service button {
-      margin: 0 auto;
-      width: 49%;
-    }
-      li.service button::before {
-        content: '\2B06\FE0F';
-      }
+div.some_buttons {
+  display: grid;
+  grid-template-areas: "v4 v6";
+  grid-template-columns: 1fr 1fr;
+}
 
+button.let_me_connect::before {
+  content: '\2B06\FE0F';
+}
+/*stuff for trusted users*/
   ul#trusted_users {
     margin: 0;
     padding: 0;
@@ -68,6 +69,7 @@
       float: none;
     }
   }
+  /*stuff for the brief constructed response at the bottom of the page */
   h2:has(+ ul), h2:has(+ ol), h2:has(+ details){
     margin-bottom:0;
   }
@@ -78,7 +80,7 @@
     margin-top:0px;
     margin-bottom:0px;
   }
-
+  
 div.necessary-documentation{
   details {
     border: 3px double black;
@@ -407,19 +409,35 @@ code{
       serviceName: button.dataset.serviceName,
       username: button.dataset.username
     };
-    await pleaseLetMeJoin(punch.addr, punch.port, punch.serviceName, punch.username);
+    await pleaseLetMeJoin(punch);
     button.innerHTML = `Attempting to connect...`;
   }
 
   /**@param {string} addr
-   * @returns number
+   * @returns {number}
    */
   function toFam(addr){
     return addr.includes(':')?6:addr.includes('.')?4:9;
   }
 
+  /**@param {Punch} punch
+   * @returns {string}
+  */
+  function makeConnectButton(punch){
+    var button_html = `
+      <button class="let_me_connect" style="grid-area:v${toFam(punch.addr)}"
+      data-addr="${punch.addr}"
+      data-port="${punch.port}"
+      data-service-name="${punch.serviceName}"
+      data-username="${punch.username}"
+      >Connect via IPv${toFam(punch.addr)}</button>
+      `;
+    return button_html;
+  }
+
   /**
-  @param {Punch} punch
+   * @param {Punch} punch
+   * @returns {string}
   */
   function makeServiceListing (punch) {
     var service_proto = {
@@ -430,17 +448,10 @@ code{
     var sp_tag = encodeURIComponent(JSON.stringify(service_proto));
 
     var service = ``;
+    var some_button = makeConnectButton(punch);
     var already_here = document.getElementById(sp_tag);
     if (already_here) {
-      var not_service = `
-      <button class="let_me_connect"
-      data-addr="${punch.addr}"
-      data-port="${punch.port}"
-      data-service-name="${punch.serviceName}"
-      data-username="${punch.username}"
-      >Connect via IPv${toFam(punch.addr)}</button>
-      `;
-      already_here.querySelector('button').insertAdjacentHTML('afterend', not_service);
+      already_here.querySelector('div.some_buttons').insertAdjacentHTML('beforeend', some_button);
       
     } else {
     service = `
@@ -450,13 +461,8 @@ code{
         <li>ServiceName: ${punch.serviceName}</li>
         <li>username: ${punch.username}</li>
       </ul>
-      <div>
-      <button class="let_me_connect"
-      data-addr="${punch.addr}"
-      data-port="${punch.port}"
-      data-service-name="${punch.serviceName}"
-      data-username="${punch.username}"
-      >Connect via IPv${toFam(punch.addr)}</button>
+      <div class="some_buttons">
+      ${some_button}
       </div>
     </li>
     `;
@@ -467,15 +473,10 @@ code{
   var allowJoinUnsafeAddr = true;
 
   /**
-  @param {string} addr
-  @param {number} port
-  @param {string} serviceName
-  @param {string} username
+  *@param {Punch} punch
+  *@returns {Promise<void>}
   */
-  async function pleaseLetMeJoin (addr, port, serviceName, username) {
-    /**@type Punch*/
-    const punch = {addr, port, serviceName, username};
-    //var contentType = useLocalhost ? 'application/json' : 'text/plain';
+  async function pleaseLetMeJoin (punch) {
     var contentType = 'application/json';
     //var base_url = useLocalhost ? '' : `${window.location.protocol}//${punch.addr.includes(":") ? 6 : 4}.${window.location.hostname}`;
     var base_url = '';
@@ -483,7 +484,7 @@ code{
     
     let which_fam = punch.addr.includes(":") ? 6 : 4;
     if (allowJoinUnsafeAddr && typeof window[`addr_v${which_fam}`] === 'string') {
-      punch.unsafeAddr = window[`addr_v${which_fam}`];
+      // punch.unsafeAddr = window[`addr_v${which_fam}`];
     }
 
     const res = await fetch(fetch_url, {
