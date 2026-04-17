@@ -309,6 +309,15 @@ code{
 
   var useLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '';
 
+  async function actual_init(){
+    await writeIpAddr();
+    await getPunchList();
+  }
+  actual_init();
+
+  var addr_v4 = '';
+  var addr_v6 = '';
+
   /**
   Display the IP address of the user
   */
@@ -329,24 +338,34 @@ code{
       your_ipvx.innerText = addr_real;
     } else {
       // we are surfing the world wide web
-      window.addr_v4 = (await (await fetch(`https://4.${window.location.hostname}`, {
-        method: 'GET',
-        cache: 'no-store',
-        mode: 'cors'
-      })).text());
-      var your_ipv4 = document.getElementById("your_ipv4");
-      your_ipv4.innerText = window.addr_v4;
 
-      window.addr_v6 = (await (await fetch(`https://6.${window.location.hostname}`, {
-        method: 'GET',
-        cache: 'no-store',
-        mode: 'cors'
-      })).text());
+      // record your ipv4
+      var your_ipv4 = document.getElementById("your_ipv4");
+      try{      
+        window.addr_v4 = (await (await fetch(`https://4.${window.location.hostname}`, {
+          method: 'GET',
+          cache: 'no-store',
+          mode: 'cors'
+        })).text());
+        your_ipv4.innerText = window.addr_v4;
+      }catch(err){
+        your_ipv4.innerHTML = "<em>nothing</em>";
+      }
+      
+      // and now your ipv6
       var your_ipv6 = document.getElementById("your_ipv6");
-      your_ipv6.innerText = window.addr_v6;
+      try{
+        window.addr_v6 = (await (await fetch(`https://6.${window.location.hostname}`, {
+          method: 'GET',
+          cache: 'no-store',
+          mode: 'cors'
+        })).text());
+        your_ipv6.innerText = window.addr_v6;
+      } catch(err){
+        your_ipv6.innerHTML = "<em>nothing</em>";
+      }
     }
   }
-  writeIpAddr();
 
   /**
   @typedef Punch
@@ -394,7 +413,6 @@ code{
       plist.innerHTML = await res.text();
     }
   }
-  getPunchList();
   
   /**
    * @param {PointerEvent } ev
@@ -432,6 +450,7 @@ code{
       data-port="${punch.port}"
       data-service-name="${punch.serviceName}"
       data-username="${punch.username}"
+      ${window[`addr_v${toFam(punch.addr)}`]?'':'hidden' }
       >Connect via IPv${toFam(punch.addr)}</button>
       `;
     return button_html;
