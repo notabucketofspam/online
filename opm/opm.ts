@@ -275,6 +275,30 @@ async function onWsMessage (ev : MessageEvent) {
 		
 			// make some new UDP sockets
 			const udp_pair = await createUdpPair(wx);
+
+			// if we're using IPv4, then we can't actually tell WSBC
+			// about our punch_port. That's the miracle of NAT, baby.
+			if (net.isIPv4(wx.remote_addr)){
+				await new Promise<void>((resolve, reject)=>{
+					let spontaneousDeath = setTimeout(function(){
+						// timeout the effort after a few seconds, to prevent the process
+						// from hanging
+						reject();
+					}, 8000);
+					function prependOnce_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
+						// WSBC acknowledged our UDP port
+						clearTimeout(spontaneousDeath);
+						resolve();
+					}
+					udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
+					// send a ping to the grandFacade port
+					udp_pair.punch_socket.send(Buffer.from(request_id), 39688, '4.waluigi-servebeer.com');
+				}).catch(reason=>{
+					// we don't really have to do much here
+					console.error(reason);
+				});
+			}
+
 			const punch_port = udp_pair.punch_socket.address().port;
 			
 			if (flavour === 'client-open') {

@@ -473,7 +473,7 @@ interface WsPair {
 
 /**temporarily remember the WebSockets involved in the punch port peer pairing process*/
 const joinMap: Map<string, WsPair> = new Map();
-
+export {joinMap as punchJoinMap};
 async function askToJoin(req: Request, res: Response){
 	try{
 		const reqUsername = req.session.username;
@@ -540,7 +540,6 @@ async function askToJoin(req: Request, res: Response){
 					}
 				}
 				if (shouldSend){
-					wsClient.send(JSON.stringify(client_open));
 					const wsMeta: WsPairMeta = {
 						client_addr: reqAddr,
 						client_port: 0,
@@ -549,6 +548,7 @@ async function askToJoin(req: Request, res: Response){
 						app_port: reqPunch.port
 					};
 					joinMap.set(request_id, {wsClient, wsServer, wsMeta});
+					wsClient.send(JSON.stringify(client_open));
 					res.status(200).json({msg:'ok'});
 					// eventually delete the temp data in joinMap
 					setTimeout(function(){
@@ -645,7 +645,11 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 					const {wsClient, wsServer, wsMeta} = wsPair;
 					if (flavour === 'client-open') {
 						// client has opened the udp socket
-						wsMeta.client_port = punch_port;
+
+						// we may already have the client's UDP port, thanks to grandFacade						
+						if (!wsMeta.client_port) {
+							wsMeta.client_port = punch_port;
+						}
 						const server_open: WsEventData = {
 							request_id: request_id,
 							flavour: 'server-open',
@@ -660,7 +664,11 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 						wsServer.send(JSON.stringify(server_open ));					
 					} else if (flavour === 'server-open'){
 						// server is telling us her punch_port
-						wsMeta.server_port = punch_port;
+
+						// we may already know the server's UDP port
+						if (!wsMeta.server_port){
+							wsMeta.server_port = punch_port;
+						}
 						const peer_punch_port: WsEventData = {
 							request_id: request_id,
 							flavour: 'peer-punch-port',
