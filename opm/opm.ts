@@ -186,16 +186,64 @@ async function getLoginCredentials(){
 	return {user_email, user_password};
 }
 
+function genericHttpRequest(options: http.RequestOptions, dataToWrite?: any): Promise<unknown>{
+	return new Promise<unknown>((resolve, reject)=>{
+		const req = http_request(options, res=>{
+
+			if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
+				// not ok
+				reject(res);
+			}
+			
+			res.setEncoding('utf8');
+			let somedata = "";
+			const res_ondata = (chunk:any)=>{
+				somedata += chunk;
+			};
+			res.on("data", res_ondata);
+			res.once('end', () => {
+				res.off('data', res_ondata);
+				req.off('error', req_onerror);
+				resolve(somedata);
+			});
+
+		});
+		if (typeof dataToWrite !== 'undefined'){
+			req.write(dataToWrite);
+		}
+		const req_onerror = (err: Error)=>{
+			console.error(err);
+			reject(err);
+		}
+		req.on('error', req_onerror);
+		req.end();
+	});
+}
+const realStacks = {
+	v4: true,
+	v6: true
+};
+/**This is how we know if the client's network supports IPv4 and/or IPv6*/
+async function determineRealStacks(){
+	try {
+		await genericHttpRequest({hostname: '4.waluigi-servebeer.com'});
+	} catch(err){
+		console.error(err);
+		realStacks.v4 = false;
+	}
+	try {
+		await genericHttpRequest({hostname: '6.waluigi-servebeer.com'});
+	} catch(err){
+		console.error(err);
+		realStacks.v6 = false;
+	}
+}
+
 // ============================================================
 // websocket client
 
 import {WsClientInfo} from 'ProperNouns';
 
-/**stupid fix bc the 'X-Forwarded-For' header kept getting messed up*/
-let allowUnsafeAddr = true;
-if (existsSync('opm-data/allow-unsafe-addr.txt')){
-	allowUnsafeAddr = asbool('opm-data/allow-unsafe-addr.txt');
-}
 const ws_protocol = useLocalhost ? `ws:` : `wss:`;
 
 /** 
@@ -205,24 +253,36 @@ const ws_protocol = useLocalhost ? `ws:` : `wss:`;
 const wsClients: Record<string, WsClientInfo> = {};
 
 /** do this once at startup*/
-function init_websockets() {	
-	let wsUrl6 = `${ws_protocol}//${wsbc_hostname}/wss`;
-	let ws6_services = services;
-
+function init_websockets() {
 	if (!useLocalhost && postingAds) {
-		wsUrl6 = `${ws_protocol}//6.${wsbc_hostname}/wss`;
-		ws6_services = services;
-
-		let wsUrl4 = `${ws_protocol}//4.${wsbc_hostname}/wss`;
-		let ws4 = new WebSocket(wsUrl4)
-		ws4.addEventListener('close', onceWsClose, {once:true});
-		ws4.addEventListener('open', onceWsOpen, {once:true});	
-		wsClients[wsUrl4] = {ws: ws4, services: services};
+		// we are an advertiser and/or local dev
+		if (realStacks.v4){
+			// init for IPv4
+			let wsUrl4 = `${ws_protocol}//4.${wsbc_hostname}/wss`;
+			const ws4_services = services;
+			let ws4 = new WebSocket(wsUrl4)
+			ws4.addEventListener('close', onceWsClose, {once:true});
+			ws4.addEventListener('open', onceWsOpen, {once:true});	
+			wsClients[wsUrl4] = {ws: ws4, services: ws4_services};
+		}
+		if (realStacks.v6){
+			// init for IPv6
+			let wsUrl6 = `${ws_protocol}//6.${wsbc_hostname}/wss`;
+			let ws6_services = services;
+			let ws6 = new WebSocket(wsUrl6);
+			ws6.addEventListener('close', onceWsClose, {once:true});
+			ws6.addEventListener('open', onceWsOpen, {once:true});
+			wsClients[wsUrl6] = {ws: ws6, services: ws6_services};
+		}
+	} else{
+		// we are a client, so just connect in the most convenient way
+		let wsUrlx = `${ws_protocol}//${wsbc_hostname}/wss`;
+		let wsx_services = services;
+		let wsx = new WebSocket(wsUrlx);
+		wsx.addEventListener('close', onceWsClose, {once:true});
+		wsx.addEventListener('open', onceWsOpen, {once:true});
+		wsClients[wsUrlx] = {ws: wsx, services: wsx_services};
 	}
-	let ws6 = new WebSocket(wsUrl6);
-	ws6.addEventListener('close', onceWsClose, {once:true});
-	ws6.addEventListener('open', onceWsOpen, {once:true});
-	wsClients[wsUrl6] = {ws: ws6, services: ws6_services};
 }
 
 /** this will be called every-so-often when we're attempting to cope */
@@ -517,6 +577,9 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 async function init_real(){
 	await init_login();
 	init_ads();
+	if (!useLocalhost){
+		await determineRealStacks();
+	}
 	init_websockets();
 }
 init_real();
