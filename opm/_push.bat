@@ -5,7 +5,7 @@ REM build opm
 CMD /C "tsc"
 
 REM push to remote
-SET what_files=assets/opm.bat assets/services.json dist/opm.js
+SET what_files=assets/opm.bat assets/services.json dist/opm.js assets/opm-node.bat
 pscp %what_files% OCI-cool:/httpd/dlc/opm/
 
 ECHO DONE
