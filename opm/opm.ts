@@ -212,7 +212,6 @@ function genericHttpRequest(options: http.RequestOptions, dataToWrite?: any): Pr
 			req.write(dataToWrite);
 		}
 		const req_onerror = (err: Error)=>{
-			console.error(err);
 			reject(err);
 		}
 		req.on('error', req_onerror);
@@ -228,13 +227,13 @@ async function determineRealStacks(){
 	try {
 		await genericHttpRequest({hostname: '4.waluigi-servebeer.com'});
 	} catch(err){
-		console.error(err);
+		//console.error(err);
 		realStacks.v4 = false;
 	}
 	try {
 		await genericHttpRequest({hostname: '6.waluigi-servebeer.com'});
 	} catch(err){
-		console.error(err);
+		//console.error(err);
 		realStacks.v6 = false;
 	}
 }
