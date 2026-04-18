@@ -1,6 +1,0 @@
-{
-  "main": "dist/opm.js",
-  "output": "dist/opm.exe",
-  "disableExperimentalSEAWarning": true,
-  "execArgvExtension":  "none"
-}
