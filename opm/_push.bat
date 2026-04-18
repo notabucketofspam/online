@@ -1,15 +1,11 @@
 @ECHO off
 TITLE _push.bat
 
-REM build/compress SEA
+REM build opm
 CMD /C "tsc"
-node --build-sea sea-config.json
-CD dist
-7za u opm.zip opm.exe
-CD ..
 
 REM push to remote
-SET what_files=assets/opm-node.bat assets/services.json dist/opm.js dist/opm.zip
+SET what_files=assets/opm.bat assets/services.json dist/opm.js
 pscp %what_files% OCI-cool:/httpd/dlc/opm/
 
 ECHO DONE

@@ -13,3 +13,6 @@ desktop.ini
 # secrets et al.
 notkeys/***
 opm-data/***
+
+# too big for github
+bigassets/node.*

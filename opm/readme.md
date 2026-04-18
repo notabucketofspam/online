@@ -1,7 +1,8 @@
 # opm
 
-list of some stuff you may need if you want to build the single executable application:
+list of some stuff that may not be obvious:
 
-- [Node.js v25.5.0 or newer](https://nodejs.org/en/download/archive/v25.5.0)
-- [7za.exe (the 7-Zip CLI)](https://www.7-zip.org/download.html)
-   - it's included in the download for 7-Zip Extra
+- in the folder `bigassets`, there should be the `node.exe` file. it's kinda big, tho, so i don't wanna include it in the github repo.
+	- here's a handy link to some downloads for [Node.js v25.9.0](https://nodejs.org/en/download/archive/v25.9.0)
+	- you just need one of the `.zip` files from the "Binary Downloads" section
+- i'm using putty / pscp for the push commands bc it's simple.
