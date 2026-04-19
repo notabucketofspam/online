@@ -1,2 +1,3 @@
 @echo off
-mexec.bat "cd base;./push"
+cd base
+mexec "./push.sh"
