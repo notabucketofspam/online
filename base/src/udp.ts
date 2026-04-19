@@ -1,5 +1,5 @@
 import dgram from 'node:dgram';
-import {punchJoinMap as joinMap} from "./express_app";
+import {punchJoinMap as joinMap} from "./punch";
 
 const udpOK = Buffer.from('PUNCH');
 
