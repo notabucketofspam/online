@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 
 import * as odb from "./db";
 import {generate_reset_token, isAuthenticated, express_app as app, redisStore } from "./express_app";
-import {Punch,ClientData, WireInfo, WsbcReply,WsEventData,WsPair,WsPairMeta } from "VocabQuiz";
+import {Punch, ClientData, WsbcReply, WsEventData, WsPair, WsPairMeta } from "VocabQuiz";
 
 declare module 'express-session' {
 	interface SessionData {
@@ -18,23 +18,25 @@ declare module 'express-session' {
 }
 import {SessionData} from "express-session";
 
-// =================================== this is all the punch stuff
+// ========================================================
+// this is all the express-related punch stuff
 
-var cog = console.log;
-
-async function get_ip(req: Request, res: Response){
-	const xff = req.header('X-Forwarded-For');
-	res.setHeader('Content-Type', 'text/plain');
-	res.setHeader('Access-Control-Allow-Origin', '*');
-	res.status(200).send(xff);
+function get_ip(req: Request, res: Response){
+	try {
+		const xff = req.header('X-Forwarded-For');
+		res.setHeader('Content-Type', 'text/plain');
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.status(200).send(xff);
+	} catch (err) {
+		res.status(500).send({ msg: "error sorry" });
+	}
 }
 
-async function getPunchHtml(req: Request, res: Response){
+function getPunchHtml(req: Request, res: Response){
 	res.sendFile(path.join(__dirname, "..", 'html','punch.html'));
 }
 
-
-
+/**What do you have for sale? */
 async function getPunchList(req: Request, res: Response){
 	try {
 		let filteredView: Punch[] = [];
@@ -72,12 +74,15 @@ async function getPunchList(req: Request, res: Response){
 
 const allowJoinUnsafeAddr = fs.existsSync('keys/allow-unsafe-addr.txt');
 
-
 /**temporarily remember the WebSockets involved in the punch port peer pairing process*/
 const joinMap: Map<string, WsPair> = new Map();
 export {joinMap as punchJoinMap};
+
+/**
+ * A user wants to connect to a particular Punch service
+ */
 async function askToJoin(req: Request, res: Response){
-	try{
+	try {
 		const reqUsername = req.session.username;
 		const reqAddr = req.header('X-Forwarded-For');
 		const contentType = req.header('Content-Type');
@@ -181,7 +186,6 @@ import http from 'node:http';
 
 let wss: ws.WebSocketServer;
 
-
 const clientMap: WeakMap<ws, ClientData> = new WeakMap();
 
 // we need the server returned by app.listen()
@@ -207,96 +211,104 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 	const addr = xff??'';
 	
 	async function ws_onmessage (message : ws.RawData, isBinary: boolean){
-		if (!isBinary){
-			const rawMessage = message.toString();
-			const parsedMessage = JSON.parse(rawMessage);
+		try {
+			if (!isBinary) {
+				const rawMessage = message.toString();
+				const parsedMessage = JSON.parse(rawMessage);
 
-			if (typeof parsedMessage['Cookie'] !== 'undefined'){
-				// client wants to set the session id
-				let sid: string = parsedMessage['Cookie'];
-				if (sid.includes('connect.sid=')){
-					sid = sid.replace('connect.sid=','');
-				}
-				sid = decodeURIComponent(sid);
-				const rx = /s:(.*?)\./;
-				sid = rx.exec(sid)?.[1] ?? sid;
-				const services: Punch[] = [];
-				clientMap.set(ws, {sid, services, addr});
+				if (typeof parsedMessage['Cookie'] === 'string') {
+					// client wants to set the session id
+					let sid: string = parsedMessage['Cookie'];
+					if (sid.includes('connect.sid=')){
+						sid = sid.replace('connect.sid=','');
+					}
+					sid = decodeURIComponent(sid);
+					const rx = /s:(.*?)\./;
+					sid = rx.exec(sid)?.[1] ?? sid;
+					const services: Punch[] = [];
+					clientMap.set(ws, {sid, services, addr});
 
-			} else if (typeof parsedMessage['request_id'] !== 'undefined'){
-				// client is doing the join handshake thing
-				const ev_data: WsbcReply = parsedMessage;				
-				const {request_id, flavour, punch_port} = ev_data;
+				} else if (typeof parsedMessage['request_id'] === 'string'
+				&& typeof parsedMessage['flavour'] === 'string'
+				&& typeof parsedMessage['punch_port'] === 'number' ) {
+					// client is doing the join handshake thing
+					const ev_data: WsbcReply = parsedMessage;
+					const {request_id, flavour, punch_port} = ev_data;
 				
-				const wsPair = joinMap.get(request_id);
-				if (typeof wsPair !== 'undefined') {
-					const {wsClient, wsServer, wsMeta} = wsPair;
-					if (flavour === 'client-open') {
-						// client has opened the udp socket
+					const wsPair = joinMap.get(request_id);
+					if (typeof wsPair !== 'undefined') {
+						const {wsClient, wsServer, wsMeta} = wsPair;
+						if (flavour === 'client-open') {
+							// client has opened the udp socket
 
-						// we may already have the client's UDP port, thanks to grandFacade						
-						if (!wsMeta.client_port) {
-							wsMeta.client_port = punch_port;
-						}
-						const server_open: WsEventData = {
-							request_id: request_id,
-							flavour: 'server-open',
-							wx: {
-								app_port: wsMeta.app_port,
-								remote_addr: wsMeta.client_addr,
-								remote_port: wsMeta.client_port
+							// we may already have the client's UDP port, thanks to grandFacade						
+							if (!wsMeta.client_port) {
+								wsMeta.client_port = punch_port;
 							}
-						};
+							const server_open: WsEventData = {
+								request_id: request_id,
+								flavour: 'server-open',
+								wx: {
+									app_port: wsMeta.app_port,
+									remote_addr: wsMeta.client_addr,
+									remote_port: wsMeta.client_port
+								}
+							};
 
-						// now we need to tell the server to open a udp socket
-						wsServer.send(JSON.stringify(server_open ));					
-					} else if (flavour === 'server-open'){
-						// server is telling us her punch_port
+							// now we need to tell the server to open a udp socket
+							wsServer.send(JSON.stringify(server_open ));					
+						} else if (flavour === 'server-open'){
+							// server is telling us her punch_port
 
-						// we may already know the server's UDP port
-						if (!wsMeta.server_port){
-							wsMeta.server_port = punch_port;
-						}
-						const peer_punch_port: WsEventData = {
-							request_id: request_id,
-							flavour: 'peer-punch-port',
-							wx: {
-								app_port: wsMeta.app_port,
-								remote_addr: wsMeta.server_addr,
-								remote_port: wsMeta.server_port
+							// we may already know the server's UDP port
+							if (!wsMeta.server_port){
+								wsMeta.server_port = punch_port;
 							}
-						};
+							const peer_punch_port: WsEventData = {
+								request_id: request_id,
+								flavour: 'peer-punch-port',
+								wx: {
+									app_port: wsMeta.app_port,
+									remote_addr: wsMeta.server_addr,
+									remote_port: wsMeta.server_port
+								}
+							};
 
-						// and now we tell the client about the server's punch port
-						wsClient.send(JSON.stringify(peer_punch_port) );
-					} else if (flavour === 'peer-punch-port') {
-						// this shouldn't happen
+							// and now we tell the client about the server's punch port
+							wsClient.send(JSON.stringify(peer_punch_port) );
+						} else if (flavour === 'peer-punch-port') {
+							// this shouldn't happen
+						} else {
+							// this also shouldn't happen
+						}
 					} else {
-						// this also shouldn't happen
+						// wsPair is undefined
 					}
 				} else {
-					// wsPair is undefined
+					// client is listing services
+					let clientData = clientMap.get(ws);
+					if (typeof clientData !== 'undefined'){
+						// check session info
+						const sid = clientData.sid;
+						const session: SessionData | undefined = await redisStore.get(sid);
+						let username = session?.username ?? '';
+						const services: Punch[] = parsedMessage;
+						if (typeof services.forEach === 'function') {
+							services.forEach(punch => {
+								punch.addr = addr;
+								punch.username = username;
+							});
+						}
+						clientMap.set(ws, {sid, services, addr});
+					} else {
+						// clientData is undefined
+					}
 				}
 			} else {
-				// client is listing services
-				let clientData = clientMap.get(ws);
-				if (typeof clientData !== 'undefined'){
-					// check session info
-					const sid = clientData.sid;
-					const session: SessionData | undefined = await redisStore.get(sid);
-					let username = session?.username ?? '';
-					const services: Punch[] = parsedMessage;
-					services.forEach(punch=>{
-						punch.addr = addr;
-						punch.username = username;
-					});
-					clientMap.set(ws, {sid, services, addr});
-				} else {
-					// clientData is undefined
-				}
+				// it's just a ping message
 			}
-		} else {
-			// it's just a ping message
+		}catch(err){
+			console.error(err);
 		}
 	}
 	ws.on('message', ws_onmessage);
@@ -315,38 +327,49 @@ function wss_onwsClientError (err : Error, socket: Stream.Duplex, request: http.
 	console.error(request);
 }
 
+// ==============================================================
+// some helper functions for enumerating Punch services
+
 function getPunchServices(): Punch[]{
 	const all_services: Punch[] = [];
-	// Set.prototype.map wasn't working for some reason
-	wss.clients.forEach(ws=>{
-		let clientData = clientMap.get(ws);
-		if (typeof clientData !== 'undefined'){
-		let services_perchance = clientData.services.filter(punch=>punch.port);
-			all_services.push(...services_perchance);
-		}
-	});
+	try {
+		// Set.prototype.map wasn't working for some reason
+		wss.clients.forEach(ws => {
+			let clientData = clientMap.get(ws);
+			if (typeof clientData !== 'undefined') {
+				// remove services where port === 0
+				let services_perchance = clientData.services.filter(punch => punch.port);
+				all_services.push(...services_perchance);
+			}
+		});
+	} catch(err) {
+		console.error(err);
+	}
 	return all_services;
 }
 
 function getClientByService(search: Punch): ws | undefined {
 	let foundClient: ws | undefined;
-
-	searching: for (const client of wss.clients){		
-		let clientData = clientMap.get(client);
-		if (typeof clientData !== 'undefined'){
-			for (const service of clientData.services) {
-				if (service.addr === search.addr &&
-				service.port === search.port &&
-				service.serviceName === search.serviceName &&
-				service.username === search.username){
-					foundClient = client;
-					break searching;
+	try {
+		searching: for (const client of wss.clients) {
+			let clientData = clientMap.get(client);
+			if (typeof clientData !== 'undefined') {
+				for (const service of clientData.services) {
+					if (service.addr === search.addr &&
+						service.port === search.port &&
+						service.serviceName === search.serviceName &&
+						service.username === search.username) {
+						foundClient = client;
+						break searching;
+					}
 				}
 			}
 		}
+	} catch(err) {
+		console.error(err);
 	}
-
 	return foundClient;
 }
 
+// exports? yes.
 export {initWSS};
