@@ -182,6 +182,26 @@ async function getLoginCredentials(){
 	const user_email = await rl.question("What's your account's email address?\r\n");
 	const user_password = await rl.question("Ok cool. And what's your password?\r\n");
 	rl.write("Thank you !!!\r\n");
+
+	// wanna hide the username/password from prying eyes
+	const rl_jr = new readline.Readline(process.stdout);
+	// remove password
+	rl_jr.moveCursor(0, -2);
+	rl_jr.clearLine(0);
+	rl_jr.cursorTo(0);
+	await rl_jr.commit();
+	process.stdout.write('<and this is where your password used to be>');
+	// remove email
+	rl_jr.moveCursor(0, -2);
+	rl_jr.clearLine(0);
+	rl_jr.cursorTo(0);
+	await rl_jr.commit();
+	process.stdout.write('<this is where your email address was>');
+	// put the cursor back where it was
+	rl_jr.moveCursor(0, 4);
+	rl_jr.cursorTo(0);
+	await rl_jr.commit();
+
 	rl.close();
 	return {user_email, user_password};
 }
