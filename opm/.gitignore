@@ -15,4 +15,4 @@ notkeys/***
 opm-data/***
 
 # too big for github
-bigassets/node.*
+bigassets/node*
