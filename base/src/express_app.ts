@@ -13,7 +13,18 @@ const redisClient = createClient({
 		url: 'redis://localhost:6379'
 });
 redisClient.connect().catch(console.error);
-redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.on('error', function(err) {
+	console.error(err);
+	if (err?.code === "ECONNREFUSED"){
+		console.log(`
+		=======================
+		You need to start redis
+		=======================
+
+		`);
+		process.abort();
+	}
+});
 
 const app = express();
 
