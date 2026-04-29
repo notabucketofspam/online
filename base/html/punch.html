@@ -100,6 +100,26 @@ div.necessary-documentation{
 code{
   background-color: #ddda;
 }
+span.choose-os{
+  display: inline-block;
+  border-style:outset;
+  border-width:3px;
+  background-color:#ddda;
+  padding:5px;
+  user-select:none;
+  cursor:default;
+}
+span.choose-os:hover{
+  background-color:#ccca;
+}
+span.choose-os:active, span.choose-os.active{
+  border-style:inset;
+  background-color:#e3e3e3aa;
+}
+div.software-download h3{
+  margin:0;
+  line-height:1lh;
+}
 </style>
 </head>
 <body>
@@ -133,45 +153,91 @@ code{
 </div>
 
 <h2>Table of Services</h2>
+<ol id="plist"></ol>
 <div>
   <label>
     <input type="checkbox" id="please_use_relay"/>
     Use the WSBC UDP relay
   </label>
 </div>
-<ol id="plist"></ol>
-
 <hr/>
 
 <div class="necessary-documentation">
-  <h2>Software downloads</h2>
-  <ul>
-    <li>
-      Option #1: run my cool batch file
-      <ul>
-        <li>
-          <a target="_blank" download="opm.bat" href="/dlc/opm/opm.bat">
-            <b>opm.bat</b> | This is the aforementioned cool batch file
-          </a>
-          <ul><li>When you run this, it'll download everything else you need</li></ul>
-        </li>
-      </ul>
-    </li>
-    <li>
-      Option #2: use Node.js&reg;
-      <ul>
-        <li><a target="_blank" href="https://nodejs.org/en/download"><b>Node.js</b> | Download &amp; install</a></li>
-        <li><a target="_blank" download="opm.js" href="/dlc/opm/opm.js"><b>opm.js</b> | The actual js file you need for Punch</a></li>
-        <li>
-          <a target="_blank" download="opm-node.bat" href="/dlc/opm/opm-node.bat">
-            <b>opm-node.bat</b> | a batch script to help you run <b>opm.js</b>
-          </a>
-          <ul><li>please keep it in the same folder as <b>opm.js</b></li></ul>
-        </li>
-      </ul>
-    </li>
-    <li>If you are unsure, go with <u>Option #1</u></li>
-  </ul>
+  <h2 style="margin-bottom:0">Software downloads</h2>
+  <div>
+    <span class="choose-os" id="choose-windows" data-operatingsystem="windows">Microsoft&reg; Windows&reg;</span>
+    <span class="choose-os" id="choose-linux" data-operatingsystem="linux" 
+    style="letter-spacing:2px;font-style:italic;font-family:cursive;line-height:1lh;">Linux</span>
+    <span class="choose-os" id="choose-macos" data-operatingsystem="macos">MacOS</span>
+  </div>
+
+  <div class="software-download" id="software-download-windows" hidden>
+    <h3 style="font-variant: small-caps">Windows</h3>
+    <ul class="pls-no-gap">
+      <li>
+        Option #1: run my cool batch file
+        <ul>
+          <li>
+            <a target="_blank" download="opm.bat" href="/dlc/opm/opm.bat">
+              <b>opm.bat</b> | This is the aforementioned cool batch file
+            </a>
+            <ul><li>When you run this, it'll download everything else you need</li></ul>
+          </li>
+        </ul>
+      </li>
+      <li>
+        Option #2: use Node.js&reg;
+        <ul>
+          <li><a target="_blank" href="https://nodejs.org/en/download"><b>Node.js</b> | Download &amp; install</a></li>
+          <li><a target="_blank" download="opm.js" href="/dlc/opm/opm.js"><b>opm.js</b> | The actual js file you need for Punch</a></li>
+          <li>
+            <a target="_blank" download="opm-node.bat" href="/dlc/opm/opm-node.bat">
+              <b>opm-node.bat</b> | a batch script to help you run <b>opm.js</b>
+            </a>
+            <ul><li>please keep it in the same folder as <b>opm.js</b></li></ul>
+          </li>
+        </ul>
+      </li>
+      <li>If you are unsure, go with <u>Option #1</u></li>
+    </ul>  
+  </div>
+
+  <div class="software-download" id="software-download-linux" hidden>
+    <h3 style="font-weight:normal;">
+      Are you a <span style="letter-spacing:2px;font-style:italic;font-family:cursive;">Linux user</span>?
+    </h3>
+    <ul class="pls-no-gap">
+      <li>
+        Option #1: run my cool shell script
+        <ul>
+          <li><code>curl -o opm "https://waluigi-servebeer.com/dlc/opm/opm.sh"</code></li>
+          <li><code>chmod +x opm</code></li>
+          <li><code>./opm</code></li>
+        </ul>
+      </li>
+      <li>
+        Option #2: Install Node.js
+        <ul>
+          <li>
+            choose your own adventure
+            <ul>
+              <li><code>sudo yum install nodejs</code></li>
+              <li><code>sudo apt-get install nodejs</code></li>
+              <li><code>sudo pacman -S nodejs</code></li>
+            </ul>
+          </li>
+          <li>and then do <u>Option #1</u> anyways</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="software-download" id="software-download-macos" hidden>
+    <h3>MacOS</h3>  
+    <ul class="pls-no-gap">
+      <li>idk lol</li>
+    </ul>
+  </div>
 
   <h2>Instructions</h2>
   <details open>
@@ -256,6 +322,42 @@ code{
 
 <script src="/js/everything.js"></script>
 <script>
+
+/**@param {PointerEvent}ev*/
+function showSoftwareDownloads(ev){
+  Array.from(document.getElementsByClassName('choose-os')).forEach(item=>{
+    item.classList.remove('active');
+  });
+  ev.target.classList.add('active');
+  document.getElementById('software-download-windows').setAttribute('hidden',"");
+  document.getElementById('software-download-linux').setAttribute('hidden',"");
+  document.getElementById('software-download-macos').setAttribute('hidden',"");
+  /**@type string*/
+  const operatingsystem = ev.target.dataset['operatingsystem']??'windows';
+  document.getElementById(`software-download-${operatingsystem}`).removeAttribute('hidden');
+  sessionStorage.setItem("software-download", operatingsystem);
+}
+
+Array.from(document.getElementsByClassName('choose-os')).forEach(item=>{
+  item.addEventListener('click', showSoftwareDownloads);
+});
+setTimeout(function(){
+  let operatingsystem = sessionStorage.getItem('software-download');
+  if (!operatingsystem){
+    const platty = window.navigator.platform.toLowerCase();
+    if (platty.includes('mac')){
+      operatingsystem = 'macos';
+    } else if (platty.includes('linux')){
+      operatingsystem = 'linux';
+    } else {
+      operatingsystem = 'windows';
+    }
+    sessionStorage.setItem('software-download', operatingsystem);
+  }
+  document.getElementById(`software-download-${operatingsystem}`)?.removeAttribute('hidden');
+  document.getElementById(`choose-${operatingsystem}`)?.classList.add('active');
+});
+
   check_online(async (jazz) => {
     var logged_in_as = document.getElementById("logged_in_as");
     if (jazz.username) {
