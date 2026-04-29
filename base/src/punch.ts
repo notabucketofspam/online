@@ -72,11 +72,11 @@ async function getPunchList(req: Request, res: Response){
 	}
 }
 
-const allowJoinUnsafeAddr = fs.existsSync('keys/allow-unsafe-addr.txt');
-
 /**temporarily remember the WebSockets involved in the punch port peer pairing process*/
 const joinMap: Map<string, WsPair> = new Map();
 export {joinMap as punchJoinMap};
+
+import {rsPort, theWsbcUdpRelay } from './udp';
 
 /**
  * A user wants to connect to a particular Punch service
@@ -96,9 +96,9 @@ async function askToJoin(req: Request, res: Response){
 			// we got a live one
 
 			const reqPunch: Punch = (contentType === 'text/plain') ? JSON.parse(req.body) : req.body;
-			let unsafeAddr: string | undefined;
-			if (allowJoinUnsafeAddr && typeof reqPunch.unsafeAddr === 'string') {
-				unsafeAddr = reqPunch.unsafeAddr;
+			let useRelay = false;
+			if (typeof reqPunch.useRelay === 'boolean') {
+				useRelay = reqPunch.useRelay;
 			}
 			
 			// search for client with matching username and IP
@@ -146,15 +146,21 @@ async function askToJoin(req: Request, res: Response){
 						res.status(500).json({msg:"database error"});
 					}
 				}
+
 				if (shouldSend){
 					const wsMeta: WsPairMeta = {
 						client_addr: reqAddr,
 						client_port: 0,
 						server_addr: reqPunch.addr,
 						server_port: 0,
-						app_port: reqPunch.port
+						app_port: reqPunch.port,
+						use_relay: useRelay
 					};
 					joinMap.set(request_id, {wsClient, wsServer, wsMeta});
+					if (useRelay) {
+						// he wants to use the relay
+						client_open.wx.remote_addr = "waluigi-servebeer.com";
+					}
 					wsClient.send(JSON.stringify(client_open));
 					res.status(200).json({msg:'ok'});
 					// eventually delete the temp data in joinMap
@@ -183,6 +189,7 @@ app.post("/api/punch/join", isAuthenticated, askToJoin);
 import ws from 'ws';
 import Stream from 'node:stream';
 import http from 'node:http';
+import net from "node:net";
 
 let wss: ws.WebSocketServer;
 
@@ -255,6 +262,12 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 								}
 							};
 
+							if (wsMeta.use_relay){
+								// we want the client to talk to us
+								server_open.wx.remote_addr = "waluigi-servebeer.com";
+								server_open.wx.remote_port = net.isIPv4(wsMeta.server_addr )? rsPort.IPv4 : rsPort.IPv6;
+							}
+
 							// now we need to tell the server to open a udp socket
 							wsServer.send(JSON.stringify(server_open ));					
 						} else if (flavour === 'server-open'){
@@ -273,6 +286,14 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 									remote_port: wsMeta.server_port
 								}
 							};
+							
+							if (wsMeta.use_relay) {
+								// need to tell the client to go somewhere else
+								peer_punch_port.wx.remote_addr = "waluigi-servebeer.com";
+								peer_punch_port.wx.remote_port = net.isIPv4(wsMeta.client_addr) ? rsPort.IPv4 : rsPort.IPv6;
+								// also, we need to actually use the relay
+								theWsbcUdpRelay(wsMeta);
+							}
 
 							// and now we tell the client about the server's punch port
 							wsClient.send(JSON.stringify(peer_punch_port) );

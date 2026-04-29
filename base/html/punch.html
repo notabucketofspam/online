@@ -133,6 +133,12 @@ code{
 </div>
 
 <h2>Table of Services</h2>
+<div>
+  <label>
+    <input type="checkbox" id="please_use_relay"/>
+    Use the WSBC UDP relay
+  </label>
+</div>
 <ol id="plist"></ol>
 
 <hr/>
@@ -374,7 +380,7 @@ code{
     @prop {number} port this is the port for the service that client wants to advertise (ex: 2302)
     @prop {string} serviceName this is the name of the server, for display purposes
     @prop {string} username Who posted this?
-    @prop {string=} unsafeAddr Please don't use this.
+    @prop {boolean=} useRelay the WSBC UDP relay
   */
 
   /**
@@ -492,21 +498,17 @@ code{
     return service;
   }
 
-  var allowJoinUnsafeAddr = true;
-
   /**
   *@param {Punch} punch
   *@returns {Promise<void>}
   */
   async function pleaseLetMeJoin (punch) {
     var contentType = 'application/json';
-    //var base_url = useLocalhost ? '' : `${window.location.protocol}//${punch.addr.includes(":") ? 6 : 4}.${window.location.hostname}`;
-    var base_url = '';
-    var fetch_url = base_url + '/api/punch/join';
+    var fetch_url = '/api/punch/join';
     
-    let which_fam = punch.addr.includes(":") ? 6 : 4;
-    if (allowJoinUnsafeAddr && typeof window[`addr_v${which_fam}`] === 'string') {
-      // punch.unsafeAddr = window[`addr_v${which_fam}`];
+    let useRelay = document.getElementById("please_use_relay")?.checked ?? false;
+    if (useRelay){
+      punch['useRelay'] = useRelay;
     }
 
     const res = await fetch(fetch_url, {

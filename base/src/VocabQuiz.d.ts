@@ -9,9 +9,9 @@ declare module 'VocabQuiz' {
 		serviceName : string;
 		/**Who posted this?*/
 		username: string;
-		/**The joining client shall send this. Please don't use in production bc
-		 * it can be easily spoofed. Trust no one, not even yourself.*/
-		unsafeAddr?: string;
+		/**The client is behind a firewall and can't p2p with his broskis,
+		 * so he's gotta use the WSBC UDP relay.*/
+		useRelay?: boolean;
 	}
 
 	export interface WsEventData {
@@ -36,6 +36,7 @@ declare module 'VocabQuiz' {
 		server_addr: string;
 		server_port: number;
 		app_port: number;
+		use_relay: boolean;
 	}
 
 	export interface WsPair {
