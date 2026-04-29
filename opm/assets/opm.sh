@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-if [ ! -f "./node" ] || [ ! -x "./node" ]; then
+if [ ! $(command -v node) ] && [ ! -x "./node" ]; then
   echo Gotta download node
   curl -O "https://waluigi-servebeer.com/dlc/opm/node.xz"
   xz --decompress --force "node.xz"
