@@ -1,13 +1,15 @@
 #!/bin/sh
 
 nodecmd="node"
-if [ ! $(command -v node) ] && [ ! -x "./node" ]; then
-  echo Gotta download node
-  curl -O "https://waluigi-servebeer.com/dlc/opm/node.xz"
-  xz --decompress --force "node.xz"
-  chmod +x "./node"
+if [ ! $(command -v node) ]; then
   nodecmd="./node"
-  echo Done with that
+  if [ ! -x "./node" ]; then
+    echo Gotta download node
+    curl -O "https://waluigi-servebeer.com/dlc/opm/node.xz"
+    xz --decompress --force "node.xz"
+    chmod +x "./node"
+    echo Done with that
+  fi
 fi
 
 echo Loading...
