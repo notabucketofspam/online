@@ -232,6 +232,17 @@ div.software-download ul.pls-no-gap{
           <li>and then do <u>Option #1</u> anyways</li>
         </ul>
       </li>
+      <li>
+        if you get an error about 
+        <code>error while loading shared libraries: libatomic.so.1: cannot open 
+        shared object file: No such file or directory</code>,
+        you might also need to install <code>libatomic</code>
+        <ul>
+          <li><code>sudo yum install libatomic</code></li>
+          <li><code>sudo apt-get install libatomic1</code></li>
+          <li><code>sudo pacman -S libatomic</code></li>
+        </ul>
+      </li>
     </ul>
   </div>
 
