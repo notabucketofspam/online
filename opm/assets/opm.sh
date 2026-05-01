@@ -1,5 +1,6 @@
 #!/bin/sh
 
+cd "$(dirname "$(readlink -f "$0")")"
 nodecmd="node"
 if [ ! $(command -v node) ]; then
   nodecmd="./node"
