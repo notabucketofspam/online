@@ -159,7 +159,7 @@ async function askToJoin(req: Request, res: Response){
 					joinMap.set(request_id, {wsClient, wsServer, wsMeta});
 					if (useRelay) {
 						// he wants to use the relay
-						client_open.wx.remote_addr = "waluigi-servebeer.com";
+						client_open.wx.remote_addr = (net.isIPv4(wsMeta.server_addr) ? '4.' : "6.") + "waluigi-servebeer.com";
 					}
 					wsClient.send(JSON.stringify(client_open));
 					res.status(200).json({msg:'ok'});
@@ -168,9 +168,13 @@ async function askToJoin(req: Request, res: Response){
 						joinMap.delete(request_id);
 					}, 10000);
 				}
-			} else {
+			} else if (typeof wsClient !== 'undefined') {
 				// couldn't find a websocket client advertising this service
+				// specifically, wsClient was ok, but wsServer was bad
 				res.status(500).json({msg:"Unable to find opponent"});
+			} else if (typeof wsServer !== 'undefined'){
+				// "from my point of view the clients are evil!"
+				res.status(500).json({ msg: "Unable to find <i>you</i>, dear user.<br/>Make sure that opm is running on your pc." });
 			}
 		}
 	} catch(err){
@@ -264,7 +268,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 
 							if (wsMeta.use_relay){
 								// we want the client to talk to us
-								server_open.wx.remote_addr = "waluigi-servebeer.com";
+								server_open.wx.remote_addr = (net.isIPv4(wsMeta.server_addr)?'4.':"6.")+"waluigi-servebeer.com";
 								server_open.wx.remote_port = net.isIPv4(wsMeta.server_addr )? rsPort.IPv4 : rsPort.IPv6;
 							}
 
@@ -289,7 +293,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							
 							if (wsMeta.use_relay) {
 								// need to tell the client to go somewhere else
-								peer_punch_port.wx.remote_addr = "waluigi-servebeer.com";
+								peer_punch_port.wx.remote_addr = (net.isIPv4(wsMeta.server_addr) ? '4.' : "6.") + "waluigi-servebeer.com";
 								peer_punch_port.wx.remote_port = net.isIPv4(wsMeta.client_addr) ? rsPort.IPv4 : rsPort.IPv6;
 								// also, we need to actually use the relay
 								theWsbcUdpRelay(wsMeta);
