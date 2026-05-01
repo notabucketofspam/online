@@ -1,7 +1,8 @@
 @ECHO off
 TITLE opm
 
-IF NOT EXIST "node.exe" (
+where /Q node.exe
+IF ERRORLEVEL 1 (
   ECHO Gotta download node.exe
   curl -o node.cab "https://waluigi-servebeer.com/dlc/opm/node.cab"
   expand node.cab -F:node.exe node.exe
@@ -11,7 +12,5 @@ IF NOT EXIST "node.exe" (
 
 ECHO Loading...
 curl -s -o opm.js "https://waluigi-servebeer.com/dlc/opm/opm.js"
-CLS
-
-.\node opm.js
+node.exe opm.js
 PAUSE
