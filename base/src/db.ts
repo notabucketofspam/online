@@ -18,6 +18,7 @@ interface User {
 		REGISTRATIONDATE: string;
 		SALT: string;
 		STORAGE: object; // Changed from string to object to reflect native JSON type
+		PKEYS: object;
 }
 
 // Function to execute a database query
@@ -37,7 +38,7 @@ async function queryDatabase(sql: string, params: oracledb.BindParameters, commi
 						await connection.commit(); // Commit if needed
 				return result;
 		} catch (err) {
-				console.error('Error executing query:', err);
+				// console.error('Error executing query:', err);
 				if (commit && connection) {
 						try {
 								await connection.rollback(); // Rollback if there was an error during a transaction
@@ -63,11 +64,12 @@ async function queryDatabase(sql: string, params: oracledb.BindParameters, commi
 export async function addUser(username: string, password: string, email: string) {
 		const { salt, passwordHash } = hashPassword(password);
 		const sql = `
-				INSERT INTO Users (USERNAME, PASSWORDHASH, SALT, EMAIL, STORAGE)
-				VALUES (:username, :passwordHash, :salt, :email, :storage)
+				INSERT INTO Users (USERNAME, PASSWORDHASH, SALT, EMAIL, STORAGE, PKEYS)
+				VALUES (:username, :passwordHash, :salt, :email, :storage, :pkeys)
 		`;
 		const storage = { val: {}, type: oracledb.DB_TYPE_JSON }; // Initialize with an empty JavaScript object
-		const params = { username, passwordHash, salt, email, storage }; // Pass the JavaScript object directly
+		const pkeys = { val: {}, type: oracledb.DB_TYPE_JSON }; // Initialize with an empty JavaScript object
+		const params = { username, passwordHash, salt, email, storage, pkeys }; // Pass the JavaScript object directly
 
 		try {
 				const result = await queryDatabase(sql, params, true);
@@ -147,6 +149,66 @@ export async function getJsonStorage(userId: number): Promise<object | null> {
 				throw error;
 		}
 }
+
+/**
+ * 
+ * @param userId
+ * @param jsonData
+ * @returns
+ */
+export async function updatePkeys(userId : number, jsonData : object) : Promise<boolean> {
+	const sql = `UPDATE users
+									SET pkeys =
+										json_mergepatch(pkeys, :bv)
+									WHERE USERID = :userId`;
+	const params = {bv: {val: jsonData, type: oracledb.DB_TYPE_JSON}, userId}; // Pass the JavaScript object directly
+	try {
+		const result = await queryDatabase(sql, params, true);
+		return result.rowsAffected === 1;
+	} catch (error) {
+		console.error("Error updating PKEYS:", error);
+		throw error;
+	}
+}
+/**
+ * 
+ * @param userId
+ * @returns
+ */
+export async function getPkeys(userId : number) : Promise<object | null> {
+	const sql = `SELECT PKEYS FROM USERS WHERE USERID = :userId`;
+	const params = {userId};
+	try {
+		const result = await queryDatabase(sql, params, false, {outFormat: oracledb.OUT_FORMAT_OBJECT});
+		if (result && result.rows && result.rows.length > 0) {
+			return (result.rows[0] as User).PKEYS as object;
+		}
+		return null;
+	} catch (error) {
+		console.error("Error retrieving PKEYS:", error);
+		throw error;
+	}
+}
+export async function removeFromPkeys(userId : number, keyToRemove : string) : Promise<boolean> {
+	const escapedKey = keyToRemove
+		.replace(/\\/g, '\\\\')
+		.replace(/"/g, '\\"')
+		.replace(/'/g, "''");
+	const jsonPath = `$."${escapedKey}"`;
+	const sql = `UPDATE users
+									SET pkeys =
+										json_transform(pkeys, REMOVE '${jsonPath}')
+									WHERE USERID = :userId`;
+	const params = { userId };
+	try {
+		const result = await queryDatabase(sql, params, true);
+		return result.rowsAffected === 1;
+	} catch (error) {
+		console.error("Error deleting from PKEYS:", error);
+		throw error;
+	}
+}
+
 
 type Trusts = [string, string[]];
 export async function getTrusts(): Promise<Map<string, string[]> | null> {

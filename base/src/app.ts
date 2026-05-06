@@ -6,6 +6,7 @@ import { express_app } from './express_app'; // Import the Express app
 import { setPool, checkPlease } from './db'; // Import the setPool function
 import {grandFacade} from './udp';
 import {initWSS} from "./punch";
+import "./product_key";
 
 const astext = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
 

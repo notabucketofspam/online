@@ -40,6 +40,18 @@ As a rule of thumb:
 			font-variant: small-caps;
 			text-transform: capitalize;
 		}
+		#the-box-with-product-keys{
+			border: 1px solid black;
+			padding:2px;
+		}
+		#the-box-with-product-keys table{
+			border-collapse:collapse;
+		}
+		#the-box-with-product-keys th, #the-box-with-product-keys td {
+			border-style:solid;
+			border-width:1px;
+			border-color: black;
+		}
 	</style>
 </head>
 <body>	
@@ -55,6 +67,31 @@ As a rule of thumb:
 		<div id="auth-status-area" hidden>
 			<p>Welcome back, <b id="welcome-message"></b> !!</p>
 			<p><button id="logout-button" style="transform: matrix(3, 0, 0, 1, 60, 0)">Logout</button></p>
+
+			<div id="the-box-with-product-keys">
+				<span>Here are all of your Product Keys</span>
+				<table >
+					<thead>
+						<tr>
+							<th>&#x1F5D1;&#xFE0F;</th>
+							<th>name</th>
+							<th>product key</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+				<hr />
+				<form id="genpk_form">
+					<div>Generate a new product key</div>
+					<div>
+						<input type="text" placeholder="this new key's name" name="keyname" id="genpk_name"/>
+					</div>
+					<div>
+						<button type="submit">Submit</button>
+					</div>
+				</form>
+			</div>
+
 			<p>
 				<details name="doot" class="dumb-box">
 					<summary class="crab">please, delete my account</summary>
@@ -105,6 +142,85 @@ As a rule of thumb:
 	<!---------------------- this is where all the javascript has ended up for now ----------------------->
 <script src="/js/everything.js"></script>
 <script>
+// ---------------- some stuff about product keys
+async function show_product_keys(){
+	/**@type{HTMLTableSectionElement} */
+	var teebod = document.querySelector('#the-box-with-product-keys tbody');
+	teebod.replaceChildren();
+	const res = await fetch('/api/pkey/list');
+	if (res.ok) {
+		const data = await res.json();
+		for (const [key, name] of Object.entries(data.pkeys)) {
+			var row = document.createElement('tr');
+			var name_cell = document.createElement('td');
+			name_cell.innerText = name;
+			var key_cell = document.createElement('td');
+			key_cell.innerText = key;
+			var del_cell = document.createElement('td');
+			var del_btn = document.createElement('button');
+			del_btn.innerText = 'delete';
+			del_btn.addEventListener('click', async function () {
+				// if (confirm(`Are you sure you want to delete the product key "${name}"?`)) {
+				if (true) {
+					const res = await fetch('/api/pkey/delete', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({key})
+					});
+					if (res.ok) {
+						alert_II('DELETE OK');
+						show_product_keys();
+					} else {
+						alert_II('Failed to delete the product key.');
+					}
+				}
+			});
+			del_cell.appendChild(del_btn);
+			row.appendChild(del_cell);
+			row.appendChild(name_cell);
+			row.appendChild(key_cell);
+			teebod.appendChild(row);
+		}
+	}
+}
+
+/**
+* @param {SubmitEvent} ev
+*/
+async function pleaseGenerateProductKey(ev){
+	ev.preventDefault();
+	/**@type{HTMLInputElement} */
+	var genpk_name = document.getElementById('genpk_name');
+	if (genpk_name){
+		var keyname = genpk_name.value;
+		if (!keyname){
+			// keyname = Math.random().toString(16);
+		}
+		const res = await fetch('/api/pkey/create',{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ keyname })
+		});
+		if (res.ok){
+			const data = await res.json();
+			// alert_II(`New product key generated:<br/>${data.key}`);
+			show_product_keys();
+		}
+
+	}
+
+	/**@type {HTMLFormElement}*/
+	var genpk_form = document.getElementById('genpk_form');
+	if (genpk_form){
+		genpk_form.reset();
+	}
+}
+document.getElementById('genpk_form').addEventListener('submit', pleaseGenerateProductKey);
+
 // ---- delete account ----
 document.getElementById('delete_this').addEventListener('click', async function(){
 	try {
@@ -167,6 +283,7 @@ async function checkLoginStatus() {
 						const data = await response.json();
 						updateUiForUser(data.username);
 						localStorage.setItem("online_username", data.username);
+						await show_product_keys();
 				} else {
 						// User is not authenticated (HTTP 401 or 404 from server)
 						updateUiForUser(null);
