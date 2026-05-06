@@ -52,6 +52,19 @@ As a rule of thumb:
 			border-width:1px;
 			border-color: black;
 		}
+		div#nerd-stats {
+			float: right;
+			border: ridge #ddd 3px;
+			padding: 3px;
+			background-color: #eee7;
+			max-width: fit-content;
+		}
+		@media (max-width: 600px) {
+			div#nerd-stats {
+				float: none;
+				margin: 0 auto 10px auto;
+			}
+		}
 	</style>
 </head>
 <body>	
@@ -65,7 +78,11 @@ As a rule of thumb:
 		<hr />
 
 		<div id="auth-status-area" hidden>
-			<p>Welcome back, <b id="welcome-message"></b> !!</p>
+			<div id="nerd-stats">
+				<div>Your email address is:<br/><span style="font-weight:bold;" id="user-email"></span></div>
+				<div>Your userId is: <span style="font-weight:bold;" id="user-id"></span></div>
+			</div>
+			<div>Welcome back, <b id="welcome-message"></b> !!</div>
 			<p><button id="logout-button" style="transform: matrix(3, 0, 0, 1, 60, 0)">Logout</button></p>
 
 			<div id="the-box-with-product-keys">
@@ -284,6 +301,10 @@ async function checkLoginStatus() {
 						updateUiForUser(data.username);
 						localStorage.setItem("online_username", data.username);
 						await show_product_keys();
+					var user_email_span = document.getElementById('user-email');
+					var user_id_span = document.getElementById('user-id');
+					if (user_email_span) user_email_span.textContent = data.email;
+					if (user_id_span) user_id_span.textContent = data.userId;
 				} else {
 						// User is not authenticated (HTTP 401 or 404 from server)
 						updateUiForUser(null);
