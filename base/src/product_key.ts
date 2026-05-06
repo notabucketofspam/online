@@ -125,10 +125,11 @@ app.post('/api/pkey/delete', isAuthenticated, deleteKey);
 export async function createKey_II(req : Request, res : Response) {
   try {
     const newkey = generateMSProductKey();
-    res.status(200).json({key: newkey});
+		res.contentType('text/plain');
+    res.status(200).send(newkey);
   } catch (err) {
     res.status(500).json({error: 'Internal server error'});
   }
 }
-app.get('/api/pkey/create', createKey_II);
+app.get('/product-key', createKey_II);
 
