@@ -253,7 +253,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							// client has opened the udp socket
 
 							// we may already have the client's UDP port, thanks to grandFacade						
-							if (!wsMeta.client_port) {
+							if (!wsMeta.use_relay && !wsMeta.client_port) {
 								wsMeta.client_port = punch_port;
 							}
 							const server_open: WsEventData = {
@@ -278,7 +278,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							// server is telling us her punch_port
 
 							// we may already know the server's UDP port
-							if (!wsMeta.server_port){
+							if (!wsMeta.use_relay && !wsMeta.server_port){
 								wsMeta.server_port = punch_port;
 							}
 							const peer_punch_port: WsEventData = {

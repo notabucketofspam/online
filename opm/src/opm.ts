@@ -357,7 +357,7 @@ async function onWsMessage (ev : MessageEvent) {
 
 			// if we're using IPv4, then we can't actually tell WSBC
 			// about our punch_port. That's the miracle of NAT, baby.
-			if (net.isIPv4(wx.remote_addr)){
+			if (!net.isIPv6(wx.remote_addr)){
 				await new Promise<void>((resolve, reject)=>{
 					let spontaneousDeath = setTimeout(function(){
 						// timeout the effort after a few seconds, to prevent the process
