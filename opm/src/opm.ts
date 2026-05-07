@@ -73,7 +73,10 @@ type PromiseReject = (reason ?: any) => void;
 // failing that, log in with email and password.
 async function init_login(){
 	return await new Promise<void>(async (resolve, reject) => {
-		if (existsSync('opm-data/cookie.txt')) {
+		if (existsSync('opm-data/product-key.json')) {
+			console.log('Using product key to authenticate');
+			resolve();
+		} else if (existsSync('opm-data/cookie.txt')) {
 			await loginWithCookie(resolve, reject);
 		} else {
 			await loginWithUserCredentials(resolve, reject);
@@ -454,10 +457,15 @@ function onceWsOpen (ev: Event) {
 	ws.addEventListener('error', onWsError);
 	ws.addEventListener('message', onWsMessage);
 
-	// we need to send login info to the server,
-	// but we can't do that with the default WebSocket constructor,
-	// since it doesn't let us set our own headers
-	ws.send(JSON.stringify({'Cookie': astext('opm-data/cookie.txt')}));
+	if (existsSync('opm-data/product-key.json')){
+		// user has elected to authenticate with a product key
+		ws.send(astext('opm-data/product-key.json'));
+	} else {
+		// we need to send login info to the server,
+		// but we can't do that with the default WebSocket constructor,
+		// since it doesn't let us set our own headers
+		ws.send(JSON.stringify({'Cookie': astext('opm-data/cookie.txt')}));
+	}
 
 	refreshListings(ws);
 	wsClients[ws.url]!.refreshTimer = setInterval(()=>{

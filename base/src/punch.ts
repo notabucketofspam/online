@@ -194,6 +194,7 @@ import ws from 'ws';
 import Stream from 'node:stream';
 import http from 'node:http';
 import net from "node:net";
+import {PkeyInfo} from 'VocabQuiz';
 
 let wss: ws.WebSocketServer;
 
@@ -226,19 +227,60 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 			if (!isBinary) {
 				const rawMessage = message.toString();
 				const parsedMessage = JSON.parse(rawMessage);
+				if (!clientMap.has(ws)) {
+					// client wishes to set either the session or the product key
+				
+					if (typeof parsedMessage['pkey'] === 'string'
+						&& typeof parsedMessage['email'] === 'string') {
+						// client wants to set the product key
+						const pkeyInfo: PkeyInfo = {
+							pkey: parsedMessage['pkey'],
+							email: parsedMessage['email'],
+							username: '',
+							userId: 0
+						};
+						// handle product key
+						const userResult = await odb.getUserByEmail(pkeyInfo.email);
+						if (userResult !== null) {
+							// user is real
+							pkeyInfo.username = userResult.USERNAME;
+							pkeyInfo.userId = userResult.USERID;
 
-				if (typeof parsedMessage['Cookie'] === 'string') {
-					// client wants to set the session id
-					let sid: string = parsedMessage['Cookie'];
-					if (sid.includes('connect.sid=')){
-						sid = sid.replace('connect.sid=','');
+							// now we check if his product key is registered under his name
+							const pkeysRes = await odb.getPkeys(pkeyInfo.userId);
+							if (pkeysRes !== null){
+								// pkeys is real
+
+								// so now we check if it's actually his
+								if (Object.keys(pkeysRes).includes(pkeyInfo.pkey)) {
+									// the product key belongs to him
+
+									// everything checks out, so we can add this guy to the clientMap
+									const services : Punch[] = [];
+									clientMap.set(ws, {pkeyInfo, services, addr});
+								} else {
+									// this is not your product key
+								}
+							} else {
+								// pkeys is null
+							}
+						} else {
+							// user result was null
+						}
+					} else if (typeof parsedMessage['Cookie'] === 'string') {
+						// client wants to set the session id
+						let sid: string = parsedMessage['Cookie'];
+						if (sid.includes('connect.sid=')){
+							sid = sid.replace('connect.sid=','');
+						}
+						sid = decodeURIComponent(sid);
+						const rx = /s:(.*?)\./;
+						sid = rx.exec(sid)?.[1] ?? sid;
+						const services: Punch[] = [];
+						clientMap.set(ws, {sid, services, addr});
+					} else {
+						// the request doesn't include sid or pkey et al.
 					}
-					sid = decodeURIComponent(sid);
-					const rx = /s:(.*?)\./;
-					sid = rx.exec(sid)?.[1] ?? sid;
-					const services: Punch[] = [];
-					clientMap.set(ws, {sid, services, addr});
-
 				} else if (typeof parsedMessage['request_id'] === 'string'
 				&& typeof parsedMessage['flavour'] === 'string'
 				&& typeof parsedMessage['punch_port'] === 'number' ) {
@@ -309,25 +351,40 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 					} else {
 						// wsPair is undefined
 					}
-				} else {
+				} else if (parsedMessage instanceof Array
+					&& typeof parsedMessage.forEach === 'function') {
 					// client is listing services
+					const services : Punch[] = parsedMessage;
+
 					let clientData = clientMap.get(ws);
-					if (typeof clientData !== 'undefined'){
-						// check session info
-						const sid = clientData.sid;
-						const session: SessionData | undefined = await redisStore.get(sid);
-						let username = session?.username ?? '';
-						const services: Punch[] = parsedMessage;
-						if (typeof services.forEach === 'function') {
+					if (typeof clientData !== 'undefined') {
+						// check user's info
+						if (typeof clientData.pkeyInfo === 'object') {
+							// client is using product key
+							const pkeyInfo = clientData.pkeyInfo;
+							services.forEach(punch => {
+								punch.addr = addr;
+								punch.username = pkeyInfo.username;
+							});
+						} else if (typeof clientData.sid === 'string') {
+							// client logged in with cookie session data
+
+							const sid = clientData.sid;
+							const session : SessionData | undefined = await redisStore.get(sid);
+							const username = session?.username ?? '';
 							services.forEach(punch => {
 								punch.addr = addr;
 								punch.username = username;
 							});
+							clientMap.set(ws, {sid, services, addr});
+						} else {
+							// clientData doesn't have pkeyInfo or sid
 						}
-						clientMap.set(ws, {sid, services, addr});
 					} else {
 						// clientData is undefined
 					}
+				} else {
+					// we have received junk mail
 				}
 			} else {
 				// it's just a ping message

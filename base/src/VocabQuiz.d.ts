@@ -47,17 +47,26 @@ declare module 'VocabQuiz' {
 
 	export interface ClientData{
 		/**The session ID*/
-		sid: string;
+		sid?: string;
 		/**All the services that the client wants to list*/
 		services: Punch[];
 		/** the IP address of this client*/
 		addr: string;
+		/**the product key they're using to authenticate */
+		pkeyInfo ?: PkeyInfo;
 	}
 
 	export interface WsbcReply {
 		request_id: string;
 		flavour: WsEventData['flavour'];
 		punch_port: number;
+	}
+
+	export interface PkeyInfo {
+		pkey: string;
+		username : string;
+		userId : number;
+		email : string;
 	}
 
 }
