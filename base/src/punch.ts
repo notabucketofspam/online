@@ -258,14 +258,19 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 									// everything checks out, so we can add this guy to the clientMap
 									const services : Punch[] = [];
 									clientMap.set(ws, {pkeyInfo, services, addr});
+									// console.log(`User ${pkeyInfo.username} authenticated successfully with product key ${pkeyInfo.pkey}`);
+									ws.send(JSON.stringify({flavour:"authn-ok"}));
 								} else {
 									// this is not your product key
+									console.error(`User ${pkeyInfo.username} attempted to authenticate with invalid product key ${pkeyInfo.pkey}`);
 								}
 							} else {
 								// pkeys is null
+								console.error(`Database error when fetching product keys for user ${pkeyInfo.username}`);
 							}
 						} else {
 							// user result was null
+							console.error(`No user found with email ${pkeyInfo.email} when attempting to authenticate with product key ${pkeyInfo.pkey}`);
 						}
 					} else if (typeof parsedMessage['Cookie'] === 'string') {
 						// client wants to set the session id
@@ -278,8 +283,11 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 						sid = rx.exec(sid)?.[1] ?? sid;
 						const services: Punch[] = [];
 						clientMap.set(ws, {sid, services, addr});
+						// console.log(`Client with IP ${addr} authenticated with session ID ${sid}`);
+						ws.send(JSON.stringify({flavour: "authn-ok"}));
 					} else {
 						// the request doesn't include sid or pkey et al.
+						console.error('Received invalid authentication message from client:', parsedMessage);
 					}
 				} else if (typeof parsedMessage['request_id'] === 'string'
 				&& typeof parsedMessage['flavour'] === 'string'
@@ -350,6 +358,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 						}
 					} else {
 						// wsPair is undefined
+						console.error('Received join handshake with invalid request_id:', parsedMessage);
 					}
 				} else if (parsedMessage instanceof Array
 					&& typeof parsedMessage.forEach === 'function') {
@@ -366,6 +375,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 								punch.addr = addr;
 								punch.username = pkeyInfo.username;
 							});
+							clientMap.set(ws, {pkeyInfo, services, addr});
 						} else if (typeof clientData.sid === 'string') {
 							// client logged in with cookie session data
 
@@ -379,12 +389,15 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							clientMap.set(ws, {sid, services, addr});
 						} else {
 							// clientData doesn't have pkeyInfo or sid
+							console.error('Client data has no authentication info:', clientData);
 						}
 					} else {
 						// clientData is undefined
+						console.error('Received services list from unauthenticated client:', parsedMessage);
 					}
 				} else {
 					// we have received junk mail
+					console.error('Received junk mail from client:', parsedMessage);
 				}
 			} else {
 				// it's just a ping message

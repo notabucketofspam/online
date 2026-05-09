@@ -320,7 +320,7 @@ function reinit_websocket(ws: WebSocket) {
 	wsClients[wsUrl]!.ws = newWs;
 }
 
-const refreshTime = 20000;
+const refreshTime = 27000;
 /**
  * this is how we tell WSBC that we are hosting stuff
  * @param ws
@@ -351,8 +351,13 @@ async function onWsMessage (ev : MessageEvent) {
 	if (typeof ev.data === 'string') {
 		const ev_data: WsEventData = JSON.parse(ev.data);
 		const {request_id, flavour, wx} = ev_data;
-
-		if (flavour === 'client-open' || flavour === 'server-open') {
+		if (flavour === 'authn-ok'){
+			// we authenticated ok, so now we can list our services
+			refreshListings(ws);
+			wsClients[ws.url]!.refreshTimer = setInterval(() => {
+				refreshListings(ws);
+			}, refreshTime);
+		} else if (flavour === 'client-open' || flavour === 'server-open') {
 			// WSBC (the game coordinator) wants us to reach out to someone
 		
 			// make some new UDP sockets
@@ -446,7 +451,7 @@ function onceWsClose(ev: CloseEvent){
 		cog(`[${ws.url}] attempting to cope...`);
 		setTimeout(() => {
 			reinit_websocket(ws);
-		}, 2000);
+		}, 4000);
 }
 
 function onceWsOpen (ev: Event) {
@@ -459,7 +464,8 @@ function onceWsOpen (ev: Event) {
 
 	if (existsSync('opm-data/product-key.json')){
 		// user has elected to authenticate with a product key
-		ws.send(astext('opm-data/product-key.json'));
+		const productkey = JSON.parse(astext('opm-data/product-key.json'));
+		ws.send(JSON.stringify(productkey));
 	} else {
 		// we need to send login info to the server,
 		// but we can't do that with the default WebSocket constructor,
@@ -467,10 +473,6 @@ function onceWsOpen (ev: Event) {
 		ws.send(JSON.stringify({'Cookie': astext('opm-data/cookie.txt')}));
 	}
 
-	refreshListings(ws);
-	wsClients[ws.url]!.refreshTimer = setInterval(()=>{
-		refreshListings(ws);
-	}, refreshTime);
 	if (wsClients[ws.url]?.copiumTimer) {
 		clearTimeout(wsClients[ws.url]?.copiumTimer);
 	}

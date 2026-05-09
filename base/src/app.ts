@@ -50,7 +50,7 @@ init();
 
 // Close the default connection pool with 1 second draining, and exit
 async function closePoolAndExit() {
-		console.log("[]\nTerminating");
+		console.log("\nTerminating []");
 		try {
 				await oracledb.getPool().close(1);
 				process.exit(0);

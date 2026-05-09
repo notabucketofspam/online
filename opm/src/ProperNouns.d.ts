@@ -23,7 +23,7 @@ declare module 'ProperNouns' {
 	
 	export interface WsEventData {
 		request_id: string;
-		flavour: 'client-open'|'server-open'|'peer-punch-port';
+		flavour: 'client-open'|'server-open'|'peer-punch-port' | 'authn-ok';
 		wx: WireInfo;
 	}
 
