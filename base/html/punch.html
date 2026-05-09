@@ -121,7 +121,7 @@ div.software-download h3{
   line-height:1lh;
 }
 div.software-download ul.pls-no-gap{
-  min-height:10lh;
+  min-height:9lh;
 }
 span.linux-user {
 	letter-spacing: 2px;
@@ -129,6 +129,15 @@ span.linux-user {
 	font-family: cursive;
 	line-height: 1lh;
 }
+	button.pseudoconnect {
+		display: inline-block;
+		line-height: 12px;
+		padding-top: 1px;
+		padding-bottom: 0;
+	}
+		button.pseudoconnect::before {
+			content: "\2b06\fe0f Connect"
+		}
 </style>
 </head>
 <body>
@@ -172,6 +181,8 @@ span.linux-user {
 <hr/>
 
 <div class="necessary-documentation">
+<!-- START of the Software downloads -->
+<div>
   <h2 style="margin-bottom:0">Software downloads</h2>
   <div>
     <span class="choose-os" id="choose-windows" data-operatingsystem="windows">Microsoft&reg; Windows&reg;</span>
@@ -267,9 +278,13 @@ span.linux-user {
         <span style="white-space:pre-line">and then download the opm.js file from
         <a href="https://waluigi-servebeer.com/dlc/opm/opm.js">https://waluigi-servebeer.com/dlc/opm/opm.js</a></span>
       </li>
+      <li><button onclick="macuser.play()">I cannot help you</button></li>
     </ul>
   </div>
+</div><!-- end of the software downloads -->
 
+<!-- INSTRUCTIONS -->
+<div>
   <h2>Instructions</h2>
   <details open>
     <summary><h3>Client</h3><br/>I want to connect to my friend's video game server</summary>
@@ -295,8 +310,7 @@ span.linux-user {
         <ul>
           <li>
             Click that
-            <button style="display:inline-block;line-height:12px;padding-top:1px;padding-bottom:0;">
-              &#x2b06;&#xfe0f;Connect
+            <button class="pseudoconnect">              
             </button> button
           </li>
         </ul>
@@ -323,6 +337,15 @@ span.linux-user {
         Run opm
         <ul>
           <li>When appropriately prompted, enter the email &amp; password for your <u>waluigi-servebeer.com</u> account</li>
+          <li><em>Alternatively</em>, you can choose to authenticate using a <strong>product key</strong><ul>
+            <li>You can generate your very own <strong>product key</strong> on <a href="/account">your account page</a></li>
+            <li>
+              <a target="_blank" download="product-key.json" href="/dlc/opm/product-key.json">
+                <b><code>product-key.json</code></b> | Here's an example for you to edit
+              </a>
+            </li>
+            <li>Put your <code>product-key.json</code> file in the <code>opm-data</code> folder</li>
+          </ul></li>
         </ul>
       </li>
       <li>Close opm</li>
@@ -345,14 +368,95 @@ span.linux-user {
         </ul>
       </li>
     </ol>
-  </details>
+  </details>  
 </div>
+<!-- END OF INSTRUCTIONS -->
 
+<!-- F.A.Q. may or may not stand for "Frequently Asked Questions", depending on who you (frequently) ask -->
+<div>
+  <h2>F.A.Q.</h2>
+  <ul class="pls-no-gap" style="padding:0;list-style-type:none;">
+		<li>
+			What is Punch?
+      <ul>
+        <li>
+          Now you may be asking yourself: "Hey, what's the deal with Punch?"
+          Well, I'll tell you what's the deal with Punch.
+          It's exactly what it sounds like. You know how Normal Netcode is made out 
+          of UDP Stuff&trade;? It's just messages and bytestreams that have long 
+          since expired and been dropped by your ISP like some kind of ancient protocol.
+        </li>
+        <li>
+          That's sort of gross if you ask me.
+          There's got to be a better answer. Surely
+          we can find a way to enjoy the high-quality playing of video games without having
+          to deal with all that Nasty Business&trade;.
+        </li>
+        <li>
+          This is where Punch comes in.
+          Using our <s>proprietary</s> open-source Networking technology,
+          we're able to extract packets right out of the interface of
+          your filthy app and transform it into a sendable product. As an added 
+          bonus, the forwarding process <s>cleans up</s> generates excessive pollution, so 
+          you don't even have to worry anymore about those damn bots trying to bust down
+          your firewall to steal this emetic delicacy.
+        </li>
+      </ul>
+		</li>
+
+    <li>
+      Care to elaborate?
+			<ul><li>Punch is UDP hole-punching for software that doesn't natively support it.</li></ul>
+    </li>
+		<li>
+			Why?
+			<ul>
+        <li>Have you ever wanted to play <em>&lt;name of hip video game&gt;</em> with your friends,
+        but you couldn't forward your own ports?</li>
+        <li>Stuff like Hamachi is <span style="letter-spacing: 2px;"> just too expensive </span> (probably).</li>
+        <li>and this one's free :^)</li>
+      </ul>
+		</li>
+    <li>
+      How does it work?
+      <ul>
+        <li>
+          <button onclick="document.getElementById('how_does_it_work').play()">Listen to this section</button>
+          <audio src="/page/soundboard/opodes/BigBillHellsCars/how%20does%20it%20work.opus" id="how_does_it_work"></audio>
+        </li>
+        <li>
+          TLDR: <ul>
+            <li>OPM is a piece of software. Run OPM. Touch one of those <button class="pseudoconnect"></button> buttons above.</li>
+            <li>All of the traffic on <code>localhost:&lt;portnumber&gt;</code> will get forwarded to your friend (and vice versa).</li>
+            <li>Connect to <code>localhost:&lt;portnumber&gt;</code> in-game, and it'll be like connecting to your friend on LAN.</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+    <li>
+      What do I and/or my friends gotta do to use Punch?
+      <ol>
+        <li>Pick someone in your friend group who's gonna host the video game server</li>
+        <li>Everyone downloads OPM (see the "Software Downloads" section above)</li>
+        <li>Follow your respective instructions (in that "Instructions" section up top)</li>
+      </ol>
+    </li>
+  </ul>
+  
+</div><!-- end of the F.A.Q.s -->
+</div><!-- end of necessary-documentation -->
 </div>
 <!-- end of the main stuff -->
 
+<!-- and here's where all the scripts have ended up for now :^) -->
 <script src="/js/everything.js"></script>
 <script>
+  var macuser = document.createElement('AUDIO');
+  macuser.setAttribute('src', '/page/soundboard/opodes/GordonMahUng/fuck%20you%20Steve%20Jobs.opus');
+  macuser.volume = 0.5;
+  //document.appendChild(macuser);
+	var how_does_it_work = document.getElementById('how_does_it_work');
+  how_does_it_work.volume=0.2;
 
 /**@param {PointerEvent}ev*/
 function showSoftwareDownloads(ev){
