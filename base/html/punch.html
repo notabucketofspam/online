@@ -123,6 +123,12 @@ div.software-download h3{
 div.software-download ul.pls-no-gap{
   min-height:10lh;
 }
+span.linux-user {
+	letter-spacing: 2px;
+	font-style: italic;
+	font-family: cursive;
+	line-height: 1lh;
+}
 </style>
 </head>
 <body>
@@ -169,8 +175,7 @@ div.software-download ul.pls-no-gap{
   <h2 style="margin-bottom:0">Software downloads</h2>
   <div>
     <span class="choose-os" id="choose-windows" data-operatingsystem="windows">Microsoft&reg; Windows&reg;</span>
-    <span class="choose-os" id="choose-linux" data-operatingsystem="linux" 
-    style="letter-spacing:2px;font-style:italic;font-family:cursive;line-height:1lh;">Linux</span>
+    <span class="choose-os linux-user" id="choose-linux" data-operatingsystem="linux">Linux</span>
     <span class="choose-os" id="choose-macos" data-operatingsystem="macos">MacOS</span>
   </div>
 
@@ -194,8 +199,8 @@ div.software-download ul.pls-no-gap{
           <li><a target="_blank" href="https://nodejs.org/en/download"><b>Node.js</b> | Download &amp; install</a></li>
           <li><a target="_blank" download="opm.js" href="/dlc/opm/opm.js"><b>opm.js</b> | The actual js file you need for Punch</a></li>
           <li>
-            <a target="_blank" download="opm-node.bat" href="/dlc/opm/opm-node.bat">
-              <b>opm-node.bat</b> | a batch script to help you run <b>opm.js</b>
+            <a target="_blank" download="opm.bat" href="/dlc/opm/opm.bat">
+              <b>opm.bat</b> | a batch script to help you run <b>opm.js</b>
             </a>
             <ul><li>please keep it in the same folder as <b>opm.js</b></li></ul>
           </li>
@@ -207,7 +212,7 @@ div.software-download ul.pls-no-gap{
 
   <div class="software-download" id="software-download-linux" hidden>
     <h3 style="font-weight:normal;">
-      Are you a <span style="letter-spacing:2px;font-style:italic;font-family:cursive;">Linux user</span>?
+      Are you a <span class="linux-user">Linux user</span>?
     </h3>
     <ul class="pls-no-gap">
       <li>
@@ -239,7 +244,7 @@ div.software-download ul.pls-no-gap{
         you might also need to install <code>libatomic</code>
         <ul>
           <li>
-            it'll be one of these:            
+            it'll probs be one of these:            
             <ul>
               <li><code>sudo yum install libatomic</code></li>
               <li><code>sudo apt-get install libatomic1</code></li>
