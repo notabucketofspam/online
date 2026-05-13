@@ -150,9 +150,9 @@ span.linux-user {
 </div>
 
 <div id="trust_sidebar">
-  <div id="logged_in_as">Not logged in</div>
-  <hr/>
+  <div id="logged_in_as" class="logged-in-as">Not logged in</div>
   <div id="trust_stuff">
+  <hr/>
     <span>Here are the users that you trust:</span>
     <ul id="trusted_users"></ul>
     <hr/>
@@ -496,7 +496,7 @@ setTimeout(function(){
   check_online(async (jazz) => {
     var logged_in_as = document.getElementById("logged_in_as");
     if (jazz.username) {
-      logged_in_as.innerHTML = `Logged in as <b>${jazz.username}</b>`;
+      logged_in_as.innerHTML = `Logged in as <div><b>${jazz.username}</b><div>`;
       await showTrusts();
     } else {
       document.getElementById("trust_stuff").setAttribute("hidden", '');
