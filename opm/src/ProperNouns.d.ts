@@ -52,6 +52,8 @@ declare module 'ProperNouns' {
 	export interface SettingsJson {
 		is_advertiser: number;
 		use_localhost: number;
+		use_copium: number;
+		[string]: any;
 	}
 
 }

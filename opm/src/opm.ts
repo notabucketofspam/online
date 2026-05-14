@@ -24,25 +24,30 @@ import https from 'node:https';
 import {Punch, SettingsJson} from 'ProperNouns';
 
 // ===========================================================
-// services
+// services and settings
 
 fs.mkdirSync('opm-data', {recursive:true});
-let settings: SettingsJson = {
+/**This is how we know stuff*/
+const settings: SettingsJson = {
 	is_advertiser: 0,
-	use_localhost: 0	
+	use_localhost: 0,
+	use_copium: 0
 };
 if (existsSync('opm-data/settings.json')){
 	// settings we have some
 	try {
-		let newsettings = JSON.parse(astext('opm-data/settings.json'));
-		settings = newsettings;
+		const savefile = JSON.parse(astext('opm-data/settings.json')) as SettingsJson;
+		for (const key in settings){
+			if (typeof settings[key] === typeof savefile[key]) {
+				settings[key] = savefile[key];
+			}
+		}
 	} catch(err){
 		cog("can't load settings, skipping...");
 	}
-} else {
-	// we got no settings
-	fs.writeFileSync('opm-data/settings.json', JSON.stringify(settings, null, 2), { encoding: 'utf8' });	
 }
+// re-save our settings
+fs.writeFileSync('opm-data/settings.json', JSON.stringify(settings, null, 2), { encoding: 'utf8' });
 /**what are we hosting here?*/
 let services: Punch[] = [];
 /**Are you qualified to advertise with WSBC?*/
