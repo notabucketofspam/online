@@ -7,15 +7,6 @@ import * as odb from "./db";
 import {generate_reset_token, isAuthenticated, express_app as app, redisStore } from "./express_app";
 import {Punch, ClientData, WsbcReply, WsEventData, WsPair, WsPairMeta } from "VocabQuiz";
 
-declare module 'express-session' {
-	interface SessionData {
-		userId: number;
-		username: string;
-		email: string;
-		storage: object;
-		id: string;
-	}
-}
 import {SessionData} from "express-session";
 
 // ========================================================

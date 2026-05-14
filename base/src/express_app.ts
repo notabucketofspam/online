@@ -3,6 +3,7 @@ import * as path from "node:path";
 import * as odb from "./db";
 import { Request, Response } from 'express';
 import session from 'express-session';
+import {SessionData} from 'express-session';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
 import * as crypto from 'node:crypto';
@@ -107,15 +108,6 @@ async function handleAdd(req: Request, res: Response) {
 	}
 }
 
-declare module 'express-session' {
-		interface SessionData {
-				userId: number;
-				username: string;
-				email: string;
-				storage: object;
-				id: string;
-		}
-}
 
 async function handleLogin(req: Request, res: Response) {
 		const { email, password } = req.body;
@@ -276,7 +268,6 @@ async function handle_ask_for_token(req: Request, res: Response){
 		res.sendStatus(500);
 	}
 }
-import {SessionData} from 'express-session';
 /**
  * For when the user actually fills out the password reset form
  * @param req
