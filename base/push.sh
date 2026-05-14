@@ -3,6 +3,7 @@ tsc --build
 echo "tsc OK"
 rsync \
   --compress \
+  --times \
   --recursive \
   --include-from="./rsync-include.txt" \
   --exclude-from="./rsync-exclude.txt" \
