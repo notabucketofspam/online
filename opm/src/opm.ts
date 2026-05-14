@@ -364,91 +364,95 @@ import {WsEventData} from 'ProperNouns';
 const socketMap: Map<string, UdpPair> = new Map();
 
 async function onWsMessage (ev : MessageEvent) {
-	// we shall open a udp socket and send something
-	// to the specified address and port
-	let ws = ev.target as WebSocket;
-	//cog(ev.data);
-	if (typeof ev.data === 'string') {
-		const ev_data: WsEventData = JSON.parse(ev.data);
-		const {request_id, flavour, wx} = ev_data;
-		if (flavour === 'authn-ok'){
-			// we authenticated ok, so now we can list our services
-			refreshListings(ws);
-			wsClients[ws.url]!.refreshTimer = setInterval(() => {
+	try {
+		// we shall open a udp socket and send something
+		// to the specified address and port
+		let ws = ev.target as WebSocket;
+		//cog(ev.data);
+		if (typeof ev.data === 'string') {
+			const ev_data: WsEventData = JSON.parse(ev.data);
+			const {request_id, flavour, wx} = ev_data;
+			if (flavour === 'authn-ok'){
+				// we authenticated ok, so now we can list our services
 				refreshListings(ws);
-			}, refreshTime);
-		} else if (flavour === 'client-open' || flavour === 'server-open') {
-			// WSBC (the game coordinator) wants us to reach out to someone
+				wsClients[ws.url]!.refreshTimer = setInterval(() => {
+					refreshListings(ws);
+				}, refreshTime);
+			} else if (flavour === 'client-open' || flavour === 'server-open') {
+				// WSBC (the game coordinator) wants us to reach out to someone
 		
-			// make some new UDP sockets
-			const udp_pair = await createUdpPair(wx);
+				// make some new UDP sockets
+				const udp_pair = await createUdpPair(wx);
 
-			// if we're using IPv4, then we can't actually tell WSBC
-			// about our punch_port. That's the miracle of NAT, baby.
-			if (!net.isIPv6(wx.remote_addr)){
-				await new Promise<void>((resolve, reject)=>{
-					let spontaneousDeath = setTimeout(function(){
-						// timeout the effort after a few seconds, to prevent the process
-						// from hanging
-						reject();
-					}, 8000);
-					function prependOnce_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
-						// WSBC acknowledged our UDP port
-						clearTimeout(spontaneousDeath);
-						resolve();
-					}
-					udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
-					// send a ping to the grandFacade port
-					udp_pair.punch_socket.send(Buffer.from(request_id), 39688, '4.waluigi-servebeer.com');
-				}).catch(reason=>{
-					// we don't really have to do much here
-					console.error(reason);
-				});
-			}
+				// if we're using IPv4, then we can't actually tell WSBC
+				// about our punch_port. That's the miracle of NAT, baby.
+				if (!net.isIPv6(wx.remote_addr)){
+					await new Promise<void>((resolve, reject)=>{
+						let spontaneousDeath = setTimeout(function(){
+							// timeout the effort after a few seconds, to prevent the process
+							// from hanging
+							reject();
+						}, 8000);
+						function prependOnce_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
+							// WSBC acknowledged our UDP port
+							clearTimeout(spontaneousDeath);
+							resolve();
+						}
+						udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
+						// send a ping to the grandFacade port
+						udp_pair.punch_socket.send(Buffer.from(request_id), 39688, '4.waluigi-servebeer.com');
+					}).catch(reason=>{
+						// we don't really have to do much here
+						console.error(reason);
+					});
+				}
 
-			const punch_port = udp_pair.punch_socket.address().port;
+				const punch_port = udp_pair.punch_socket.address().port;
 			
-			if (flavour === 'client-open') {
-				// temporarily keep track of stuff
-				socketMap.set(request_id, udp_pair);
-				setTimeout(function(){
-					socketMap.delete(request_id);
-				}, 10000);
-			} else if (flavour === 'server-open') {
-				// associate this punch_socket with a remote client
-				udp_pair.remote_info.port = wx.remote_port;
-				udp_pair.remote_info.address = wx.remote_addr;
-				// send an initial message
-				udp_pair.ps_send(punchMsg);
-			}
+				if (flavour === 'client-open') {
+					// temporarily keep track of stuff
+					socketMap.set(request_id, udp_pair);
+					setTimeout(function(){
+						socketMap.delete(request_id);
+					}, 10000);
+				} else if (flavour === 'server-open') {
+					// associate this punch_socket with a remote client
+					udp_pair.remote_info.port = wx.remote_port;
+					udp_pair.remote_info.address = wx.remote_addr;
+					// send an initial message
+					udp_pair.ps_send(punchMsg);
+				}
 
-			// tell WSBC about our punch_port
-			const wsbc_reply = {
-				request_id,
-				flavour,
-				punch_port
-			};
-			ws.send(JSON.stringify(wsbc_reply));
-		} else if (flavour === 'peer-punch-port') {
-			// we are a client, and we've just received the server's punch port
+				// tell WSBC about our punch_port
+				const wsbc_reply = {
+					request_id,
+					flavour,
+					punch_port
+				};
+				ws.send(JSON.stringify(wsbc_reply));
+			} else if (flavour === 'peer-punch-port') {
+				// we are a client, and we've just received the server's punch port
 
-			const udp_pair = socketMap.get(request_id);
-			if (typeof udp_pair !== 'undefined' ){
-				// associate our punch_socket with the server
-				udp_pair.remote_info.port = wx.remote_port;
-				udp_pair.remote_info.address = wx.remote_addr;
-				// send an initial message
-				udp_pair.ps_send(punchMsg);
-				// alert user about punch success
-				cog(`Ok cool.`);
-				cog(`Now go back to your game and try to connect to 127.0.0.1`);
+				const udp_pair = socketMap.get(request_id);
+				if (typeof udp_pair !== 'undefined' ){
+					// associate our punch_socket with the server
+					udp_pair.remote_info.port = wx.remote_port;
+					udp_pair.remote_info.address = wx.remote_addr;
+					// send an initial message
+					udp_pair.ps_send(punchMsg);
+					// alert user about punch success
+					cog(`Ok cool.`);
+					cog(`Now go back to your game and try to connect to 127.0.0.1`);
+				}
+			} else {
+				// this shouldn't happen
 			}
-		} else {
-			// this shouldn't happen
-		}
 		
-	} else {
-		// probs a pong frame, so just ignore
+		} else {
+			// probs a pong frame, so just ignore
+		}
+	} catch(err) {
+		cog('something has gone horribly wrong.');
 	}
 }
 
@@ -484,8 +488,12 @@ function onceWsOpen (ev: Event) {
 
 	if (existsSync('opm-data/product-key.json')){
 		// user has elected to authenticate with a product key
-		const productkey = JSON.parse(astext('opm-data/product-key.json'));
-		ws.send(JSON.stringify(productkey));
+		try {
+			const productkey = JSON.parse(astext('opm-data/product-key.json'));
+			ws.send(JSON.stringify(productkey));
+		} catch(err) {
+			cog("Failure to read product key");
+		}
 	} else {
 		// we need to send login info to the server,
 		// but we can't do that with the default WebSocket constructor,
