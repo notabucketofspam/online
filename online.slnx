@@ -1,19 +1,29 @@
 <Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
   <Folder Name="/Solution Items/" />
   <Project Path="base/base.esproj">
+    <Platform Project="AnyCPU" />
     <Build />
     <Deploy />
   </Project>
+  <Project Path="copium/copium.vcxproj" Id="a4dc09ef-7f09-4114-a9b6-532bfd04f113" />
   <Project Path="email/email.esproj">
-    <Build />
-    <Deploy />
+    <Platform Project="AnyCPU" />
+    <Build Solution="*|Any CPU" />
+    <Deploy Solution="*|Any CPU" />
   </Project>
   <Project Path="opm/opm.esproj">
+    <Platform Project="AnyCPU" />
     <Build />
     <Deploy />
   </Project>
   <Project Path="websocket/websocket.esproj">
-    <Build />
-    <Deploy />
+    <Platform Project="AnyCPU" />
+    <Build Solution="*|Any CPU" />
+    <Deploy Solution="*|Any CPU" />
   </Project>
 </Solution>
