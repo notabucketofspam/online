@@ -23,7 +23,10 @@ redisClient.on('error', function(err) {
 		=======================
 
 		`);
-		process.abort();
+		redisClient.destroy();
+		setTimeout(function (){
+			process.abort();
+		}, 10000);
 	}
 });
 
