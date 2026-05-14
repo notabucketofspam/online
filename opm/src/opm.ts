@@ -21,20 +21,32 @@ import https from 'node:https';
 // we don't really need the local HTTP server at all.
 // OPM would always communicate with wsbc via WebSockets anyways.
 
-import {Punch} from 'ProperNouns';
+import {Punch, SettingsJson} from 'ProperNouns';
 
 // ===========================================================
 // services
 
 fs.mkdirSync('opm-data', {recursive:true});
-
+let settings: SettingsJson = {
+	is_advertiser: 0,
+	use_localhost: 0	
+};
+if (existsSync('opm-data/settings.json')){
+	// settings we have some
+	try {
+		let newsettings = JSON.parse(astext('opm-data/settings.json'));
+		settings = newsettings;
+	} catch(err){
+		cog("can't load settings, skipping...");
+	}
+} else {
+	// we got no settings
+	fs.writeFileSync('opm-data/settings.json', JSON.stringify(settings, null, 2), { encoding: 'utf8' });	
+}
 /**what are we hosting here?*/
 let services: Punch[] = [];
 /**Are you qualified to advertise with WSBC?*/
 let postingAds = false;
-if (asbool('opm-data/is-advertiser.txt')){
-	postingAds = true;
-}
 /**zilchware */
 const empty_service: Punch = {
 	addr: "",
@@ -44,14 +56,22 @@ const empty_service: Punch = {
 };
 
 function init_ads(){
-	if (existsSync('opm-data/services.json')) {
-		// by default, we post ads if we have them
-		postingAds = true;
-		// we remembered to write it down before we left
-		const services_json = astext('opm-data/services.json');
-		services = JSON.parse(services_json) as Punch[];
-		cog("Hosting these services:");
-		cog(services);
+	if (existsSync('opm-data/services.json') && settings.is_advertiser) {
+		try {
+			// we remembered to write it down before we left
+			const services_json = astext('opm-data/services.json');
+			services = JSON.parse(services_json) as Punch[];
+			cog("Hosting these services:");
+			cog(services);
+			// by default, we post ads if we have them
+			postingAds = true;
+		} catch(err){
+			cog("Failure to read services file. Check your syntax.");
+		}
+	} else if (existsSync('opm-data/services.json') && !settings.is_advertiser) {
+		cog(`If you wanna post ads, you need to have "is_advertiser":1 in your settings.json`);
+	} else if (!existsSync('opm-data/services.json') && settings.is_advertiser){
+		cog(`Go find a services file somewhere`);
 	} else {
 		// i got nothin
 		cog("You have elected to host zero services.");
@@ -62,7 +82,7 @@ function init_ads(){
 // ==================================================================
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
-const useLocalhost = asbool('opm-data/use-localhost.txt');
+const useLocalhost = settings.use_localhost;
 const wsbc_hostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
 const http_request = useLocalhost ? http.request : https.request;
 

@@ -49,4 +49,9 @@ declare module 'ProperNouns' {
 		ps_send: (msg: Buffer) => void;
 	}
 
+	export interface SettingsJson {
+		is_advertiser: number;
+		use_localhost: number;
+	}
+
 }
