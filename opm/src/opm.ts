@@ -506,9 +506,6 @@ function onceWsOpen (ev: Event) {
 		ws.send(JSON.stringify({'Cookie': astext('opm-data/cookie.txt')}));
 	}
 
-	if (wsClients[ws.url]?.copiumTimer) {
-		clearTimeout(wsClients[ws.url]?.copiumTimer);
-	}
 }
 
 // ============================================================
