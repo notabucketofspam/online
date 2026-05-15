@@ -1,0 +1,20 @@
+[Unit]
+Description=OPM
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=opm
+Group=opm
+# assuming that the actual `opm` script is in the folder `/opt/opm/`
+WorkingDirectory=/opt/opm
+ExecStart=/usr/bin/bash /opt/opm/opm
+
+Restart=always
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
