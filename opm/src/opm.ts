@@ -1,3 +1,4 @@
+// thanks gemini
 import {createUdpRelay} from "./relayManager"
 
 // the usual gang of idiots
@@ -5,24 +6,19 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 const astext = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
 const existsSync = (x: string) => fs.existsSync(path.normalize(x));
-	
 const cog = console.log;
 
-// ===========================================================
 // some more setup i guess
 import http from "node:http";
 import net from "node:net";
 import dgram from 'node:dgram';
 import https from 'node:https';
 
-// Now that I think about it a bit more,
-// we don't really need the local HTTP server at all.
-// OPM would always communicate with wsbc via WebSockets anyways.
-
 import {Punch, SettingsJson} from 'ProperNouns';
 
-// ===========================================================
-// services and settings
+// ================================================================================================
+// ===================================== services and settings ====================================
+// ================================================================================================
 
 fs.mkdirSync('opm-data', {recursive:true});
 /**This is how we know stuff*/
@@ -82,7 +78,10 @@ function init_ads(){
 	}
 }
 
-// ==================================================================
+// ================================================================================================
+// ========================================== HELLA HTTP ==========================================
+// ================================================================================================
+
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
 const useLocalhost = settings.use_localhost;
@@ -284,8 +283,9 @@ async function determineRealStacks(){
 	}
 }
 
-// ============================================================
-// websocket client
+// ================================================================================================
+// ======================================= websocket client =======================================
+// ================================================================================================
 
 import {WsClientInfo} from 'ProperNouns';
 
@@ -360,7 +360,8 @@ function refreshListings(ws: WebSocket){
 	}
 }
 
-// -------------------------------------- websocket event listeners
+// --------------------------------------
+// ----- websocket event listeners ------
 
 import {WsEventData} from 'ProperNouns';
 
@@ -517,8 +518,9 @@ function onceWsOpen (ev: Event) {
 
 }
 
-// ============================================================
-// the udp stuff
+// ================================================================================================
+// ======================================== the udp stuff =========================================
+// ================================================================================================
 
 async function createUdpSocket (family : 'udp4' | 'udp6', options: dgram.BindOptions) {
 	const socket = dgram.createSocket(family);
@@ -549,7 +551,7 @@ function onUdpSocketError (err : Error) {
 	console.error(`udp socket error: ${err}`);
 }
 
-// ===========================================================
+// -----------------------------------
 // please don't shake the lightbulb
 
 import {WireInfo, UdpPair} from 'ProperNouns';
@@ -640,8 +642,10 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 	return {factorio_socket, punch_socket, remote_info, ps_send};
 }
 
-// ============================================================
-// final bit of setup
+// ================================================================================================
+// ====================================== final bit of setup ======================================
+// ================================================================================================
+
 async function init_real(){
 	await init_login();
 	init_ads();
