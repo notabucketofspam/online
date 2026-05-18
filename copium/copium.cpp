@@ -4,10 +4,30 @@
 #include <cstring>
 #include <chrono>
 #include <vector>
+
+#ifdef _WIN32
+// Windows-specific includes and types
 #include <winsock2.h>
 #include <ws2tcpip.h>
-
 #pragma comment(lib, "ws2_32.lib")
+
+typedef int sock_len_t; // Windows uses int for address lengths
+#else
+// Linux/POSIX-specific includes and types
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
+
+// Map Windows types to POSIX equivalents so the rest of the code stays the same
+#define SOCKET int
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
+#define closesocket close
+
+typedef socklen_t sock_len_t; // Linux uses socklen_t
+#endif
 
 #define BUFFER_SIZE 65536
 
@@ -27,22 +47,22 @@ bool is_same_endpoint(const sockaddr_storage& sender, const sockaddr_storage& re
 }
 
 int main(int argc, char* argv[]) {
-  // We now expect 5 arguments (6 including executable)
   if (argc != 6) {
-    std::cerr << "Usage: udp_relay.exe <local_bind_port> <local_target_port> <coord_host> <coord_port> <request_id>" << std::endl;
+    std::cerr << "Usage: udp_relay <local_bind_port> <local_target_port> <coord_host> <coord_port> <request_id>" << std::endl;
     return 1;
   }
 
   const char* LOCAL_BIND_PORT = argv[1];
-  int LOCAL_TARGET_PORT = std::atoi(argv[2]); // 0 = dynamic learning, >0 = static server
+  int LOCAL_TARGET_PORT = std::atoi(argv[2]);
   const char* COORD_HOST = argv[3];
   const char* COORD_PORT = argv[4];
   const char* REQUEST_ID = argv[5];
 
+#ifdef _WIN32
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return 1;
+#endif
 
-  // 1. Create and Bind the Main Socket
   SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   struct sockaddr_in listen_addr;
@@ -56,14 +76,13 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  // Print the bound port (helpful if we bound to 0)
   struct sockaddr_in current_addr;
-  int current_len = sizeof(current_addr);
+  sock_len_t current_len = sizeof(current_addr);
   if (getsockname(sock, (struct sockaddr*)&current_addr, &current_len) != SOCKET_ERROR) {
     std::cout << "READY:" << ntohs(current_addr.sin_port) << std::endl;
   }
 
-  // 2. Fire the Hole-Punch STUN Packet
+  // Fire the Hole-Punch STUN Packet
   struct addrinfo coord_hints, * coord_info;
   memset(&coord_hints, 0, sizeof(coord_hints));
   coord_hints.ai_family = AF_UNSPEC;
@@ -75,12 +94,10 @@ int main(int argc, char* argv[]) {
     std::cout << "[Startup] Fired request_id to coordinator." << std::endl;
   }
 
-  // 3. Pause and wait for Node.js to give us the Peer IP and Port via stdin!
   std::cout << "AWAITING_PEER_INFO" << std::endl;
   std::string remote_ip_str, remote_port_str;
   std::cin >> remote_ip_str >> remote_port_str;
 
-  // Resolve the peer info we just received
   struct addrinfo hints, * remote_info;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -88,7 +105,9 @@ int main(int argc, char* argv[]) {
 
   if (getaddrinfo(remote_ip_str.c_str(), remote_port_str.c_str(), &hints, &remote_info) != 0) {
     std::cerr << "Failed to resolve remote IP." << std::endl;
+#ifdef _WIN32
     WSACleanup();
+#endif
     return 1;
   }
 
@@ -97,12 +116,10 @@ int main(int argc, char* argv[]) {
   freeaddrinfo(remote_info);
   std::cout << "[IPC] Locked onto remote peer: " << remote_ip_str << ":" << remote_port_str << std::endl;
 
-  // 4. Setup Local Target Logic
   struct sockaddr_storage local_app_addr;
-  int local_app_len = sizeof(local_app_addr);
+  sock_len_t local_app_len = sizeof(local_app_addr);
   bool local_app_known = false;
 
-  // If we are in Server Mode, hardcode the Factorio server target immediately
   if (LOCAL_TARGET_PORT > 0) {
     struct sockaddr_in* addr = (struct sockaddr_in*)&local_app_addr;
     addr->sin_family = AF_INET;
@@ -115,16 +132,15 @@ int main(int argc, char* argv[]) {
     std::cout << "[Mode] Peer Client: Waiting to learn local app port dynamically..." << std::endl;
   }
 
-  // Timer setup & Buffer allocation
   using namespace std::chrono;
   auto last_keepalive_sent = steady_clock::now();
   auto last_packet_received = steady_clock::now();
   std::vector<char> buffer(BUFFER_SIZE);
 
   struct sockaddr_storage sender_addr;
-  int sender_len = sizeof(sender_addr);
+  sock_len_t sender_len = sizeof(sender_addr);
 
-  // 5. The Event Loop
+  // The Event Loop
   while (true) {
     fd_set readfds;
     FD_ZERO(&readfds);
@@ -134,7 +150,9 @@ int main(int argc, char* argv[]) {
     tv.tv_sec = 0;
     tv.tv_usec = 100000;
 
-    int activity = select(0, &readfds, NULL, NULL, &tv);
+    // Notice the first argument: Linux REQUIRES this to be the highest socket descriptor + 1.
+    // Windows completely ignores the first argument, so (sock + 1) safely satisfies both!
+    int activity = select(sock + 1, &readfds, NULL, NULL, &tv);
     auto now = steady_clock::now();
 
     if (activity > 0 && FD_ISSET(sock, &readfds)) {
@@ -145,7 +163,6 @@ int main(int argc, char* argv[]) {
         if (is_same_endpoint(sender_addr, remote_addr_storage)) {
           last_packet_received = now;
 
-          // FILTER CHECK
           if (received_bytes == 5 && std::memcmp(buffer.data(), "PUNCH", 5) == 0) continue;
 
           if (local_app_known) {
@@ -153,7 +170,6 @@ int main(int argc, char* argv[]) {
               (struct sockaddr*)&local_app_addr, local_app_len);
           }
         } else {
-          // Only learn dynamically if we are in Client Mode (Target == 0)
           if (LOCAL_TARGET_PORT == 0) {
             if (!local_app_known || !is_same_endpoint(sender_addr, local_app_addr)) {
               local_app_addr = sender_addr;
@@ -169,7 +185,6 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    // TIMER CHECKS
     if (duration_cast<seconds>(now - last_keepalive_sent).count() >= 25) {
       sendto(sock, "PUNCH", 5, 0, (struct sockaddr*)&remote_addr_storage, sizeof(remote_addr_storage));
       last_keepalive_sent = now;
@@ -179,6 +194,8 @@ int main(int argc, char* argv[]) {
   }
 
   closesocket(sock);
+#ifdef _WIN32
   WSACleanup();
+#endif
   return 0;
 }
