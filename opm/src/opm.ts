@@ -1,12 +1,10 @@
+import {createUdpRelay} from "./relayManager"
+
 // the usual gang of idiots
 import * as path from "node:path";
 import * as fs from "node:fs";
 const astext = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
 const existsSync = (x: string) => fs.existsSync(path.normalize(x));
-const asbool = (x: string) =>{
-	const pnx = path.normalize(x);
-	return fs.existsSync(pnx)&&Boolean(Number(fs.readFileSync(pnx,{encoding:"utf8"})));
-}
 	
 const cog = console.log;
 
@@ -386,6 +384,17 @@ async function onWsMessage (ev : MessageEvent) {
 			} else if (flavour === 'client-open' || flavour === 'server-open') {
 				// WSBC (the game coordinator) wants us to reach out to someone
 		
+				if (settings.use_copium){
+					// fix this later
+					createUdpRelay({
+						appPort: 0,
+						coordHost: "",
+						coordPort: 0,
+						executablePath: "",
+						isServerMode: false,
+						requestId:""
+					});
+				}
 				// make some new UDP sockets
 				const udp_pair = await createUdpPair(wx);
 

@@ -1,0 +1,13 @@
+{
+	"outDir": "./dist_II",
+	"format": "cjs",
+	"entry": ["src/opm.ts"],
+	"target": "esnext",
+	"platform": "node",
+	"bundle": true,
+	"minify": false,
+	"shims": true,
+	"clean": true,
+	"silent": true,
+	"legacyOutput": true
+}

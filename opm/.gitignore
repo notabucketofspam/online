@@ -7,6 +7,9 @@ obj/***
 tsconfig.tsbuildinfo
 dist/***
 
+# tsup
+dist_II/***
+
 # windows
 desktop.ini
 
