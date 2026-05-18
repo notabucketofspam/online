@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.4902498">
   <PropertyGroup>
     <ShouldRunNpmAudit>false</ShouldRunNpmAudit>
-    <BuildCommand>tsc --build</BuildCommand>
-    <CleanCommand>tsc --build --clean</CleanCommand>
+    <BuildCommand>npm run build --silent</BuildCommand>
+    <CleanCommand>npm run clean --silent</CleanCommand>
+    <StartupCommand>node</StartupCommand>
   </PropertyGroup>
 </Project>
