@@ -58,14 +58,15 @@ declare module 'ProperNouns' {
 	}
 
 	/**what you get from running spawn_copium */
-	export interface CopiumKid {
-		/** The raw underlying Node child process */
+	export interface CopiumSpawn {
+		/** the underlying child process */
 		kiddo: ChildProcess;
-		/** Call this when your STUN/Coordinator server finds the peer */
+		/** This is how we make new friends, Gordo. */
 		pairWithPeer: (peerIp: string, peerPort: number) => void;
-		/** Safely terminate the C++ background process */
-		selfDestruct: () => void;
+		/** Kill the child process */
+		kill_kiddo: () => void;
 	}
+
 	/**the command-line arguments for copium*/
 	export interface CopiumOptions {
 		executablePath: string;

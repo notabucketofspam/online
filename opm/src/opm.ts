@@ -1,6 +1,3 @@
-// thanks gemini
-// import {createUdpRelay} from "./relayManager"
-
 // the usual gang of idiots
 import * as path from "node:path";
 import * as fs from "node:fs";
@@ -645,108 +642,126 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 // ================================================================================================
 // ============================================ COPIUM ============================================
 // ================================================================================================
-import {spawn, ChildProcess} from "node:child_process";
-import {CopiumKid, CopiumOptions} from "ProperNouns";
+import {spawn} from "node:child_process";
+import {CopiumSpawn, CopiumOptions} from "ProperNouns";
+import os from 'node:os';
 
-function spawn_copium(options: CopiumOptions): CopiumKid {
-	// Determine ports based on our Role (Server vs Client)
+/** make sure that we actually have copium downloaded */
+async function check_for_copium() {
+	const baseurl = "https://waluigi-servebeer.com/dlc/copium-";
+	const os_type = os.type();
+	const os_machine = os.machine();
+	if (os_machine === 'x86_64' || os_machine === 'aarch64') {
+		// we are using a supported machine
+		if (os_type === 'Windows_NT') {
+			// Windows
+			const res = await fetch(baseurl+'windows-'+os_machine);
+			const resblob = await res.blob();
+		} else if (os_type === 'Linux') {
+
+		} else if (os_type === 'Darwin') {
+			// an actual Mac user
+
+		} else {
+			// I don't know what OS this is
+			console.error(`Unsupported operating system`);
+		}
+	} else {
+		// not AMD64 or ARM64
+		console.error(`Unsupported CPU`);
+	}
+}
+
+/**returns: 
+ * 1) a kiddo
+ * 2) a function to pair with the remote
+ * 3) a function to kill the kiddo*/
+async function spawn_copium(options: CopiumOptions): Promise<CopiumSpawn> {
+	// Determine ports based on our Role
+
+	/**this is 0 in server mode*/
 	const bindPort = options.isServerMode ? "0" : options.appPort.toString();
+	/**this is 0 in CLIENT MODE*/
 	const targetPort = options.isServerMode ? options.appPort.toString() : "0";
-	// create the child process
-	const relayProcess = spawn(options.executablePath, [
+
+	/** the copium child process*/
+	const kiddo = spawn(options.executablePath, [
 		bindPort,
 		targetPort,
 		options.coordHost,
 		options.coordPort.toString(),
 		options.requestId
 	]);
-	console.log(`[RelayManager] Spawned worker (PID: ${relayProcess.pid}) in ${options.isServerMode ? 'Server' : 'Client'} mode.`);
+	console.log(`[COPIUM] Spawned worker (PID: ${kiddo.pid}) in ${options.isServerMode ? 'Server' : 'Client'} mode.`);
 
-	/**
-	 * listen for when the child speaks
-	 * @param data
-	 */
+	/** listen for when the child speaks */
 	function stdout_ondata(data: Buffer) {
 		const output = data.toString().trim();
 		console.log(`[C++] ${output}`);
 		if (output.startsWith('READY:')) {
 			const assignedPort = parseInt(output.split(':')[1] ?? '0', 10);
-			console.log(`[RelayManager] Relay bound to local port: ${assignedPort}`);
+			console.log(`[COPIUM] Relay bound to local port: ${assignedPort}`);
 		}
 	}
-	relayProcess.stdout?.on('data', stdout_ondata);
+	kiddo.stdout?.on('data', stdout_ondata);
 
-	/**
-	 * listen for when the child complains loudly in public
-	 * @param data
-	 */
+	/** listen for when the child complains loudly in public */
 	function stderr_ondata(data: Buffer) {
 		console.error(`[C++ ERR] ${data.toString().trim()}`);
 	}
-	relayProcess.stderr?.on('data', stderr_ondata);
+	kiddo.stderr?.on('data', stderr_ondata);
 
 	/**delete the child process*/
-	function selfDestruct() {
-		if (!relayProcess.killed) {
-			console.log(`[RelayManager] Parent terminating. Taking C++ worker down with it...`);
-			relayProcess.kill('SIGTERM');
+	function kill_kiddo() {
+		if (!kiddo.killed) {
+			// console.log(`[COPIUM] Killing a copium child process`);
+			kiddo.kill('SIGTERM');
 		}
 	}
 
 	/**in case someone hits ctrl+c in the node.js window*/
 	function sigintHandler() {
-		selfDestruct();
+		kill_kiddo();
 		process.exit();
 	}
 
 	// Attach them to the main Node.js process
-	process.on('exit', selfDestruct);
+	process.on('exit', kill_kiddo);
 	process.on('SIGINT', sigintHandler);
 	process.on('SIGTERM', sigintHandler);
 
-	/**
-	 * when the child process is closed
-	 * @param code
-	 */
+	/** when the child process is closed */
 	function rp_onclose(code: number | null) {
-		console.log(`[RelayManager] Worker exited with code ${code}`);
+		console.log(`[COPIUM] Worker exited with code ${code}`);
 
-		// 1. Strip all listeners from the dead child process
-		relayProcess.removeAllListeners();
-		relayProcess.stdout?.removeAllListeners();
-		relayProcess.stderr?.removeAllListeners();
-		relayProcess.stdin?.removeAllListeners();
+		// remove listeners from the child process
+		kiddo.removeAllListeners();
+		kiddo.stdout?.removeAllListeners();
+		kiddo.stderr?.removeAllListeners();
+		kiddo.stdin?.removeAllListeners();
 
-		// 2. Detach the destruct handlers from the main Node process to prevent memory leaks!
-		process.removeListener('exit', selfDestruct);
+		// remove specific listeners from main node.js process
+		process.removeListener('exit', kill_kiddo);
 		process.removeListener('SIGINT', sigintHandler);
 		process.removeListener('SIGTERM', sigintHandler);
 
-		console.log(`[RelayManager] Memory and event listeners successfully wiped.`);
+		// console.log(`[COPIUM] Memory and event listeners successfully wiped.`);
 	}
-	relayProcess.on('close', rp_onclose);
+	kiddo.on('close', rp_onclose);
 
-	/**
-	 * tell the child process to make a new friend
-	 * @param peerIp
-	 * @param peerPort
-	 */
+	/** tell the child process to make a new friend */
 	function pairWithPeer(peerIp: string, peerPort: number) {
-		if (!relayProcess.stdin) {
-			console.error("[RelayManager] Error: Cannot write to C++ stdin.");
-			selfDestruct();
+		if (!kiddo.stdin) {
+			console.error("[COPIUM] Error: Cannot write to C++ stdin.");
+			kill_kiddo();
 		} else {
-			console.log(`[RelayManager] Piping peer info to C++ -> ${peerIp}:${peerPort}`);
-			relayProcess.stdin.write(`${peerIp} ${peerPort}\n`);
+			console.log(`[COPIUM] Piping peer info to C++ -> ${peerIp}:${peerPort}`);
+			kiddo.stdin.write(`${peerIp} ${peerPort}\n`);
 		}
 	}
 
 	/**here's your order, sir*/
-	return {
-		kiddo: relayProcess,
-		pairWithPeer,
-		selfDestruct
-	};
+	return {kiddo, pairWithPeer, kill_kiddo};
 }
 
 // ================================================================================================
