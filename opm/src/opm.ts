@@ -1,5 +1,5 @@
 // thanks gemini
-import {createUdpRelay} from "./relayManager"
+// import {createUdpRelay} from "./relayManager"
 
 // the usual gang of idiots
 import * as path from "node:path";
@@ -387,14 +387,14 @@ async function onWsMessage (ev : MessageEvent) {
 		
 				if (settings.use_copium){
 					// fix this later
-					createUdpRelay({
-						appPort: 0,
-						coordHost: "",
-						coordPort: 0,
-						executablePath: "",
-						isServerMode: false,
-						requestId:""
-					});
+					// createUdpRelay({
+					// 	appPort: 0,
+					// 	coordHost: "",
+					// 	coordPort: 0,
+					// 	executablePath: "",
+					// 	isServerMode: false,
+					// 	requestId:""
+					// });
 				}
 				// make some new UDP sockets
 				const udp_pair = await createUdpPair(wx);

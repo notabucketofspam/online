@@ -1,5 +1,6 @@
 declare module 'ProperNouns' {
 	import dgram from 'node:dgram';
+	import {ChildProcess} from 'node:child_process';
 	
 	/** Info about some kinda hosted service */
 	export interface Punch {
@@ -54,6 +55,25 @@ declare module 'ProperNouns' {
 		use_localhost: number;
 		use_copium: number;
 		[string]: any;
+	}
+
+	/**what you get from running spawn_copium */
+	export interface CopiumKid {
+		/** The raw underlying Node child process */
+		kiddo: ChildProcess;
+		/** Call this when your STUN/Coordinator server finds the peer */
+		pairWithPeer: (peerIp: string, peerPort: number) => void;
+		/** Safely terminate the C++ background process */
+		selfDestruct: () => void;
+	}
+	/**the command-line arguments for copium*/
+	export interface CopiumOptions {
+		executablePath: string;
+		isServerMode: boolean;
+		appPort: number;
+		coordHost: string;
+		coordPort: number;
+		requestId: string;
 	}
 
 }
