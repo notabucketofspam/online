@@ -14,4 +14,4 @@ rsync \
 echo "rsync OK"
 ssh -i "./notkeys/key" ubuntu@193.122.154.50 "pm2 restart online > /dev/null"
 echo "Done"
-sleep 2
+# sleep 2

@@ -10,4 +10,4 @@ SET what_files=assets/opm.bat assets/services.json dist/opm.js assets/product-ke
 pscp %what_files% OCI-cool:/httpd/dlc/opm/
 
 ECHO DONE
-timeout /t 2 > nul
+REM timeout /t 2 > nul
