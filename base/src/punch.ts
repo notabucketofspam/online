@@ -67,7 +67,7 @@ async function getPunchList(req: Request, res: Response){
 const joinMap: Map<string, WsPair> = new Map();
 export {joinMap as punchJoinMap};
 
-import {rsPort, theWsbcUdpRelay } from './udp';
+import { rsPort, theWsbcUdpRelay } from './udp';
 
 /**
  * A user wants to connect to a particular Punch service
@@ -310,7 +310,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							if (wsMeta.use_relay){
 								// we want the client to talk to us
 								server_open.wx.remote_addr = (net.isIPv4(wsMeta.server_addr)?'4.':"6.")+"waluigi-servebeer.com";
-								server_open.wx.remote_port = net.isIPv4(wsMeta.server_addr )? rsPort.IPv4 : rsPort.IPv6;
+								server_open.wx.remote_port = rsPort;
 							}
 
 							// now we need to tell the server to open a udp socket
@@ -335,7 +335,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							if (wsMeta.use_relay) {
 								// need to tell the client to go somewhere else
 								peer_punch_port.wx.remote_addr = (net.isIPv4(wsMeta.server_addr) ? '4.' : "6.") + "waluigi-servebeer.com";
-								peer_punch_port.wx.remote_port = net.isIPv4(wsMeta.client_addr) ? rsPort.IPv4 : rsPort.IPv6;
+								peer_punch_port.wx.remote_port = rsPort;
 								// also, we need to actually use the relay
 								theWsbcUdpRelay(wsMeta);
 							}
