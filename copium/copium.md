@@ -1,6 +1,4 @@
 # copium
 
-to compile this on Linux
-```
-g++ -O3 copium.cpp -o copium
-```
+note: i'm using zig for compiling the binaries.
+  - https://ziglang.org/
