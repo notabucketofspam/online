@@ -31,7 +31,7 @@ typedef socklen_t sock_len_t; // Linux uses socklen_t
 
 #define BUFFER_SIZE 65536
 
-// Helper function
+// Are these two addresses the same?
 bool is_same_endpoint(const sockaddr_storage& sender, const sockaddr_storage& remote) {
   if (sender.ss_family != remote.ss_family) return false;
   if (sender.ss_family == AF_INET) {
@@ -63,6 +63,7 @@ int main(int argc, char* argv[]) {
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return 1;
 #endif
 
+  // the udp socket that does all the listening
   SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   struct sockaddr_in listen_addr;
@@ -76,24 +77,37 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // where we are right now
   struct sockaddr_in current_addr;
   sock_len_t current_len = sizeof(current_addr);
   if (getsockname(sock, (struct sockaddr*)&current_addr, &current_len) != SOCKET_ERROR) {
     std::cout << "READY:" << ntohs(current_addr.sin_port) << std::endl;
   }
 
-  // Fire the Hole-Punch STUN Packet
+  // Send request_id to WSBC
   struct addrinfo coord_hints, * coord_info;
   memset(&coord_hints, 0, sizeof(coord_hints));
   coord_hints.ai_family = AF_UNSPEC;
   coord_hints.ai_socktype = SOCK_DGRAM;
 
   if (getaddrinfo(COORD_HOST, COORD_PORT, &coord_hints, &coord_info) == 0) {
-    sendto(sock, REQUEST_ID, std::strlen(REQUEST_ID), 0, coord_info->ai_addr, coord_info->ai_addrlen);
+    // actually send the request to WSBC (handled by grandFacade)
+    sendto(sock, REQUEST_ID,
+#ifdef _WIN32
+    (int)
+#endif
+      std::strlen(REQUEST_ID), 0, coord_info->ai_addr,
+#ifdef _WIN32
+      (int)
+#endif
+      coord_info->ai_addrlen);
     freeaddrinfo(coord_info);
     std::cout << "[Startup] Fired request_id to coordinator." << std::endl;
+  } else {
+    // somehow failed to send a single udp packet to WSBC. sad.
   }
 
+  // we need to know the remote peer's address and port
   std::cout << "AWAITING_PEER_INFO" << std::endl;
   std::string remote_ip_str, remote_port_str;
   std::cin >> remote_ip_str >> remote_port_str;
@@ -116,11 +130,14 @@ int main(int argc, char* argv[]) {
   freeaddrinfo(remote_info);
   std::cout << "[IPC] Locked onto remote peer: " << remote_ip_str << ":" << remote_port_str << std::endl;
 
+  // the local app's address
   struct sockaddr_storage local_app_addr;
   sock_len_t local_app_len = sizeof(local_app_addr);
   bool local_app_known = false;
 
+  // figure out how to talk to the local app
   if (LOCAL_TARGET_PORT > 0) {
+    // we are in server mode
     struct sockaddr_in* addr = (struct sockaddr_in*)&local_app_addr;
     addr->sin_family = AF_INET;
     addr->sin_port = htons(LOCAL_TARGET_PORT);
@@ -129,12 +146,15 @@ int main(int argc, char* argv[]) {
     local_app_known = true;
     std::cout << "[Mode] Peer Server: Hardcoded local target to port " << LOCAL_TARGET_PORT << std::endl;
   } else {
+    // we are in client mode
     std::cout << "[Mode] Peer Client: Waiting to learn local app port dynamically..." << std::endl;
   }
 
   using namespace std::chrono;
   auto last_keepalive_sent = steady_clock::now();
   auto last_packet_received = steady_clock::now();
+
+  // the actual buffer that holds the incoming udp packet
   std::vector<char> buffer(BUFFER_SIZE);
 
   struct sockaddr_storage sender_addr;
@@ -150,48 +170,81 @@ int main(int argc, char* argv[]) {
     tv.tv_sec = 0;
     tv.tv_usec = 100000;
 
-    // Notice the first argument: Linux REQUIRES this to be the highest socket descriptor + 1.
-    // Windows completely ignores the first argument, so (sock + 1) safely satisfies both!
-    int activity = select(sock + 1, &readfds, NULL, NULL, &tv);
+    // check for udp socket activity
+    int activity = select(
+#ifdef _WIN32
+    (int)
+#endif
+      (sock + 1), &readfds, NULL, NULL, &tv);
     auto now = steady_clock::now();
 
     if (activity > 0 && FD_ISSET(sock, &readfds)) {
+      // there's activity on the udp socket
+
+      // read in the received data
       int received_bytes = recvfrom(sock, buffer.data(), BUFFER_SIZE, 0,
         (struct sockaddr*)&sender_addr, &sender_len);
 
       if (received_bytes != SOCKET_ERROR) {
         if (is_same_endpoint(sender_addr, remote_addr_storage)) {
+          // we got a message from the remote peer
+
           last_packet_received = now;
 
-          if (received_bytes == 5 && std::memcmp(buffer.data(), "PUNCH", 5) == 0) continue;
+          // if it's a keepalive, skip to the next iteration
+          if (received_bytes == 5 && std::memcmp(buffer.data(), "PUNCH", 5) == 0) {
+            continue;
+          }
 
           if (local_app_known) {
+            // we know the local app's info
+            
+            // send this data to the local app
             sendto(sock, buffer.data(), received_bytes, 0,
               (struct sockaddr*)&local_app_addr, local_app_len);
+          } else {
+            // the local app's info is not yet known to us
           }
         } else {
+          // we got a message from the local app
           if (LOCAL_TARGET_PORT == 0) {
+            // we are in client mode
+
             if (!local_app_known || !is_same_endpoint(sender_addr, local_app_addr)) {
+              // we need to learn the local app's info
               local_app_addr = sender_addr;
               local_app_len = sender_len;
               local_app_known = true;
               std::cout << "Learned local app's return port!" << std::endl;
+            } else {
+              // we already know the local app's info
             }
+          } else {
+            // we are in server mode, so we already know stuff
           }
 
+          // actually send the data to the remote peer
           sendto(sock, buffer.data(), received_bytes, 0,
             (struct sockaddr*)&remote_addr_storage, sizeof(remote_addr_storage));
         }
+      } else {
+        // there was a socket error
       }
+    } else {
+      // there's no activity on the socket
     }
 
+    // send a keepalive every 25 seconds
     if (duration_cast<seconds>(now - last_keepalive_sent).count() >= 25) {
       sendto(sock, "PUNCH", 5, 0, (struct sockaddr*)&remote_addr_storage, sizeof(remote_addr_storage));
       last_keepalive_sent = now;
     }
 
-    if (duration_cast<seconds>(now - last_packet_received).count() >= 80) break;
-  }
+    // if no incoming data after 80 seconds, terminate
+    if (duration_cast<seconds>(now - last_packet_received).count() >= 80) {
+      break;
+    }
+  } // end of the event loop
 
   closesocket(sock);
 #ifdef _WIN32
