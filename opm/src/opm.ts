@@ -645,30 +645,36 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 import {spawn} from "node:child_process";
 import {CopiumSpawn, CopiumOptions} from "ProperNouns";
 import os from 'node:os';
+import {pipeline} from 'node:stream/promises';
 
 /** make sure that we actually have copium downloaded */
 async function check_for_copium() {
-	const baseurl = "https://waluigi-servebeer.com/dlc/copium-";
 	const os_type = os.type();
 	const os_machine = os.machine();
-	if (os_machine === 'x86_64' || os_machine === 'aarch64') {
-		// we are using a supported machine
-		if (os_type === 'Windows_NT') {
-			// Windows
-			const res = await fetch(baseurl+'windows-'+os_machine);
-			const resblob = await res.blob();
-		} else if (os_type === 'Linux') {
+	const file_ext = os_type === 'Windows_NT'?'.exe':'';
+	const copium_path = `opm-data/copium${file_ext}`;
 
-		} else if (os_type === 'Darwin') {
-			// an actual Mac user
-
+	// check for copium on disk
+	if (!existsSync(copium_path)) {
+		// no copium on disk
+		const req_url = `https://waluigi-servebeer.com/dlc/copium/copium-${os_type}-${os_machine}${file_ext}`;
+		const res = await fetch(req_url);
+		if (res.ok && res.body) {
+			// response was fine
+			const writeMe = fs.createWriteStream(copium_path);
+			await pipeline(res.body, writeMe);
+			if (!file_ext){
+				// Need some permissions, man.
+				fs.chmodSync(copium_path, 0o755);
+			}
+			cog(`copium binary saved to ${copium_path}`);
 		} else {
-			// I don't know what OS this is
-			console.error(`Unsupported operating system`);
+			// invalid URL
+			cog('fetch issue');
 		}
 	} else {
-		// not AMD64 or ARM64
-		console.error(`Unsupported CPU`);
+		// we already have copium
+		cog(`using copium binary at ${copium_path}`);
 	}
 }
 
@@ -769,6 +775,9 @@ async function spawn_copium(options: CopiumOptions): Promise<CopiumSpawn> {
 // ================================================================================================
 
 async function init_real(){
+	if (settings.use_copium) {
+		await check_for_copium();
+	}
 	await init_login();
 	init_ads();
 	if (!useLocalhost){
