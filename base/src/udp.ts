@@ -15,7 +15,7 @@ export function grandFacade(){
 			const wsPair = joinMap.get(request_id);
 			if (typeof wsPair !== 'undefined'){
 				// const {wsMeta} = wsPair;
-				// console.log('grandFacade', rinfo);
+				console.log('grandFacade', rinfo);
 				const address = rinfo.address;
 				if (address === wsPair.wsMeta.server_addr){
 					// the server has pinged us using UDP

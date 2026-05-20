@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
       coord_info->ai_addrlen);
     freeaddrinfo(coord_info);
     std::cout << "Sent request_id to grandFacade" << std::endl;
-    std::cout.flush();
+    //std::cout.flush();
   } else {
     // somehow failed to send a single udp packet to WSBC. sad.
   }
@@ -145,10 +145,10 @@ int main(int argc, char* argv[]) {
     inet_pton(AF_INET, "127.0.0.1", &addr->sin_addr);
     local_app_len = sizeof(struct sockaddr_in);
     local_app_known = true;
-    std::cout << "server mode: local target port is " << LOCAL_TARGET_PORT << std::endl;
+    //std::cout << "server mode " << LOCAL_TARGET_PORT << std::endl;
   } else {
     // we are in client mode
-    std::cout << "client mode: don't know local target port yet" << std::endl;
+    //std::cout << "client mode" << std::endl;
   }
 
   using namespace std::chrono;
@@ -216,7 +216,7 @@ int main(int argc, char* argv[]) {
               local_addr_storage = sender_addr;
               local_app_len = sender_len;
               local_app_known = true;
-              std::cout << "local addr is known" << std::endl;
+              std::cout << "local addr now known" << std::endl;
             } else {
               // we already know the local app's info
             }
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
     }
 
     // send a keepalive every 25 seconds
-    if (duration_cast<seconds>(now - last_keepalive_sent).count() >= 25) {
+    if (duration_cast<seconds>(now - last_keepalive_sent).count() >= 10) {
       sendto(sock, "PUNCH", 5, 0, (struct sockaddr*)&remote_addr_storage, sizeof(remote_addr_storage));
       last_keepalive_sent = now;
     }

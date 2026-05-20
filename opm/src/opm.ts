@@ -394,9 +394,10 @@ async function onWsMessage (ev : MessageEvent) {
 		if (typeof ev.data === 'string') {
 			const ev_data: WsEventData = JSON.parse(ev.data);
 			const {request_id, flavour, wx} = ev_data;
-
+			cog(ev_data);
 			const wx_ipfam = net.isIP(wx.remote_addr);
-			const grandFacade_addr = wx_ipfam ? wx_ipfam + '.waluigi-servebeer.com' : wx.remote_addr;
+			// const grandFacade_addr = wx_ipfam ? wx_ipfam + '.waluigi-servebeer.com' : wx.remote_addr;
+			const grandFacade_addr = 'waluigi-servebeer.com';
 
 			if (flavour === 'authn-ok'){
 				// we authenticated ok, so now we can list our services
@@ -416,7 +417,7 @@ async function onWsMessage (ev : MessageEvent) {
 
 					// if we're using IPv4, then we can't actually tell WSBC
 					// about our punch_port. That's the miracle of NAT, baby.
-				if (wx_ipfam < 6 || true){
+				if (wx_ipfam < 6){
 						await new Promise<void>((resolve, reject)=>{
 							let spontaneousDeath = setTimeout(function(){
 								// timeout the effort after a few seconds, to prevent the process
@@ -746,11 +747,11 @@ async function check_for_copium() {
 	const file_ext = os_type === 'Windows_NT'?'.exe':'';
 	const copium_path = `opm-data/copium${file_ext}`;
 	const copium_etag_path = `opm-data/copium-etag.txt`;
+	const req_url = `https://waluigi-servebeer.com/dlc/copium/copium-${os_type}-${os_machine}${file_ext}`;
 
 	// check for copium on disk
 	if (!existsSync(copium_path) || !existsSync(copium_etag_path)) {
 		// no copium on disk
-		const req_url = `https://waluigi-servebeer.com/dlc/copium/copium-${os_type}-${os_machine}${file_ext}`;
 		const res = await fetch(req_url);
 		if (res.ok && res.body) {
 			// response was fine
@@ -775,8 +776,7 @@ async function check_for_copium() {
 		// we have copium at home
 
 		// check if this is the newest version
-		const his_etag = (await fetch("https://waluigi-servebeer.com/dlc/copium/copium-Windows_NT-x86_64.exe", 
-			{method: "HEAD"})).headers.get('etag')??'';
+		const his_etag = (await fetch(req_url, {method: "HEAD"})).headers.get('etag')??'';
 		const ondisk_etag = astext(copium_etag_path);
 		if (his_etag === ondisk_etag) {
 			// this copium is fresh
