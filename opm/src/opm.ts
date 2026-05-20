@@ -12,33 +12,44 @@ import dgram from 'node:dgram';
 import https from 'node:https';
 
 import {Punch, SettingsJson} from 'ProperNouns';
+const grandFacade_port = 39688;
 
 // ================================================================================================
 // ===================================== services and settings ====================================
 // ================================================================================================
 
 fs.mkdirSync('opm-data', {recursive:true});
+
 /**This is how we know stuff*/
-const settings: SettingsJson = {
+let settings: SettingsJson = {
 	is_advertiser: 0,
 	use_localhost: 0,
 	use_copium: 0
 };
-if (existsSync('opm-data/settings.json')){
-	// settings we have some
-	try {
-		const savefile = JSON.parse(astext('opm-data/settings.json')) as SettingsJson;
-		for (const key in settings){
-			if (typeof settings[key] === typeof savefile[key]) {
-				settings[key] = savefile[key];
+
+/** try to load settings from disk */
+function init_settings() {
+	if (existsSync('opm-data/settings.json')) {
+		// settings we have some
+		try {
+			const savefile = JSON.parse(astext('opm-data/settings.json')) as SettingsJson;
+			for (const key in settings) {
+				if (typeof settings[key] === typeof savefile[key]) {
+					settings[key] = savefile[key];
+				}
 			}
+		} catch (err) {
+			cog("can't load settings, skipping...");
 		}
-	} catch(err){
-		cog("can't load settings, skipping...");
 	}
+	saveSettings();
 }
-// re-save our settings
-fs.writeFileSync('opm-data/settings.json', JSON.stringify(settings, null, 2), { encoding: 'utf8' });
+
+/** re-save our settings to disk */
+function saveSettings() {
+	fs.writeFileSync('opm-data/settings.json', JSON.stringify(settings, null, 2), {encoding: 'utf8'});
+}
+
 /**what are we hosting here?*/
 let services: Punch[] = [];
 /**Are you qualified to advertise with WSBC?*/
@@ -81,9 +92,8 @@ function init_ads(){
 
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
-const useLocalhost = settings.use_localhost;
-const wsbc_hostname = useLocalhost ? 'localhost' : 'waluigi-servebeer.com';
-const http_request = useLocalhost ? http.request : https.request;
+const wsbc_hostname = settings.use_localhost ? 'localhost' : 'waluigi-servebeer.com';
+const http_request = settings.use_localhost ? http.request : https.request;
 
 type PromiseResolve<T> = (value : T) => void;
 type PromiseReject = (reason ?: any) => void;
@@ -286,7 +296,7 @@ async function determineRealStacks(){
 
 import {WsClientInfo} from 'ProperNouns';
 
-const ws_protocol = useLocalhost ? `ws:` : `wss:`;
+const ws_protocol = settings.use_localhost ? `ws:` : `wss:`;
 
 /** 
  * we need two different websockets bc WSBC uses
@@ -296,7 +306,7 @@ const wsClients: Record<string, WsClientInfo> = {};
 
 /** do this once at startup*/
 function init_websockets() {
-	if (!useLocalhost && postingAds) {
+	if (!settings.use_localhost && postingAds) {
 		// we are an advertiser and/or local dev
 		if (realStacks.v4){
 			// init for IPv4
@@ -340,7 +350,7 @@ function reinit_websocket(ws: WebSocket) {
 	wsClients[wsUrl]!.ws = newWs;
 }
 
-const refreshTime = 27000;
+const refreshTime = 25000;
 
 /** i'm not dead yet */
 function sendWsPing(ws: WebSocket){
@@ -366,9 +376,14 @@ function postListings(ws: WebSocket) {
 // --------------------------------------
 // ----- websocket event listeners ------
 
-import {WsEventData} from 'ProperNouns';
+import {WsEventData, CopiumOptions, Microplastics} from 'ProperNouns';
+import os from 'node:os';
+import {setTimeout as setTimeoutP} from 'node:timers/promises';
 
+/** temporarily keep track of peer pairing info */
 const socketMap: Map<string, UdpPair> = new Map();
+/** keep track of some copium trash */
+const plasticMap: Map<string, Microplastics> = new Map();
 
 async function onWsMessage (ev : MessageEvent) {
 	try {
@@ -379,10 +394,14 @@ async function onWsMessage (ev : MessageEvent) {
 		if (typeof ev.data === 'string') {
 			const ev_data: WsEventData = JSON.parse(ev.data);
 			const {request_id, flavour, wx} = ev_data;
+
+			const wx_ipfam = net.isIP(wx.remote_addr);
+			const grandFacade_addr = wx_ipfam ? wx_ipfam + '.waluigi-servebeer.com' : wx.remote_addr;
+
 			if (flavour === 'authn-ok'){
 				// we authenticated ok, so now we can list our services
-				postListings(ws);
 				sendWsPing(ws);
+				postListings(ws);
 				wsClients[ws.url]!.refreshTimer = setInterval(() => {
 					sendWsPing(ws);
 				}, refreshTime);
@@ -397,8 +416,7 @@ async function onWsMessage (ev : MessageEvent) {
 
 					// if we're using IPv4, then we can't actually tell WSBC
 					// about our punch_port. That's the miracle of NAT, baby.
-				const wx_ipfam = net.isIP(wx.remote_addr);
-				if (wx_ipfam < 6){
+				if (wx_ipfam < 6 || true){
 						await new Promise<void>((resolve, reject)=>{
 							let spontaneousDeath = setTimeout(function(){
 								// timeout the effort after a few seconds, to prevent the process
@@ -412,16 +430,16 @@ async function onWsMessage (ev : MessageEvent) {
 							}
 							udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
 
-							// send a ping to the grandFacade port
-							const grandFacade_addr = wx_ipfam ? wx_ipfam + '.waluigi-servebeer.com' : wx.remote_addr;							
-							udp_pair.punch_socket.send(Buffer.from(request_id), wx.remote_port, grandFacade_addr);
+							// send a ping to the grandFacade port				
+							udp_pair.punch_socket.send(Buffer.from(request_id), grandFacade_port, grandFacade_addr);
 						}).catch(reason=>{
 							// we don't really have to do much here
 							console.error(reason);
 						});
 					}
 
-					const punch_port = udp_pair.punch_socket.address().port;
+					// const punch_port = udp_pair.punch_socket.address().port;
+					const punch_port = 0;
 			
 					if (flavour === 'client-open') {
 						// temporarily keep track of stuff
@@ -465,10 +483,54 @@ async function onWsMessage (ev : MessageEvent) {
 			} else {
 				// copium-specific instructions
 				if (flavour === 'client-open' || flavour === 'server-open') {
-				
-				
-				} else if (flavour === 'peer-punch-port') {
+					// WSBC wants us to socialize
 
+					const copium_options: CopiumOptions = {
+						executablePath: `opm-data/copium${os.type()==='Windows_NT'?'.exe':''}`,
+						isServerMode: postingAds,
+						appPort: wx.app_port,
+						coordHost: grandFacade_addr,
+						coordPort: grandFacade_port,
+						requestId: request_id
+					};
+
+					const detrius = spawn_copium(copium_options);
+
+					// kiddo has to start up and then send a datagram to grandFacade.
+					// That takes time, so we'll wait for him (just a smidge, tho).
+					await setTimeoutP(600);
+
+					// We don't have to witness the miracle of NAT in this case,
+					// because copium does that internally.
+
+					if (flavour === 'client-open'){
+						// temporarily track the trash
+						plasticMap.set(request_id, detrius);
+						setTimeout(function () {
+							plasticMap.delete(request_id);
+						}, 10000);
+					} else if (flavour === 'server-open'){
+						// we can actually try to talk to the client now
+						detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
+					}
+
+					// mostly the same as above
+					const punch_port = 0;
+					const wsbc_reply = {
+						request_id,
+						flavour,
+						punch_port
+					};
+					ws.send(JSON.stringify(wsbc_reply));
+				} else if (flavour === 'peer-punch-port') {
+					// he gave you his insta
+
+					const detrius = plasticMap.get(request_id);
+					if (typeof detrius !== 'undefined'){
+						detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
+					} else {
+						// detrius was undefined
+					}
 				} else {
 					// this shouldn't happen
 				}
@@ -479,6 +541,7 @@ async function onWsMessage (ev : MessageEvent) {
 		}
 	} catch(err) {
 		cog('something has gone horribly wrong.');
+		cog(err);
 	}
 }
 
@@ -657,8 +720,6 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 // ============================================ COPIUM ============================================
 // ================================================================================================
 import {spawn} from "node:child_process";
-import {CopiumSpawn, CopiumOptions} from "ProperNouns";
-import os from 'node:os';
 import {pipeline} from 'node:stream/promises';
 
 /** make sure that we actually have copium downloaded */
@@ -706,7 +767,7 @@ async function check_for_copium() {
  * 1) a kiddo
  * 2) a function to pair with the remote
  * 3) a function to kill the kiddo*/
-function spawn_copium(options: CopiumOptions): CopiumSpawn {
+function spawn_copium(options: CopiumOptions): Microplastics {
 	// Determine ports based on our Role
 
 	/**this is 0 in server mode*/
@@ -779,7 +840,7 @@ function spawn_copium(options: CopiumOptions): CopiumSpawn {
 	kiddo.on('close', rp_onclose);
 
 	/** tell the child process to make a new friend */
-	function pairWithPeer(peerIp: string, peerPort: number) {
+	function pair_with_peer(peerIp: string, peerPort: number) {
 		if (!kiddo.stdin) {
 			console.error(`@${piddo}:cin write fail`);
 			kill_kiddo();
@@ -790,7 +851,7 @@ function spawn_copium(options: CopiumOptions): CopiumSpawn {
 	}
 
 	/**here's your order, sir*/
-	return {kiddo, pairWithPeer, kill_kiddo};
+	return {kiddo, pair_with_peer, kill_kiddo};
 }
 
 // ================================================================================================
@@ -798,12 +859,15 @@ function spawn_copium(options: CopiumOptions): CopiumSpawn {
 // ================================================================================================
 
 async function init_real(){
+	init_settings();
 	if (settings.use_copium) {
 		await check_for_copium();
+	} else {
+		cog(`not using copium binary, unfortunately`);
 	}
 	await init_login();
 	init_ads();
-	if (!useLocalhost){
+	if (!settings.use_localhost){
 		await determineRealStacks();
 	}
 	init_websockets();
