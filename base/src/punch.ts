@@ -209,6 +209,16 @@ function wss_oncelistening(){
 	console.log('WSS OK', wss.address());
 }
 
+const authn_ok: WsEventData = {
+	flavour: "authn-ok",
+	request_id: 'AUTHN_IS_OK',
+	wx: {
+		app_port: 0,
+		remote_addr: 'waluigi-servebeer.com',
+		remote_port: 0
+	}
+};
+
 function wss_onconnection (ws : ws.WebSocket, req : Request) {
 	const xff = req.headersDistinct['x-forwarded-for']?.at(0);
 	const addr = xff??'';
@@ -250,7 +260,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 									const services : Punch[] = [];
 									clientMap.set(ws, {pkeyInfo, services, addr});
 									// console.log(`User ${pkeyInfo.username} authenticated successfully with product key ${pkeyInfo.pkey}`);
-									ws.send(JSON.stringify({flavour:"authn-ok"}));
+									ws.send(JSON.stringify(authn_ok));
 								} else {
 									// this is not your product key
 									console.error(`User ${pkeyInfo.username} attempted to authenticate with invalid product key ${pkeyInfo.pkey}`);
@@ -275,7 +285,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 						const services: Punch[] = [];
 						clientMap.set(ws, {sid, services, addr});
 						// console.log(`Client with IP ${addr} authenticated with session ID ${sid}`);
-						ws.send(JSON.stringify({flavour: "authn-ok"}));
+						ws.send(JSON.stringify(authn_ok));
 					} else {
 						// the request doesn't include sid or pkey et al.
 						console.error('Received invalid authentication message from client:', parsedMessage);
@@ -294,7 +304,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							// client has opened the udp socket
 
 							// we may already have the client's UDP port, thanks to grandFacade						
-							if (!wsMeta.use_relay && !wsMeta.client_port) {
+							if (!wsMeta.use_relay && !wsMeta.client_port && punch_port) {
 								wsMeta.client_port = punch_port;
 							}
 							const server_open: WsEventData = {
@@ -319,7 +329,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							// server is telling us her punch_port
 
 							// we may already know the server's UDP port
-							if (!wsMeta.use_relay && !wsMeta.server_port){
+							if (!wsMeta.use_relay && !wsMeta.server_port && punch_port){
 								wsMeta.server_port = punch_port;
 							}
 							const peer_punch_port: WsEventData = {
