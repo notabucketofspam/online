@@ -102,7 +102,8 @@ int main(int argc, char* argv[]) {
 #endif
       coord_info->ai_addrlen);
     freeaddrinfo(coord_info);
-    std::cout << "[Startup] Fired request_id to coordinator." << std::endl;
+    std::cout << "Sent request_id to grandFacade" << std::endl;
+    std::cout.flush();
   } else {
     // somehow failed to send a single udp packet to WSBC. sad.
   }
@@ -128,26 +129,26 @@ int main(int argc, char* argv[]) {
   struct sockaddr_storage remote_addr_storage;
   memcpy(&remote_addr_storage, remote_info->ai_addr, remote_info->ai_addrlen);
   freeaddrinfo(remote_info);
-  std::cout << "[IPC] Locked onto remote peer: " << remote_ip_str << ":" << remote_port_str << std::endl;
+  std::cout << "remote peer is: " << remote_ip_str << " " << remote_port_str << std::endl;
 
-  // the local app's address
-  struct sockaddr_storage local_app_addr;
-  sock_len_t local_app_len = sizeof(local_app_addr);
+  // local address
+  struct sockaddr_storage local_addr_storage;
+  sock_len_t local_app_len = sizeof(local_addr_storage);
   bool local_app_known = false;
 
   // figure out how to talk to the local app
   if (LOCAL_TARGET_PORT > 0) {
     // we are in server mode
-    struct sockaddr_in* addr = (struct sockaddr_in*)&local_app_addr;
+    struct sockaddr_in* addr = (struct sockaddr_in*)&local_addr_storage;
     addr->sin_family = AF_INET;
     addr->sin_port = htons(LOCAL_TARGET_PORT);
     inet_pton(AF_INET, "127.0.0.1", &addr->sin_addr);
     local_app_len = sizeof(struct sockaddr_in);
     local_app_known = true;
-    std::cout << "[Mode] Peer Server: Hardcoded local target to port " << LOCAL_TARGET_PORT << std::endl;
+    std::cout << "server mode: local target port is " << LOCAL_TARGET_PORT << std::endl;
   } else {
     // we are in client mode
-    std::cout << "[Mode] Peer Client: Waiting to learn local app port dynamically..." << std::endl;
+    std::cout << "client mode: don't know local target port yet" << std::endl;
   }
 
   using namespace std::chrono;
@@ -201,7 +202,7 @@ int main(int argc, char* argv[]) {
             
             // send this data to the local app
             sendto(sock, buffer.data(), received_bytes, 0,
-              (struct sockaddr*)&local_app_addr, local_app_len);
+              (struct sockaddr*)&local_addr_storage, local_app_len);
           } else {
             // the local app's info is not yet known to us
           }
@@ -210,12 +211,12 @@ int main(int argc, char* argv[]) {
           if (LOCAL_TARGET_PORT == 0) {
             // we are in client mode
 
-            if (!local_app_known || !is_same_endpoint(sender_addr, local_app_addr)) {
+            if (!local_app_known || !is_same_endpoint(sender_addr, local_addr_storage)) {
               // we need to learn the local app's info
-              local_app_addr = sender_addr;
+              local_addr_storage = sender_addr;
               local_app_len = sender_len;
               local_app_known = true;
-              std::cout << "Learned local app's return port!" << std::endl;
+              std::cout << "local addr is known" << std::endl;
             } else {
               // we already know the local app's info
             }

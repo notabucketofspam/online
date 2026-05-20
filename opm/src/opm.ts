@@ -10,6 +10,7 @@ import http from "node:http";
 import net from "node:net";
 import dgram from 'node:dgram';
 import https from 'node:https';
+import process from 'node:process';
 
 import {Punch, SettingsJson} from 'ProperNouns';
 const grandFacade_port = 39688;
@@ -202,7 +203,6 @@ async function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: P
 }
 
 import * as readline from "node:readline/promises";
-import * as process from "node:process";
 /**We don't wanna save the username/password to disk as plaintext*/
 async function getLoginCredentials(){
 	const rl = readline.createInterface({
@@ -498,7 +498,23 @@ async function onWsMessage (ev : MessageEvent) {
 
 					// kiddo has to start up and then send a datagram to grandFacade.
 					// That takes time, so we'll wait for him (just a smidge, tho).
-					await setTimeoutP(600);
+					await setTimeoutP(2000);
+
+					// await new Promise<void>((resolve, reject)=>{
+					// 	let DeathByOldAge = setTimeout(function(){
+					// 		detrius.kiddo.stdout?.off('data', hurryUpAndWait);
+					// 		reject();
+					// 	}, 10000);
+					// 	function hurryUpAndWait(data: Buffer) {
+					// 		const output = data.toString();
+					// 		if (output.includes("AWAITING_PEER_INFO")){
+					// 			clearTimeout(DeathByOldAge);
+					// 			detrius.kiddo.stdout?.off('data', hurryUpAndWait);
+					// 			resolve();
+					// 		}
+					// 	}
+					// 	detrius.kiddo.stdout?.on('data',hurryUpAndWait);
+					// });
 
 					// We don't have to witness the miracle of NAT in this case,
 					// because copium does that internally.
@@ -724,18 +740,22 @@ import {pipeline} from 'node:stream/promises';
 
 /** make sure that we actually have copium downloaded */
 async function check_for_copium() {
+	let excode = 0;
 	const os_type = os.type();
 	const os_machine = os.machine();
 	const file_ext = os_type === 'Windows_NT'?'.exe':'';
 	const copium_path = `opm-data/copium${file_ext}`;
+	const copium_etag_path = `opm-data/copium-etag.txt`;
 
 	// check for copium on disk
-	if (!existsSync(copium_path)) {
+	if (!existsSync(copium_path) || !existsSync(copium_etag_path)) {
 		// no copium on disk
 		const req_url = `https://waluigi-servebeer.com/dlc/copium/copium-${os_type}-${os_machine}${file_ext}`;
 		const res = await fetch(req_url);
 		if (res.ok && res.body) {
 			// response was fine
+
+			// write copium binary to disk
 			const writeMe = fs.createWriteStream(copium_path);
 			await pipeline(res.body, writeMe);
 			if (!file_ext){
@@ -743,25 +763,45 @@ async function check_for_copium() {
 				fs.chmodSync(copium_path, 0o755);
 			}
 			cog(`copium binary saved to ${copium_path}`);
+
+			// write etag to disk
+			const his_etag = res.headers.get('etag') ?? '';
+			fs.writeFileSync(copium_etag_path, his_etag);
 		} else {
 			// invalid URL
 			cog('fetch issue');
 		}
 	} else {
-		// we already have copium
-		cog(`using copium binary at ${copium_path}`);
-		try {
-			fs.accessSync(copium_path, fs.constants.X_OK);
-		} catch (err) {
-			cog(`copium binary at ${copium_path} is not executable`);
-			if (!file_ext) {
-				// Need some permissions, man.
-				fs.chmodSync(copium_path, 0o755);
-			}
-		}
+		// we have copium at home
 
+		// check if this is the newest version
+		const his_etag = (await fetch("https://waluigi-servebeer.com/dlc/copium/copium-Windows_NT-x86_64.exe", 
+			{method: "HEAD"})).headers.get('etag')??'';
+		const ondisk_etag = astext(copium_etag_path);
+		if (his_etag === ondisk_etag) {
+			// this copium is fresh
+			cog(`using copium binary at ${copium_path}`);
+			try {
+				fs.accessSync(copium_path, fs.constants.X_OK);
+			} catch (err) {
+				cog(`copium binary at ${copium_path} is not executable`);
+				if (!file_ext) {
+					// Need some permissions, man.
+					fs.chmodSync(copium_path, 0o755);
+				}
+			}
+		} else {
+			// your copium is stale, my guy.
+			cog(`deleting stale copium binary at ${copium_path}`);
+			fs.rmSync(copium_path);
+			fs.rmSync(copium_etag_path);
+			excode = 1;
+		}
 	}
+	return excode;
 }
+
+const listenToKid = true;
 
 /**returns: 
  * 1) a kiddo
@@ -788,20 +828,25 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 
 	/** listen for when the child speaks */
 	function stdout_ondata(data: Buffer) {
-		const output = data.toString().trim();
-		// console.log(`@${piddo}:cout << ${output}`);
-		if (output.startsWith('READY:')) {
-			const assignedPort = parseInt(output.split(':')[1] ?? '0', 10);
-			console.log(`@${piddo} BIND #${assignedPort}`);
-		}
+		const output = data.toString();
+		console.log(`@${piddo}:cout << ${output}`);
+		// if (output.startsWith('READY:')) {
+		// 	const assignedPort = parseInt(output.split(':')[1] ?? '0', 10);
+		// 	console.log(`@${piddo} BIND #${assignedPort}`);
+		// }
 	}
-	kiddo.stdout?.on('data', stdout_ondata);
+	// kiddo.stdout?.on('data', stdout_ondata);
 
 	/** listen for when the child complains loudly in public */
 	function stderr_ondata(data: Buffer) {
-		console.error(`@${piddo}:cerr ${data.toString().trim()}`);
+		console.error(`@${piddo}:cerr ${data.toString()}`);
 	}
-	kiddo.stderr?.on('data', stderr_ondata);
+	// kiddo.stderr?.on('data', stderr_ondata);
+
+	if (listenToKid) {
+		kiddo.stdout?.on('data', stdout_ondata);
+		kiddo.stderr?.on('data', stderr_ondata);
+	}
 
 	/**delete the child process*/
 	function kill_kiddo() {
@@ -824,7 +869,7 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 
 	/** when the child process is closed */
 	function rp_onclose(code: number | null) {
-		console.log(`@{piddo} EXIT #${code}`);
+		console.log(`@${piddo} EXIT #${code}`);
 
 		// remove listeners from the child process
 		kiddo.removeAllListeners();
@@ -861,7 +906,7 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 async function init_real(){
 	init_settings();
 	if (settings.use_copium) {
-		await check_for_copium();
+		while(await check_for_copium());
 	} else {
 		cog(`not using copium binary, unfortunately`);
 	}
