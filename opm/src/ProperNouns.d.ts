@@ -57,12 +57,12 @@ declare module 'ProperNouns' {
 		[string]: any;
 	}
 
-	/**what you get from running spawn_copium */
-	export interface CopiumSpawn {
+	/** Part of a balanced breakfast */
+	export interface Microplastics {
 		/** the underlying child process */
 		kiddo: ChildProcess;
 		/** This is how we make new friends, Gordo. */
-		pairWithPeer: (peerIp: string, peerPort: number) => void;
+		pair_with_peer: (peerIp: string, peerPort: number) => void;
 		/** Kill the child process */
 		kill_kiddo: () => void;
 	}
