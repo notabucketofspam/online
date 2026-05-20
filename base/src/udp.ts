@@ -8,7 +8,8 @@ let relaySocket : dgram.Socket;
 export const rsPort = 39688;
 
 export function grandFacade(){
-	const socket = dgram.createSocket({type: 'udp6'}, (msg, rinfo)=>{
+	// leave this as udp4 for now, because some people don't have IPv6
+	const socket = dgram.createSocket({type: 'udp4'}, (msg, rinfo)=>{
 		try{
 			const request_id = msg.toString();
 			const wsPair = joinMap.get(request_id);
