@@ -341,18 +341,24 @@ function reinit_websocket(ws: WebSocket) {
 }
 
 const refreshTime = 27000;
-/**
- * this is how we tell WSBC that we are hosting stuff
- * @param ws
- */
-function refreshListings(ws: WebSocket){
+
+/** i'm not dead yet */
+function sendWsPing(ws: WebSocket){
 	try{
 		// send a ping frame
 		ws.send(Buffer.from([0x9]));
+	} catch (err){
+		console.error(err);
+	}
+}
+
+/** this is how we tell WSBC that we are hosting stuff */
+function postListings(ws: WebSocket) {
+	try {
 		// send the actual listings
 		const _services = wsClients[ws.url]?.services ?? [empty_service];
 		ws.send(JSON.stringify(_services));
-	} catch (err){
+	} catch (err) {
 		console.error(err);
 	}
 }
@@ -375,91 +381,99 @@ async function onWsMessage (ev : MessageEvent) {
 			const {request_id, flavour, wx} = ev_data;
 			if (flavour === 'authn-ok'){
 				// we authenticated ok, so now we can list our services
-				refreshListings(ws);
+				postListings(ws);
+				sendWsPing(ws);
 				wsClients[ws.url]!.refreshTimer = setInterval(() => {
-					refreshListings(ws);
+					sendWsPing(ws);
 				}, refreshTime);
-			} else if (flavour === 'client-open' || flavour === 'server-open') {
-				// WSBC (the game coordinator) wants us to reach out to someone
+			} else if (!settings.use_copium){
+				// when we're using the default udp things (pure node.js)
+
+				if (flavour === 'client-open' || flavour === 'server-open') {
+					// WSBC (the game coordinator) wants us to reach out to someone
 		
-				if (settings.use_copium){
-					// fix this later
-					// createUdpRelay({
-					// 	appPort: 0,
-					// 	coordHost: "",
-					// 	coordPort: 0,
-					// 	executablePath: "",
-					// 	isServerMode: false,
-					// 	requestId:""
-					// });
-				}
-				// make some new UDP sockets
-				const udp_pair = await createUdpPair(wx);
+					// make some new UDP sockets
+					const udp_pair = await createUdpPair(wx);
 
-				// if we're using IPv4, then we can't actually tell WSBC
-				// about our punch_port. That's the miracle of NAT, baby.
-				if (!net.isIPv6(wx.remote_addr)){
-					await new Promise<void>((resolve, reject)=>{
-						let spontaneousDeath = setTimeout(function(){
-							// timeout the effort after a few seconds, to prevent the process
-							// from hanging
-							reject();
-						}, 8000);
-						function prependOnce_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
-							// WSBC acknowledged our UDP port
-							clearTimeout(spontaneousDeath);
-							resolve();
-						}
-						udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
-						// send a ping to the grandFacade port
-						udp_pair.punch_socket.send(Buffer.from(request_id), 39688, '4.waluigi-servebeer.com');
-					}).catch(reason=>{
-						// we don't really have to do much here
-						console.error(reason);
-					});
-				}
+					// if we're using IPv4, then we can't actually tell WSBC
+					// about our punch_port. That's the miracle of NAT, baby.
+				const wx_ipfam = net.isIP(wx.remote_addr);
+				if (wx_ipfam < 6){
+						await new Promise<void>((resolve, reject)=>{
+							let spontaneousDeath = setTimeout(function(){
+								// timeout the effort after a few seconds, to prevent the process
+								// from hanging
+								reject();
+							}, 8000);
+							function prependOnce_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
+								// WSBC acknowledged our UDP port
+								clearTimeout(spontaneousDeath);
+								resolve();
+							}
+							udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
 
-				const punch_port = udp_pair.punch_socket.address().port;
+							// send a ping to the grandFacade port
+							const grandFacade_addr = wx_ipfam ? wx_ipfam + '.waluigi-servebeer.com' : wx.remote_addr;							
+							udp_pair.punch_socket.send(Buffer.from(request_id), wx.remote_port, grandFacade_addr);
+						}).catch(reason=>{
+							// we don't really have to do much here
+							console.error(reason);
+						});
+					}
+
+					const punch_port = udp_pair.punch_socket.address().port;
 			
-				if (flavour === 'client-open') {
-					// temporarily keep track of stuff
-					socketMap.set(request_id, udp_pair);
-					setTimeout(function(){
-						socketMap.delete(request_id);
-					}, 10000);
-				} else if (flavour === 'server-open') {
-					// associate this punch_socket with a remote client
-					udp_pair.remote_info.port = wx.remote_port;
-					udp_pair.remote_info.address = wx.remote_addr;
-					// send an initial message
-					udp_pair.ps_send(punchMsg);
+					if (flavour === 'client-open') {
+						// temporarily keep track of stuff
+						socketMap.set(request_id, udp_pair);
+						setTimeout(function(){
+							socketMap.delete(request_id);
+						}, 10000);
+					} else if (flavour === 'server-open') {
+						// associate this punch_socket with a remote client
+						udp_pair.remote_info.port = wx.remote_port;
+						udp_pair.remote_info.address = wx.remote_addr;
+						// send an initial message
+						udp_pair.ps_send(punchMsg);
+					}
+
+					// tell WSBC about our punch_port
+					const wsbc_reply = {
+						request_id,
+						flavour,
+						punch_port
+					};
+					ws.send(JSON.stringify(wsbc_reply));
+				} else if (flavour === 'peer-punch-port') {
+					// we are a client, and we've just received the server's punch port
+
+					const udp_pair = socketMap.get(request_id);
+					if (typeof udp_pair !== 'undefined' ){
+						// associate our punch_socket with the server
+						udp_pair.remote_info.port = wx.remote_port;
+						udp_pair.remote_info.address = wx.remote_addr;
+						// send an initial message
+						udp_pair.ps_send(punchMsg);
+						// alert user about punch success
+						cog(`Ok cool.`);
+						cog(`Now go back to your game and try to connect to 127.0.0.1`);
+					}
+				} else {
+					// this shouldn't happen
 				}
 
-				// tell WSBC about our punch_port
-				const wsbc_reply = {
-					request_id,
-					flavour,
-					punch_port
-				};
-				ws.send(JSON.stringify(wsbc_reply));
-			} else if (flavour === 'peer-punch-port') {
-				// we are a client, and we've just received the server's punch port
-
-				const udp_pair = socketMap.get(request_id);
-				if (typeof udp_pair !== 'undefined' ){
-					// associate our punch_socket with the server
-					udp_pair.remote_info.port = wx.remote_port;
-					udp_pair.remote_info.address = wx.remote_addr;
-					// send an initial message
-					udp_pair.ps_send(punchMsg);
-					// alert user about punch success
-					cog(`Ok cool.`);
-					cog(`Now go back to your game and try to connect to 127.0.0.1`);
-				}
 			} else {
-				// this shouldn't happen
+				// copium-specific instructions
+				if (flavour === 'client-open' || flavour === 'server-open') {
+				
+				
+				} else if (flavour === 'peer-punch-port') {
+
+				} else {
+					// this shouldn't happen
+				}
+
 			}
-		
 		} else {
 			// probs a pong frame, so just ignore
 		}
@@ -675,6 +689,16 @@ async function check_for_copium() {
 	} else {
 		// we already have copium
 		cog(`using copium binary at ${copium_path}`);
+		try {
+			fs.accessSync(copium_path, fs.constants.X_OK);
+		} catch (err) {
+			cog(`copium binary at ${copium_path} is not executable`);
+			if (!file_ext) {
+				// Need some permissions, man.
+				fs.chmodSync(copium_path, 0o755);
+			}
+		}
+
 	}
 }
 
@@ -682,7 +706,7 @@ async function check_for_copium() {
  * 1) a kiddo
  * 2) a function to pair with the remote
  * 3) a function to kill the kiddo*/
-async function spawn_copium(options: CopiumOptions): Promise<CopiumSpawn> {
+function spawn_copium(options: CopiumOptions): CopiumSpawn {
 	// Determine ports based on our Role
 
 	/**this is 0 in server mode*/
@@ -698,29 +722,30 @@ async function spawn_copium(options: CopiumOptions): Promise<CopiumSpawn> {
 		options.coordPort.toString(),
 		options.requestId
 	]);
-	console.log(`[COPIUM] Spawned worker (PID: ${kiddo.pid}) in ${options.isServerMode ? 'Server' : 'Client'} mode.`);
+	const piddo = kiddo.pid??0;
+	console.log(`@${piddo} BIRTH as ${options.isServerMode ? 'SERVER' : 'CLIENT'}`);
 
 	/** listen for when the child speaks */
 	function stdout_ondata(data: Buffer) {
 		const output = data.toString().trim();
-		console.log(`[C++] ${output}`);
+		// console.log(`@${piddo}:cout << ${output}`);
 		if (output.startsWith('READY:')) {
 			const assignedPort = parseInt(output.split(':')[1] ?? '0', 10);
-			console.log(`[COPIUM] Relay bound to local port: ${assignedPort}`);
+			console.log(`@${piddo} BIND #${assignedPort}`);
 		}
 	}
 	kiddo.stdout?.on('data', stdout_ondata);
 
 	/** listen for when the child complains loudly in public */
 	function stderr_ondata(data: Buffer) {
-		console.error(`[C++ ERR] ${data.toString().trim()}`);
+		console.error(`@${piddo}:cerr ${data.toString().trim()}`);
 	}
 	kiddo.stderr?.on('data', stderr_ondata);
 
 	/**delete the child process*/
 	function kill_kiddo() {
 		if (!kiddo.killed) {
-			// console.log(`[COPIUM] Killing a copium child process`);
+			console.log(`@${piddo} DEATH`);
 			kiddo.kill('SIGTERM');
 		}
 	}
@@ -738,7 +763,7 @@ async function spawn_copium(options: CopiumOptions): Promise<CopiumSpawn> {
 
 	/** when the child process is closed */
 	function rp_onclose(code: number | null) {
-		console.log(`[COPIUM] Worker exited with code ${code}`);
+		console.log(`@{piddo} EXIT #${code}`);
 
 		// remove listeners from the child process
 		kiddo.removeAllListeners();
@@ -750,18 +775,16 @@ async function spawn_copium(options: CopiumOptions): Promise<CopiumSpawn> {
 		process.removeListener('exit', kill_kiddo);
 		process.removeListener('SIGINT', sigintHandler);
 		process.removeListener('SIGTERM', sigintHandler);
-
-		// console.log(`[COPIUM] Memory and event listeners successfully wiped.`);
 	}
 	kiddo.on('close', rp_onclose);
 
 	/** tell the child process to make a new friend */
 	function pairWithPeer(peerIp: string, peerPort: number) {
 		if (!kiddo.stdin) {
-			console.error("[COPIUM] Error: Cannot write to C++ stdin.");
+			console.error(`@${piddo}:cin write fail`);
 			kill_kiddo();
 		} else {
-			console.log(`[COPIUM] Piping peer info to C++ -> ${peerIp}:${peerPort}`);
+			console.log(`@${piddo}:cin >> ${peerIp} ${peerPort}`);
 			kiddo.stdin.write(`${peerIp} ${peerPort}\n`);
 		}
 	}
