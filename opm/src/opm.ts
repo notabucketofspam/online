@@ -40,6 +40,11 @@ function init_settings() {
 					settings[key] = savefile[key];
 				}
 			}
+
+			// apply settings to things in the global scope that need it
+			wsbc_hostname = settings.use_localhost ? 'localhost' : 'waluigi-servebeer.com';
+			http_request = settings.use_localhost ? http.request : https.request;
+			ws_protocol = settings.use_localhost ? `ws:` : `wss:`;
 		} catch (err) {
 			cog("can't load settings, skipping...");
 		}
@@ -94,8 +99,8 @@ function init_ads(){
 
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
-const wsbc_hostname = settings.use_localhost ? 'localhost' : 'waluigi-servebeer.com';
-const http_request = settings.use_localhost ? http.request : https.request;
+var wsbc_hostname = 'waluigi-servebeer.com';
+var http_request: typeof http.request | typeof https.request = https.request;
 
 type PromiseResolve<T> = (value : T) => void;
 type PromiseReject = (reason ?: any) => void;
@@ -297,7 +302,7 @@ async function determineRealStacks(){
 
 import {WsClientInfo} from 'ProperNouns';
 
-const ws_protocol = settings.use_localhost ? `ws:` : `wss:`;
+var ws_protocol = 'wss:';
 
 /** 
  * we need two different websockets bc WSBC uses
@@ -919,7 +924,10 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 async function init_real(){
 	init_settings();
 	if (settings.use_copium) {
-		while(await check_for_copium());
+		let has_copium = 0;
+		do {
+			has_copium = await check_for_copium();
+		} while (!has_copium);
 	} else {
 		cog(`not using copium binary, unfortunately`);
 	}
