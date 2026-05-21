@@ -14,6 +14,7 @@ import process from 'node:process';
 
 import {Punch, SettingsJson} from 'ProperNouns';
 const grandFacade_port = 39688;
+const grandFacade_addr = '4.waluigi-servebeer.com';
 
 // ================================================================================================
 // ===================================== services and settings ====================================
@@ -351,6 +352,21 @@ function reinit_websocket(ws: WebSocket) {
 }
 
 const refreshTime = 25000;
+/**
+ * this is how we tell WSBC that we are hosting stuff
+ * @param ws
+ */
+function refreshListings(ws: WebSocket){
+	try{
+		// send a ping frame
+		ws.send(Buffer.from([0x9]));
+		// send the actual listings
+		const _services = wsClients[ws.url]?.services ?? [empty_service];
+		ws.send(JSON.stringify(_services));
+	} catch (err){
+		console.error(err);
+	}
+}
 
 /** i'm not dead yet */
 function sendWsPing(ws: WebSocket){
@@ -376,14 +392,10 @@ function postListings(ws: WebSocket) {
 // --------------------------------------
 // ----- websocket event listeners ------
 
-import {WsEventData, CopiumOptions, Microplastics} from 'ProperNouns';
-import os from 'node:os';
-import {setTimeout as setTimeoutP} from 'node:timers/promises';
+import {WsEventData} from 'ProperNouns';
 
 /** temporarily keep track of peer pairing info */
 const socketMap: Map<string, UdpPair> = new Map();
-/** keep track of some copium trash */
-const plasticMap: Map<string, Microplastics> = new Map();
 
 async function onWsMessage (ev : MessageEvent) {
 	try {
@@ -394,170 +406,171 @@ async function onWsMessage (ev : MessageEvent) {
 		if (typeof ev.data === 'string') {
 			const ev_data: WsEventData = JSON.parse(ev.data);
 			const {request_id, flavour, wx} = ev_data;
-			cog(ev_data);
-			const wx_ipfam = net.isIP(wx.remote_addr);
-			// const grandFacade_addr = wx_ipfam ? wx_ipfam + '.waluigi-servebeer.com' : wx.remote_addr;
-			const grandFacade_addr = 'waluigi-servebeer.com';
-
 			if (flavour === 'authn-ok'){
 				// we authenticated ok, so now we can list our services
-				sendWsPing(ws);
-				postListings(ws);
+				refreshListings(ws);
 				wsClients[ws.url]!.refreshTimer = setInterval(() => {
-					sendWsPing(ws);
+					refreshListings(ws);
 				}, refreshTime);
-			} else if (!settings.use_copium){
-				// when we're using the default udp things (pure node.js)
-
-				if (flavour === 'client-open' || flavour === 'server-open') {
-					// WSBC (the game coordinator) wants us to reach out to someone
+			} else if (flavour === 'client-open' || flavour === 'server-open') {
+				// WSBC (the game coordinator) wants us to reach out to someone
 		
-					// make some new UDP sockets
-					const udp_pair = await createUdpPair(wx);
+				// make some new UDP sockets
+				const udp_pair = await createUdpPair(wx);
 
-					// if we're using IPv4, then we can't actually tell WSBC
-					// about our punch_port. That's the miracle of NAT, baby.
-				if (wx_ipfam < 6){
-						await new Promise<void>((resolve, reject)=>{
-							let spontaneousDeath = setTimeout(function(){
-								// timeout the effort after a few seconds, to prevent the process
-								// from hanging
-								reject();
-							}, 8000);
-							function prependOnce_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
-								// WSBC acknowledged our UDP port
-								clearTimeout(spontaneousDeath);
-								resolve();
-							}
-							udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
+				// if we're using IPv4, then we can't actually tell WSBC
+				// about our punch_port. That's the miracle of NAT, baby.
+				if (!net.isIPv6(wx.remote_addr)){
+					await new Promise<void>((resolve, reject)=>{
+						let spontaneousDeath = setTimeout(function(){
+							// timeout the effort after a few seconds, to prevent the process
+							// from hanging
+							reject();
+						}, 8000);
+						function prependOnce_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
+							// WSBC acknowledged our UDP port
+							clearTimeout(spontaneousDeath);
+							resolve();
+						}
+						udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
+						// send a ping to the grandFacade port
+						udp_pair.punch_socket.send(Buffer.from(request_id), 39688, '4.waluigi-servebeer.com');
+					}).catch(reason=>{
+						// we don't really have to do much here
+						console.error(reason);
+					});
+				}
 
-							// send a ping to the grandFacade port				
-							udp_pair.punch_socket.send(Buffer.from(request_id), grandFacade_port, grandFacade_addr);
-						}).catch(reason=>{
-							// we don't really have to do much here
-							console.error(reason);
-						});
-					}
-
-					// const punch_port = udp_pair.punch_socket.address().port;
-					const punch_port = 0;
+				const punch_port = udp_pair.punch_socket.address().port;
 			
-					if (flavour === 'client-open') {
-						// temporarily keep track of stuff
-						socketMap.set(request_id, udp_pair);
-						setTimeout(function(){
-							socketMap.delete(request_id);
-						}, 10000);
-					} else if (flavour === 'server-open') {
-						// associate this punch_socket with a remote client
-						udp_pair.remote_info.port = wx.remote_port;
-						udp_pair.remote_info.address = wx.remote_addr;
-						// send an initial message
-						udp_pair.ps_send(punchMsg);
-					}
-
-					// tell WSBC about our punch_port
-					const wsbc_reply = {
-						request_id,
-						flavour,
-						punch_port
-					};
-					ws.send(JSON.stringify(wsbc_reply));
-				} else if (flavour === 'peer-punch-port') {
-					// we are a client, and we've just received the server's punch port
-
-					const udp_pair = socketMap.get(request_id);
-					if (typeof udp_pair !== 'undefined' ){
-						// associate our punch_socket with the server
-						udp_pair.remote_info.port = wx.remote_port;
-						udp_pair.remote_info.address = wx.remote_addr;
-						// send an initial message
-						udp_pair.ps_send(punchMsg);
-						// alert user about punch success
-						cog(`Ok cool.`);
-						cog(`Now go back to your game and try to connect to 127.0.0.1`);
-					}
-				} else {
-					// this shouldn't happen
+				if (flavour === 'client-open') {
+					// temporarily keep track of stuff
+					socketMap.set(request_id, udp_pair);
+					setTimeout(function(){
+						socketMap.delete(request_id);
+					}, 10000);
+				} else if (flavour === 'server-open') {
+					// associate this punch_socket with a remote client
+					udp_pair.remote_info.port = wx.remote_port;
+					udp_pair.remote_info.address = wx.remote_addr;
+					// send an initial message
+					udp_pair.ps_send(punchMsg);
 				}
 
+				// tell WSBC about our punch_port
+				const wsbc_reply = {
+					request_id,
+					flavour,
+					punch_port
+				};
+				ws.send(JSON.stringify(wsbc_reply));
+			} else if (flavour === 'peer-punch-port') {
+				// we are a client, and we've just received the server's punch port
+
+				const udp_pair = socketMap.get(request_id);
+				if (typeof udp_pair !== 'undefined' ){
+					// associate our punch_socket with the server
+					udp_pair.remote_info.port = wx.remote_port;
+					udp_pair.remote_info.address = wx.remote_addr;
+					// send an initial message
+					udp_pair.ps_send(punchMsg);
+					// alert user about punch success
+					cog(`Ok cool.`);
+					cog(`Now go back to your game and try to connect to 127.0.0.1`);
+				}
 			} else {
-				// copium-specific instructions
-				if (flavour === 'client-open' || flavour === 'server-open') {
-					// WSBC wants us to socialize
-
-					const copium_options: CopiumOptions = {
-						executablePath: `opm-data/copium${os.type()==='Windows_NT'?'.exe':''}`,
-						isServerMode: postingAds,
-						appPort: wx.app_port,
-						coordHost: grandFacade_addr,
-						coordPort: grandFacade_port,
-						requestId: request_id
-					};
-
-					const detrius = spawn_copium(copium_options);
-
-					// kiddo has to start up and then send a datagram to grandFacade.
-					// That takes time, so we'll wait for him (just a smidge, tho).
-					await setTimeoutP(2000);
-
-					// await new Promise<void>((resolve, reject)=>{
-					// 	let DeathByOldAge = setTimeout(function(){
-					// 		detrius.kiddo.stdout?.off('data', hurryUpAndWait);
-					// 		reject();
-					// 	}, 10000);
-					// 	function hurryUpAndWait(data: Buffer) {
-					// 		const output = data.toString();
-					// 		if (output.includes("AWAITING_PEER_INFO")){
-					// 			clearTimeout(DeathByOldAge);
-					// 			detrius.kiddo.stdout?.off('data', hurryUpAndWait);
-					// 			resolve();
-					// 		}
-					// 	}
-					// 	detrius.kiddo.stdout?.on('data',hurryUpAndWait);
-					// });
-
-					// We don't have to witness the miracle of NAT in this case,
-					// because copium does that internally.
-
-					if (flavour === 'client-open'){
-						// temporarily track the trash
-						plasticMap.set(request_id, detrius);
-						setTimeout(function () {
-							plasticMap.delete(request_id);
-						}, 10000);
-					} else if (flavour === 'server-open'){
-						// we can actually try to talk to the client now
-						detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
-					}
-
-					// mostly the same as above
-					const punch_port = 0;
-					const wsbc_reply = {
-						request_id,
-						flavour,
-						punch_port
-					};
-					ws.send(JSON.stringify(wsbc_reply));
-				} else if (flavour === 'peer-punch-port') {
-					// he gave you his insta
-
-					const detrius = plasticMap.get(request_id);
-					if (typeof detrius !== 'undefined'){
-						detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
-					} else {
-						// detrius was undefined
-					}
-				} else {
-					// this shouldn't happen
-				}
-
+				// this shouldn't happen
 			}
+		
 		} else {
 			// probs a pong frame, so just ignore
 		}
 	} catch(err) {
 		cog('something has gone horribly wrong.');
+	}
+}
+
+import {CopiumOptions, Microplastics} from 'ProperNouns';
+import os from 'node:os';
+import {setTimeout as setTimeoutP} from 'node:timers/promises';
+
+/** keep track of some copium trash */
+const plasticMap: Map<string, Microplastics> = new Map();
+
+async function onWsMessage_copium(ev: MessageEvent) {
+	try {
+		let ws = ev.target as WebSocket;
+		if (typeof ev.data === 'string') {
+			const ev_data: WsEventData = JSON.parse(ev.data);
+			const {flavour} = ev_data;
+			if (flavour === 'authn-ok') {
+				// we are authenticated now
+				sendWsPing(ws);
+				postListings(ws); 
+				wsClients[ws.url]!.refreshTimer = setInterval(() => {
+					sendWsPing(ws);
+				}, refreshTime);
+			} else if (flavour === 'client-open' || flavour === 'server-open') {
+				// WSBC wants us to socialize
+
+				const {wx, request_id} = ev_data;
+
+				const copium_options: CopiumOptions = {
+					executablePath: `opm-data/copium${os.type() === 'Windows_NT' ? '.exe' : ''}`,
+					isServerMode: postingAds,
+					appPort: wx.app_port,
+					coordHost: grandFacade_addr,
+					coordPort: grandFacade_port,
+					requestId: request_id
+				};
+
+				const detrius = spawn_copium(copium_options);
+
+				// kiddo has to start up and then send a datagram to grandFacade.
+				// That takes time, so we'll wait for him (just a smidge, tho).
+				await setTimeoutP(2000);
+
+				// We don't have to witness the miracle of NAT in this case,
+				// because copium does that internally.
+
+				if (flavour === 'client-open') {
+					// temporarily track the trash
+					plasticMap.set(request_id, detrius);
+					setTimeout(function () {
+						plasticMap.delete(request_id);
+					}, 10000);
+				} else if (flavour === 'server-open') {
+					// we can actually try to talk to the client now
+					detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
+				}
+
+				// mostly the same as above
+				const punch_port = 0;
+				const wsbc_reply = {
+					request_id,
+					flavour,
+					punch_port
+				};
+				ws.send(JSON.stringify(wsbc_reply));
+			} else if (flavour === 'peer-punch-port') {
+				// he gave you his insta
+				const {wx, request_id} = ev_data;
+
+				const detrius = plasticMap.get(request_id);
+				if (typeof detrius !== 'undefined') {
+					detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
+				} else {
+					// detrius was undefined
+				}
+			} else {
+				// this shouldn't happen
+			}
+
+		} else {
+			// PING PONG
+		}
+	} catch (err) {
+		cog('FAILURE TO COPE');
 		cog(err);
 	}
 }

@@ -665,7 +665,7 @@ setTimeout(function(){
     /**@type HTMLButtonElement*/
     var button = ev.target;
     // console.log(button.dataset);
-    // button.setAttribute('disabled','');
+    button.setAttribute('disabled','');
     /**@type Punch*/
     var punch = {
       addr: button.dataset.addr,
@@ -674,7 +674,12 @@ setTimeout(function(){
       username: button.dataset.username
     };
     await pleaseLetMeJoin(punch);
-    // button.innerHTML = `Attempting to connect...`;
+		const oldInnerHtml = button.innerHTML;
+    button.innerHTML = `Attempting to connect...`;
+    setTimeout(function(){
+      button.innerHTML = oldInnerHtml;
+      button.removeAttribute('disabled');
+    }, 9000);
   }
 
   /**@param {string} addr
@@ -760,7 +765,7 @@ setTimeout(function(){
     } else if (res.ok) {
       const resdat = await res.json();
       console.log(resdat);
-      // alert_II('Now connecting...<br/>Check OPM console window for details.');
+      alert_II('Now connecting...<br/>Check OPM console window for details.');
     } else {
       let restext = await res.text();
       console.log(restext);
