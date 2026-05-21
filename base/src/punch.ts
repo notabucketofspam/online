@@ -285,7 +285,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 						const services: Punch[] = [];
 						clientMap.set(ws, {sid, services, addr});
 						// console.log(`Client with IP ${addr} authenticated with session ID ${sid}`);
-						ws.send(JSON.stringify({flavour:"authn-ok"}));
+						ws.send(JSON.stringify({flavour: "authn-ok"}));
 					} else {
 						// the request doesn't include sid or pkey et al.
 						console.error('Received invalid authentication message from client:', parsedMessage);
