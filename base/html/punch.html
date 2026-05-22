@@ -766,6 +766,12 @@ setTimeout(function(){
       const resdat = await res.json();
       console.log(resdat);
       alert_II('Now connecting...<br/>Check OPM console window for details.');
+      setTimeout(function(){
+				let dog_maybe = document.querySelector('dialog.alert_II');
+				if (dog_maybe.open) {
+					dog_maybe.close();
+        }
+      }, 9000);
     } else {
       let restext = await res.text();
       console.log(restext);
