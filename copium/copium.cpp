@@ -5,6 +5,8 @@
 #include <chrono>
 #include <vector>
 
+#include <fstream>
+
 #ifdef _WIN32
 // Windows-specific includes and types
 #include <winsock2.h>
@@ -51,6 +53,11 @@ int main(int argc, char* argv[]) {
     std::cerr << "Usage: udp_relay <local_bind_port> <local_target_port> <coord_host> <coord_port> <request_id>" << std::endl;
     return 1;
   }
+
+  std::ofstream nullStream;
+#ifndef ENABLE_DEBUG_MESSAGES
+  std::cout.rdbuf(nullStream.rdbuf());
+#endif
 
   const char* LOCAL_BIND_PORT = argv[1];
   int LOCAL_TARGET_PORT = std::atoi(argv[2]);

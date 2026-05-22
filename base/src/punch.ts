@@ -67,7 +67,7 @@ async function getPunchList(req: Request, res: Response){
 const joinMap: Map<string, WsPair> = new Map();
 export {joinMap as punchJoinMap};
 
-import { rsPort, theWsbcUdpRelay } from './udp';
+import {rsPort, theWsbcUdpRelay } from './udp';
 
 /**
  * A user wants to connect to a particular Punch service
@@ -260,7 +260,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 									const services : Punch[] = [];
 									clientMap.set(ws, {pkeyInfo, services, addr});
 									// console.log(`User ${pkeyInfo.username} authenticated successfully with product key ${pkeyInfo.pkey}`);
-									ws.send(JSON.stringify(authn_ok));
+									ws.send(JSON.stringify({flavour:"authn-ok"}));
 								} else {
 									// this is not your product key
 									console.error(`User ${pkeyInfo.username} attempted to authenticate with invalid product key ${pkeyInfo.pkey}`);
@@ -285,7 +285,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 						const services: Punch[] = [];
 						clientMap.set(ws, {sid, services, addr});
 						// console.log(`Client with IP ${addr} authenticated with session ID ${sid}`);
-						ws.send(JSON.stringify(authn_ok));
+						ws.send(JSON.stringify({flavour: "authn-ok"}));
 					} else {
 						// the request doesn't include sid or pkey et al.
 						console.error('Received invalid authentication message from client:', parsedMessage);
@@ -304,7 +304,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							// client has opened the udp socket
 
 							// we may already have the client's UDP port, thanks to grandFacade						
-							if (!wsMeta.use_relay && !wsMeta.client_port && punch_port) {
+							if (!wsMeta.use_relay && !wsMeta.client_port) {
 								wsMeta.client_port = punch_port;
 							}
 							const server_open: WsEventData = {
@@ -329,7 +329,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							// server is telling us her punch_port
 
 							// we may already know the server's UDP port
-							if (!wsMeta.use_relay && !wsMeta.server_port && punch_port){
+							if (!wsMeta.use_relay && !wsMeta.server_port){
 								wsMeta.server_port = punch_port;
 							}
 							const peer_punch_port: WsEventData = {
