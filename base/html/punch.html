@@ -290,7 +290,7 @@ span.linux-user {
     <summary><h3>Client</h3><br/>I want to connect to my friend's video game server</summary>
     <ol class="">
       <li>
-        Download opm (the Punch software)
+        Download OPM (the Punch software)
         <ul>
           <li>
             Choose one of the options above
@@ -298,7 +298,7 @@ span.linux-user {
         </ul>
       </li>
       <li>
-        Run opm
+        Run OPM
         <ul>
           <li>When appropriately prompted, enter the email &amp; password for your <u>waluigi-servebeer.com</u> account</li>
           <li>Leave opm running</li>
@@ -326,7 +326,7 @@ span.linux-user {
         <ul><li>If you don't do this, then your friends can't see any services you're listing</li></ul>
       </li>
       <li>
-        Download opm (the Punch software)
+        Download OPM (the Punch software)
         <ul>
           <li>
             Choose one of the options above
@@ -334,7 +334,7 @@ span.linux-user {
         </ul>
       </li>
       <li>
-        Run opm
+        Run OPM
         <ul>
           <li>When appropriately prompted, enter the email &amp; password for your <u>waluigi-servebeer.com</u> account</li>
           <li><em>Alternatively</em>, you can choose to authenticate using a <strong>product key</strong><ul>
@@ -348,7 +348,7 @@ span.linux-user {
           </ul></li>
         </ul>
       </li>
-      <li>Close opm</li>
+      <li>Close OPM</li>
       <li>
         Add your <code>services.json</code> file
         <ul>
@@ -362,7 +362,14 @@ span.linux-user {
         </ul>
       </li>
       <li>
-        Run opm again
+        Edit your <code>settings.json</code> file
+        <ul>
+        <li><code>settings.json</code> is also in the <code>opm-data</code> folder</li>
+          <li>You need to have <code>"is_advertiser": 1</code></li>
+        </ul>
+      </li>
+      <li>
+        Run OPM again
         <ul>
           <li>Hopefully everything <span style="font-variant:small-caps">Just Works&trade;</span></li>
         </ul>
@@ -375,7 +382,7 @@ span.linux-user {
 <!-- F.A.Q. may or may not stand for "Frequently Asked Questions", depending on who you (frequently) ask -->
 <div>
   <h2>F.A.Q.</h2>
-  <ul class="pls-no-gap" style="padding:0;list-style-type:none;">
+  <ul class="pls-no-gap" style="padding:0;">
 		<li>
 			What is Punch?
       <ul>
@@ -440,6 +447,23 @@ span.linux-user {
         <li>Everyone downloads OPM (see the "Software Downloads" section above)</li>
         <li>Follow your respective instructions (in that "Instructions" section up top)</li>
       </ol>
+    </li>
+    <li>
+      What's the deal with Copium?
+      <ul>
+        <li>Copium is a plugin for OPM that (probably) improves performance</li>
+        <li>To enable Copium, you need to have <code>"use_copium": 1</code> in your <code>settings.json</code> file</li>
+        <li>It's called "Copium" because it's written in C++ (so... C++ OPM &rarr; Copium)</li>
+        <li>Pre-compiled Copium binaries are available for both x86_64</li>
+      </ul>
+    </li>
+    <li>
+      Why does the <b>Table of Services</b> always say "sorry nothing"?
+      <ul>
+        <li>That's because nobody trusts you yet.</li>
+        <li>Punch services are not public. By default, only users on the service host's 
+        list of <strong>trusted users</strong> are allowed to see that host's services.</li>
+      </ul>
     </li>
   </ul>
   
