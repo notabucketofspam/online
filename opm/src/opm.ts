@@ -23,7 +23,7 @@ const grandFacade_addr = '4.waluigi-servebeer.com';
 fs.mkdirSync('opm-data', {recursive:true});
 
 /**This is how we know stuff*/
-let settings: SettingsJson = {
+const settings: SettingsJson = {
 	is_advertiser: 0,
 	use_localhost: 0,
 	use_copium: 0
