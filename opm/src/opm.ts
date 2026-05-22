@@ -45,6 +45,7 @@ function init_settings() {
 			wsbc_hostname = settings.use_localhost ? 'localhost' : 'waluigi-servebeer.com';
 			http_request = settings.use_localhost ? http.request : https.request;
 			ws_protocol = settings.use_localhost ? `ws:` : `wss:`;
+			onWsMessage_actual = settings.use_copium ? onWsMessage_copium : onWsMessage;
 		} catch (err) {
 			cog("can't load settings, skipping...");
 		}
@@ -585,12 +586,14 @@ function onWsError (ev : Event) {
 	console.error(`[${ws.url}]`, ev);
 }
 
+var onWsMessage_actual = onWsMessage;
+
 function onceWsClose(ev: CloseEvent){
 	let ws = ev.target as WebSocket;
 
 	cog(`[${ws.url}] closed: [code: ${ev.code}] [reason: ${ev.reason||'none'}] [clean: ${ev.wasClean}]`);
 
-	ws.removeEventListener('message', onWsMessage);
+	ws.removeEventListener('message', onWsMessage_actual);
 	ws.removeEventListener('error', onWsError);
 	if (wsClients[ws.url]?.refreshTimer){		
 		clearInterval(wsClients[ws.url]?.refreshTimer);
@@ -608,7 +611,7 @@ function onceWsOpen (ev: Event) {
 	cog(`[${ws.url}] open`);
 
 	ws.addEventListener('error', onWsError);
-	ws.addEventListener('message', onWsMessage);
+	ws.addEventListener('message', onWsMessage_actual);
 
 	if (existsSync('opm-data/product-key.json')){
 		// user has elected to authenticate with a product key
@@ -844,23 +847,14 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 	const piddo = kiddo.pid??0;
 	console.log(`@${piddo} BIRTH as ${options.isServerMode ? 'SERVER' : 'CLIENT'}`);
 
-	/** listen for when the child speaks */
+	// listen for child process output
 	function stdout_ondata(data: Buffer) {
 		const output = data.toString();
 		console.log(`@${piddo}:cout << ${output}`);
-		// if (output.startsWith('READY:')) {
-		// 	const assignedPort = parseInt(output.split(':')[1] ?? '0', 10);
-		// 	console.log(`@${piddo} BIND #${assignedPort}`);
-		// }
 	}
-	// kiddo.stdout?.on('data', stdout_ondata);
-
-	/** listen for when the child complains loudly in public */
 	function stderr_ondata(data: Buffer) {
 		console.error(`@${piddo}:cerr ${data.toString()}`);
 	}
-	// kiddo.stderr?.on('data', stderr_ondata);
-
 	if (listenToKid) {
 		kiddo.stdout?.on('data', stdout_ondata);
 		kiddo.stderr?.on('data', stderr_ondata);
@@ -924,10 +918,10 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 async function init_real(){
 	init_settings();
 	if (settings.use_copium) {
-		let has_copium = 0;
+		let need_copium = 1;
 		do {
-			has_copium = await check_for_copium();
-		} while (!has_copium);
+			need_copium = await check_for_copium();
+		} while (need_copium);
 	} else {
 		cog(`not using copium binary, unfortunately`);
 	}
