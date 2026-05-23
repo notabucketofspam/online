@@ -108,23 +108,6 @@ var wsbc_hostname = 'waluigi-servebeer.com';
 var http_protocol = 'https:';
 var http_request: typeof http.request | typeof https.request = https.request;
 
-type PromiseResolve<T> = (value : T) => void;
-type PromiseReject = (reason ?: any) => void;
-
-// try to log in with cookie, if we have one.
-// failing that, log in with email and password.
-async function init_login(){
-	return await new Promise<void>(async (resolve, reject) => {
-		if (existsSync('opm-data/product-key.json')) {
-			console.log('Using product key to authenticate');
-			resolve();
-		} else if (existsSync('opm-data/cookie.txt')) {
-			await loginWithCookie(resolve, reject);
-		} else {
-			await loginWithUserCredentials(resolve, reject);
-		}
-	});
-}
 /**try to log in with cookie, if we have one.
 failing that, log in with email and password. */
 async function init_login_II(cookie_txt: string) {
@@ -143,29 +126,6 @@ async function init_login_II(cookie_txt: string) {
 }
 
 /** we actually *do* have a cookie, so let's try to use that instead */
-async function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseReject){
-	const loginReqOptions : http.RequestOptions = {
-		hostname: wsbc_hostname,
-		path: '/api/users/info',
-		method: 'GET',
-		headers: {
-			'Cookie': astext('opm-data/cookie.txt')
-		}
-	};
-	const loginReq = http_request(loginReqOptions, async (res) => {
-
-		if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
-			// the cookie didn't work, so now we gotta log in with credentials
-			return await loginWithUserCredentials(resolve, reject);
-		} else {
-			cog('cookie login successful');
-			// we honestly don't care about the rest of it
-			resolve();
-		}
-
-	});
-	loginReq.end();
-}
 async function loginWithCookie_II(cookie_txt: string){
 	const res = await fetch(`${http_protocol}//${wsbc_hostname}/api/users/info`, {
 		method: 'GET',
@@ -181,67 +141,6 @@ async function loginWithCookie_II(cookie_txt: string){
 }
 
 /**we dont have a cookie, so we need to log in and then get the cookie */
-async function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: PromiseReject){
-	
-	const {user_email, user_password} = await getLoginCredentials();
-
-	const loginBody = JSON.stringify({
-		email: user_email, 
-		password: user_password
-	});
-	const loginReqOptions: http.RequestOptions = {
-		hostname: wsbc_hostname,
-		path: '/api/users/login',
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'Content-Length': Buffer.byteLength(loginBody)
-		}
-	};
-
-	const loginReq = http_request(loginReqOptions, res=>{
-
-		if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
-			throw new Error('credential error');
-		}
-
-		// check the cookie header
-		const setCookie = res.headers['set-cookie'];
-		if (typeof setCookie === 'undefined' || typeof setCookie[0] === 'undefined') {
-			throw new Error('login problem');
-		}
-		const scMatch = setCookie[0].match(/connect\.sid=.*?;/g);
-		if (scMatch === null || typeof scMatch[0] === 'undefined'){
-			throw new Error("problem with the 'set-cookie' HTTP header (it's not your fault)");
-		}
-		let schism = scMatch[0];
-		while (schism.endsWith(';')){
-			// get rid of the trailing semicolon(s)
-			schism = schism.slice(0, -1);
-		}
-
-		// record the cookie for future use
-		fs.writeFileSync('opm-data/cookie.txt', schism, {encoding:'utf8'});
-
-		res.setEncoding('utf8');
-		let somedata = "";
-		const ondata = (chunk:any)=>{
-			somedata += chunk;
-		};
-		res.on("data", ondata);
-		res.once('end', () => {
-			res.off('data', ondata);
-			cog('credential login successful');
-			resolve();
-		});
-	});
-
-	loginReq.once('error', err=>{
-		console.error(err);
-	});
-	loginReq.write(loginBody);
-	loginReq.end();
-}
 async function loginWithUserCredentials_II(cookie_txt: string) {
 	const {user_email, user_password} = await getLoginCredentials();
 	const loginBody = JSON.stringify({
@@ -323,57 +222,11 @@ async function getLoginCredentials(){
 	return {user_email, user_password};
 }
 
-function genericHttpRequest(options: http.RequestOptions, dataToWrite?: any): Promise<unknown>{
-	return new Promise<unknown>((resolve, reject)=>{
-		const req = http_request(options, res=>{
-
-			if (typeof res.statusCode === 'undefined' || res.statusCode < 200 || res.statusCode >= 300){
-				// not ok
-				reject(res);
-			}
-			
-			res.setEncoding('utf8');
-			let somedata = "";
-			const res_ondata = (chunk:any)=>{
-				somedata += chunk;
-			};
-			res.on("data", res_ondata);
-			res.once('end', () => {
-				res.off('data', res_ondata);
-				req.off('error', req_onerror);
-				resolve(somedata);
-			});
-
-		});
-		if (typeof dataToWrite !== 'undefined'){
-			req.write(dataToWrite);
-		}
-		const req_onerror = (err: Error)=>{
-			reject(err);
-		}
-		req.on('error', req_onerror);
-		req.end();
-	});
-}
 const realStacks = {
 	v4: true,
 	v6: true
 };
 /**This is how we know if the client's network supports IPv4 and/or IPv6*/
-async function determineRealStacks(){
-	try {
-		await genericHttpRequest({hostname: '4.waluigi-servebeer.com'});
-	} catch(err){
-		//console.error(err);
-		realStacks.v4 = false;
-	}
-	try {
-		await genericHttpRequest({hostname: '6.waluigi-servebeer.com'});
-	} catch(err){
-		//console.error(err);
-		realStacks.v6 = false;
-	}
-}
 async function determineRealStacks_II() {
 	try {
 		const res = await fetch('4.waluigi-servebeer.com');
