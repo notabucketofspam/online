@@ -225,7 +225,7 @@ const realStacks = {
 /**This is how we know if the client's network supports IPv4 and/or IPv6*/
 async function determineRealStacks_II() {
 	try {
-		const res = await fetch('4.waluigi-servebeer.com');
+		const res = await fetch(`${http_protocol}//4.${wsbc_hostname}`);
 		if (!res.ok) {
 			realStacks.v4 = false;
 		}
@@ -233,13 +233,14 @@ async function determineRealStacks_II() {
 		realStacks.v4 = false;
 	}
 	try {
-		const res = await fetch('6.waluigi-servebeer.com');
+		const res = await fetch(`${http_protocol}//6.${wsbc_hostname}`);
 		if (!res.ok) {
 			realStacks.v6 = false;
 		}
 	} catch (err) {
 		realStacks.v6 = false;
 	}
+	return realStacks.v4 || realStacks.v6;
 }
 
 // ================================================================================================
@@ -872,7 +873,11 @@ async function init_real(){
 	await init_login_II('opm-data/cookie.txt');
 	init_ads();
 	if (!settings.use_localhost){
-		await determineRealStacks_II();
+		const has_internet = await determineRealStacks_II();
+		if (!has_internet) {
+			cog("You are offline (probably).");
+			await setTimeoutP(1e4);
+		}
 	}
 	init_websockets();
 }
