@@ -6,10 +6,8 @@ const existsSync = (x: string) => fs.existsSync(path.normalize(x));
 const cog = console.log;
 
 // some more setup i guess
-import http from "node:http";
 import net from "node:net";
 import dgram from 'node:dgram';
-import https from 'node:https';
 import process from 'node:process';
 
 import {Punch, SettingsJson} from 'ProperNouns';
@@ -50,7 +48,6 @@ function init_settings() {
 
 	// apply settings to things in the global scope that need it
 	wsbc_hostname = settings.use_localhost ? 'localhost' : 'waluigi-servebeer.com';
-	http_request = settings.use_localhost ? http.request : https.request;
 	ws_protocol = settings.use_localhost ? `ws:` : `wss:`;
 	http_protocol = settings.use_localhost ? `http:` : `https:`;
 	onWsMessage_actual = settings.use_copium ? onWsMessage_copium : onWsMessage;
@@ -106,7 +103,6 @@ function init_ads(){
 // authorization and authentication and all that
 var wsbc_hostname = 'waluigi-servebeer.com';
 var http_protocol = 'https:';
-var http_request: typeof http.request | typeof https.request = https.request;
 
 /**try to log in with cookie, if we have one.
 failing that, log in with email and password. */
