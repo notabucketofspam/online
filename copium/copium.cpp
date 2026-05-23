@@ -13,7 +13,11 @@
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
-typedef int sock_len_t; // Windows uses int for address lengths
+// Windows uses int for address lengths
+typedef int sock_len_t;
+
+// you can't just say perchance
+#define perchance (int)
 #else
 // Linux/POSIX-specific includes and types
 #include <sys/socket.h>
@@ -28,7 +32,10 @@ typedef int sock_len_t; // Windows uses int for address lengths
 #define SOCKET_ERROR -1
 #define closesocket close
 
-typedef socklen_t sock_len_t; // Linux uses socklen_t
+// Linux uses socklen_t
+typedef socklen_t sock_len_t;
+
+#define perchance
 #endif
 
 #define BUFFER_SIZE 65536
@@ -59,7 +66,7 @@ int main(int argc, char* argv[]) {
   std::cout.rdbuf(nullStream.rdbuf());
 #endif
 
-  const char* LOCAL_BIND_PORT = argv[1];
+  int LOCAL_BIND_PORT = std::atoi(argv[1]);
   int LOCAL_TARGET_PORT = std::atoi(argv[2]);
   const char* COORD_HOST = argv[3];
   const char* COORD_PORT = argv[4];
@@ -77,7 +84,7 @@ int main(int argc, char* argv[]) {
   memset(&listen_addr, 0, sizeof(listen_addr));
   listen_addr.sin_family = AF_INET;
   listen_addr.sin_addr.s_addr = INADDR_ANY;
-  listen_addr.sin_port = htons(std::atoi(LOCAL_BIND_PORT));
+  listen_addr.sin_port = htons(LOCAL_BIND_PORT);
 
   if (bind(sock, (struct sockaddr*)&listen_addr, sizeof(listen_addr)) == SOCKET_ERROR) {
     std::cerr << "Failed to bind socket." << std::endl;
@@ -99,15 +106,7 @@ int main(int argc, char* argv[]) {
 
   if (getaddrinfo(COORD_HOST, COORD_PORT, &coord_hints, &coord_info) == 0) {
     // actually send the request to WSBC (handled by grandFacade)
-    sendto(sock, REQUEST_ID,
-#ifdef _WIN32
-    (int)
-#endif
-      std::strlen(REQUEST_ID), 0, coord_info->ai_addr,
-#ifdef _WIN32
-      (int)
-#endif
-      coord_info->ai_addrlen);
+    sendto(sock, REQUEST_ID, perchance std::strlen(REQUEST_ID), 0, coord_info->ai_addr, perchance coord_info->ai_addrlen);
     freeaddrinfo(coord_info);
     std::cout << "Sent request_id to grandFacade" << std::endl;
     //std::cout.flush();
@@ -179,11 +178,7 @@ int main(int argc, char* argv[]) {
     tv.tv_usec = 100000;
 
     // check for udp socket activity
-    int activity = select(
-#ifdef _WIN32
-    (int)
-#endif
-      (sock + 1), &readfds, NULL, NULL, &tv);
+    int activity = select(perchance (sock + 1), &readfds, NULL, NULL, &tv);
     auto now = steady_clock::now();
 
     if (activity > 0 && FD_ISSET(sock, &readfds)) {
