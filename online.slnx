@@ -16,9 +16,4 @@
     <Build />
     <Deploy />
   </Project>
-  <Project Path="websocket/websocket.esproj">
-    <Platform Project="AnyCPU" />
-    <Build Solution="*|Any CPU" />
-    <Deploy Solution="*|Any CPU" />
-  </Project>
 </Solution>
