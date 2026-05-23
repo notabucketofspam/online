@@ -40,16 +40,20 @@ function init_settings() {
 					settings[key] = savefile[key];
 				}
 			}
-
-			// apply settings to things in the global scope that need it
-			wsbc_hostname = settings.use_localhost ? 'localhost' : 'waluigi-servebeer.com';
-			http_request = settings.use_localhost ? http.request : https.request;
-			ws_protocol = settings.use_localhost ? `ws:` : `wss:`;
-			onWsMessage_actual = settings.use_copium ? onWsMessage_copium : onWsMessage;
 		} catch (err) {
 			cog("can't load settings, skipping...");
 		}
+	} else {
+		// settingsless
+		cog("using default settings");
 	}
+
+	// apply settings to things in the global scope that need it
+	wsbc_hostname = settings.use_localhost ? 'localhost' : 'waluigi-servebeer.com';
+	http_request = settings.use_localhost ? http.request : https.request;
+	ws_protocol = settings.use_localhost ? `ws:` : `wss:`;
+	http_protocol = settings.use_localhost ? `http:` : `https:`;
+	onWsMessage_actual = settings.use_copium ? onWsMessage_copium : onWsMessage;
 	saveSettings();
 }
 
@@ -101,6 +105,7 @@ function init_ads(){
 // actually gotta talk to the waluigi-servebeer.com server for a sec
 // authorization and authentication and all that
 var wsbc_hostname = 'waluigi-servebeer.com';
+var http_protocol = 'https:';
 var http_request: typeof http.request | typeof https.request = https.request;
 
 type PromiseResolve<T> = (value : T) => void;
@@ -119,6 +124,22 @@ async function init_login(){
 			await loginWithUserCredentials(resolve, reject);
 		}
 	});
+}
+/**try to log in with cookie, if we have one.
+failing that, log in with email and password. */
+async function init_login_II(cookie_txt: string) {
+	try{
+		if (existsSync('opm-data/product-key.json')) {
+			console.log('Using product key to authenticate');
+		} else if (existsSync(cookie_txt)) {
+			fs.accessSync(cookie_txt);
+			await loginWithCookie_II(cookie_txt);
+		} else {
+			await loginWithUserCredentials_II(cookie_txt);
+		}
+	} catch(err) {
+		cog("Huge login failure. It's probably not your fault.");
+	}
 }
 
 /** we actually *do* have a cookie, so let's try to use that instead */
@@ -144,6 +165,19 @@ async function loginWithCookie(resolve: PromiseResolve<void>, reject: PromiseRej
 
 	});
 	loginReq.end();
+}
+async function loginWithCookie_II(cookie_txt: string){
+	const res = await fetch(`${http_protocol}//${wsbc_hostname}/api/users/info`, {
+		method: 'GET',
+		headers: {
+			'Cookie': astext(cookie_txt)
+		}
+	});
+	if (res.ok) {
+		cog('cookie login successful');
+	} else {
+		await loginWithUserCredentials_II(cookie_txt);
+	}
 }
 
 /**we dont have a cookie, so we need to log in and then get the cookie */
@@ -208,22 +242,66 @@ async function loginWithUserCredentials(resolve: PromiseResolve<void>, reject: P
 	loginReq.write(loginBody);
 	loginReq.end();
 }
+async function loginWithUserCredentials_II(cookie_txt: string) {
+	const {user_email, user_password} = await getLoginCredentials();
+	const loginBody = JSON.stringify({
+		email: user_email,
+		password: user_password
+	});
+	const res = await fetch(`${http_protocol}//${wsbc_hostname}/api/users/login`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'Content-Length': String(Buffer.byteLength(loginBody))
+		},
+		body: loginBody
+	});
+	if (res.ok) {
+		// he is alive and well
+		const setCookie = res.headers.getSetCookie();
+		if (setCookie && setCookie[0]) {
+			// cookie header is chillin rn
+			const scMatch = setCookie[0].match(/connect\.sid=.*?;/g);
+			if (scMatch && scMatch[0]) {
+				// we have a match
+				let schism = scMatch[0];
+				while (schism.endsWith(';')) {
+					// get rid of the trailing semicolon(s)
+					schism = schism.slice(0, -1);
+				}
+				// record the cookie for future use
+				fs.writeFileSync(cookie_txt, schism, {encoding: 'utf8'});
+				// let the user know that everything is going to be ok
+				cog('credential login successful');
+			} else {
+				// oddly-shaped cookie (sorry, bud)
+				throw new Error("problem with the 'set-cookie' HTTP header (it's not your fault)");
+			}
+		} else {
+			// cookie header was missing
+			throw new Error("login problem");
+		}
+	} else {
+		// res is not ok
+		throw new Error('credential error');
+	}
+}
 
-import * as readline from "node:readline/promises";
+import {Readline, createInterface} from "node:readline/promises";
 /**We don't wanna save the username/password to disk as plaintext*/
 async function getLoginCredentials(){
-	const rl = readline.createInterface({
+	const rl = createInterface({
 		input: process.stdin,
 		output: process.stdout,
 		prompt: ''
 	});
-	rl.write("Gotta login to your account on waluigi-servebeer.com\r\n");
-	const user_email = await rl.question("What's your account's email address?\r\n");
-	const user_password = await rl.question("Ok cool. And what's your password?\r\n");
-	rl.write("Thank you !!!\r\n");
+	rl.write("Gotta login to your account on waluigi-servebeer.com\n");
+	const user_email = await rl.question("What's your account's email address?\n");
+	const user_password = await rl.question("Ok cool. And what's your password?\n");
+	rl.write("Thank you !!!\n");
 
 	// wanna hide the username/password from prying eyes
-	const rl_jr = new readline.Readline(process.stdout);
+	const rl_jr = new Readline(process.stdout);
 	// remove password
 	rl_jr.moveCursor(0, -2);
 	rl_jr.clearLine(0);
@@ -293,6 +371,24 @@ async function determineRealStacks(){
 		await genericHttpRequest({hostname: '6.waluigi-servebeer.com'});
 	} catch(err){
 		//console.error(err);
+		realStacks.v6 = false;
+	}
+}
+async function determineRealStacks_II() {
+	try {
+		const res = await fetch('4.waluigi-servebeer.com');
+		if (!res.ok) {
+			realStacks.v4 = false;
+		}
+	} catch (err) {
+		realStacks.v4 = false;
+	}
+	try {
+		const res = await fetch('6.waluigi-servebeer.com');
+		if (!res.ok) {
+			realStacks.v6 = false;
+		}
+	} catch (err) {
 		realStacks.v6 = false;
 	}
 }
@@ -925,10 +1021,10 @@ async function init_real(){
 	} else {
 		cog(`not using copium binary, unfortunately`);
 	}
-	await init_login();
+	await init_login_II('opm-data/cookie.txt');
 	init_ads();
 	if (!settings.use_localhost){
-		await determineRealStacks();
+		await determineRealStacks_II();
 	}
 	init_websockets();
 }
