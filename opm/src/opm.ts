@@ -319,27 +319,6 @@ function refreshListings(ws: WebSocket){
 	}
 }
 
-/** i'm not dead yet */
-function sendWsPing(ws: WebSocket){
-	try{
-		// send a ping frame
-		ws.send(Buffer.from([0x9]));
-	} catch (err){
-		console.error(err);
-	}
-}
-
-/** this is how we tell WSBC that we are hosting stuff */
-function postListings(ws: WebSocket) {
-	try {
-		// send the actual listings
-		const _services = wsClients[ws.url]?.services ?? [empty_service];
-		ws.send(JSON.stringify(_services));
-	} catch (err) {
-		console.error(err);
-	}
-}
-
 // --------------------------------------
 // ----- websocket event listeners ------
 
@@ -438,91 +417,6 @@ async function onWsMessage (ev : MessageEvent) {
 		}
 	} catch(err) {
 		cog('something has gone horribly wrong.');
-	}
-}
-
-import {CopiumOptions, Microplastics} from 'ProperNouns';
-import os from 'node:os';
-import {setTimeout as setTimeoutP} from 'node:timers/promises';
-
-/** keep track of some copium trash */
-const plasticMap: Map<string, Microplastics> = new Map();
-
-async function onWsMessage_copium(ev: MessageEvent) {
-	try {
-		let ws = ev.target as WebSocket;
-		if (typeof ev.data === 'string') {
-			const ev_data: WsEventData = JSON.parse(ev.data);
-			const {flavour} = ev_data;
-			if (flavour === 'authn-ok') {
-				// we are authenticated now
-				sendWsPing(ws);
-				postListings(ws); 
-				wsClients[ws.url]!.refreshTimer = setInterval(() => {
-					sendWsPing(ws);
-				}, refreshTime);
-			} else if (flavour === 'client-open' || flavour === 'server-open') {
-				// WSBC wants us to socialize
-
-				const {wx, request_id} = ev_data;
-
-				const copium_options: CopiumOptions = {
-					executablePath: `opm-data/copium${os.type() === 'Windows_NT' ? '.exe' : ''}`,
-					isServerMode: postingAds,
-					appPort: wx.app_port,
-					coordHost: grandFacade_addr,
-					coordPort: grandFacade_port,
-					requestId: request_id
-				};
-
-				const detrius = spawn_copium(copium_options);
-
-				// kiddo has to start up and then send a datagram to grandFacade.
-				// That takes time, so we'll wait for him (just a smidge, tho).
-				await setTimeoutP(2000);
-
-				// We don't have to witness the miracle of NAT in this case,
-				// because copium does that internally.
-
-				if (flavour === 'client-open') {
-					// temporarily track the trash
-					plasticMap.set(request_id, detrius);
-					setTimeout(function () {
-						plasticMap.delete(request_id);
-					}, 10000);
-				} else if (flavour === 'server-open') {
-					// we can actually try to talk to the client now
-					detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
-				}
-
-				// mostly the same as above
-				const punch_port = 0;
-				const wsbc_reply = {
-					request_id,
-					flavour,
-					punch_port
-				};
-				ws.send(JSON.stringify(wsbc_reply));
-			} else if (flavour === 'peer-punch-port') {
-				// he gave you his insta
-				const {wx, request_id} = ev_data;
-
-				const detrius = plasticMap.get(request_id);
-				if (typeof detrius !== 'undefined') {
-					detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
-				} else {
-					// detrius was undefined
-				}
-			} else {
-				// this shouldn't happen
-			}
-
-		} else {
-			// PING PONG
-		}
-	} catch (err) {
-		cog('FAILURE TO COPE');
-		cog(err);
 	}
 }
 
@@ -704,6 +598,9 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 // ================================================================================================
 import {spawn} from "node:child_process";
 import {pipeline} from 'node:stream/promises';
+import {setTimeout as setTimeoutP} from 'node:timers/promises';
+import os from 'node:os';
+import {CopiumOptions, Microplastics} from 'ProperNouns';
 
 /** make sure that we actually have copium downloaded */
 async function check_for_copium() {
@@ -854,6 +751,108 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 
 	/**here's your order, sir*/
 	return {kiddo, pair_with_peer, kill_kiddo};
+}
+
+/** keep track of some copium trash */
+const plasticMap: Map<string, Microplastics> = new Map();
+
+async function onWsMessage_copium(ev: MessageEvent) {
+	try {
+		let ws = ev.target as WebSocket;
+		if (typeof ev.data === 'string') {
+			const ev_data: WsEventData = JSON.parse(ev.data);
+			const {flavour} = ev_data;
+			if (flavour === 'authn-ok') {
+				// we are authenticated now
+				sendWsPing(ws);
+				postListings(ws);
+				wsClients[ws.url]!.refreshTimer = setInterval(() => {
+					sendWsPing(ws);
+				}, refreshTime);
+			} else if (flavour === 'client-open' || flavour === 'server-open') {
+				// WSBC wants us to socialize
+
+				const {wx, request_id} = ev_data;
+
+				const copium_options: CopiumOptions = {
+					executablePath: `opm-data/copium${os.type() === 'Windows_NT' ? '.exe' : ''}`,
+					isServerMode: postingAds,
+					appPort: wx.app_port,
+					coordHost: grandFacade_addr,
+					coordPort: grandFacade_port,
+					requestId: request_id
+				};
+
+				const detrius = spawn_copium(copium_options);
+
+				// kiddo has to start up and then send a datagram to grandFacade.
+				// That takes time, so we'll wait for him (just a smidge, tho).
+				await setTimeoutP(2000);
+
+				// We don't have to witness the miracle of NAT in this case,
+				// because copium does that internally.
+
+				if (flavour === 'client-open') {
+					// temporarily track the trash
+					plasticMap.set(request_id, detrius);
+					setTimeout(function () {
+						plasticMap.delete(request_id);
+					}, 10000);
+				} else if (flavour === 'server-open') {
+					// we can actually try to talk to the client now
+					detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
+				}
+
+				// mostly the same as above
+				const punch_port = 0;
+				const wsbc_reply = {
+					request_id,
+					flavour,
+					punch_port
+				};
+				ws.send(JSON.stringify(wsbc_reply));
+			} else if (flavour === 'peer-punch-port') {
+				// he gave you his insta
+				const {wx, request_id} = ev_data;
+
+				const detrius = plasticMap.get(request_id);
+				if (typeof detrius !== 'undefined') {
+					detrius.pair_with_peer(wx.remote_addr, wx.remote_port);
+				} else {
+					// detrius was undefined
+				}
+			} else {
+				// this shouldn't happen
+			}
+
+		} else {
+			// PING PONG
+		}
+	} catch (err) {
+		cog('FAILURE TO COPE');
+		cog(err);
+	}
+}
+
+/** i'm not dead yet */
+function sendWsPing(ws: WebSocket) {
+	try {
+		// send a ping frame
+		ws.send(Buffer.from([0x9]));
+	} catch (err) {
+		console.error(err);
+	}
+}
+
+/** this is how we tell WSBC that we are hosting stuff */
+function postListings(ws: WebSocket) {
+	try {
+		// send the actual listings
+		const _services = wsClients[ws.url]?.services ?? [empty_service];
+		ws.send(JSON.stringify(_services));
+	} catch (err) {
+		console.error(err);
+	}
 }
 
 // ================================================================================================
