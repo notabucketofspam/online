@@ -678,7 +678,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 	/**punch_socket.connect() says `ENETUNREACH`, so we use this instead*/
 	const remote_info: dgram.RemoteInfo = {
 		address: wx.remote_addr,
-		family: net.isIPv6(wx.remote_addr) ? 'IPv4' : 'IPv6',
+		family: net.isIPv6(wx.remote_addr) ? 'IPv6' : 'IPv4',
 		port: wx.remote_port,
 		size: 0
 	};
