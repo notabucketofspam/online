@@ -36,6 +36,7 @@ async function init() {
 
 				const port = 39600;
 				const server_real = express_app.listen(port, () => {
+					console.log('\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/');
 						console.log(`listening on ${port}`);
 				});
 				initWSS(server_real);
