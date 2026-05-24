@@ -11,8 +11,8 @@ import dgram from 'node:dgram';
 import process from 'node:process';
 
 import {Punch, SettingsJson} from 'ProperNouns';
-const grandFacade_port = 39688;
-const grandFacade_addr = '4.waluigi-servebeer.com';
+const grandFacade_port = (remote_addr: string) => !net.isIPv6(remote_addr) ? 39684 : 39686;
+const grandFacade_addr = (remote_addr: string) => !net.isIPv6(remote_addr) ? '4.waluigi-servebeer.com': '6.waluigi-servebeer.com';
 
 // ================================================================================================
 // ===================================== services and settings ====================================
@@ -259,7 +259,7 @@ const wsClients: Record<string, WsClientInfo> = {};
 
 /** do this once at startup*/
 function init_websockets() {
-	if (!settings.use_localhost && postingAds) {
+	if (!settings.use_localhost) {
 		// we are an advertiser and/or local dev
 		if (realStacks.v4){
 			// init for IPv4
@@ -351,7 +351,7 @@ async function onWsMessage (ev : MessageEvent) {
 
 				// if we're using IPv4, then we can't actually tell WSBC
 				// about our punch_port. That's the miracle of NAT, baby.
-				if (!net.isIPv6(wx.remote_addr)){
+				if (true){
 					await new Promise<void>((resolve, reject)=>{
 						let spontaneousDeath = setTimeout(function(){
 							// timeout the effort after a few seconds, to prevent the process
@@ -360,19 +360,22 @@ async function onWsMessage (ev : MessageEvent) {
 						}, 8000);
 						function prependOnce_onmessage(msg: Buffer, rinfo: dgram.RemoteInfo){
 							// WSBC acknowledged our UDP port
+							cog(msg.toString());
 							clearTimeout(spontaneousDeath);
 							resolve();
 						}
 						udp_pair.punch_socket.prependOnceListener('message', prependOnce_onmessage);
 						// send a ping to the grandFacade port
-						udp_pair.punch_socket.send(Buffer.from(request_id), 39688, '4.waluigi-servebeer.com');
+						udp_pair.punch_socket.send(Buffer.from(request_id), grandFacade_port(wx.remote_addr), grandFacade_addr(wx.remote_addr));
+						cog(`Sent ${request_id} to grandFacade (${grandFacade_addr(wx.remote_addr)}:${grandFacade_port(wx.remote_addr)})`);
 					}).catch(reason=>{
 						// we don't really have to do much here
 						console.error(reason);
 					});
 				}
 
-				const punch_port = udp_pair.punch_socket.address().port;
+				// const punch_port = udp_pair.punch_socket.address().port;
+				const punch_port = 0;
 			
 				if (flavour === 'client-open') {
 					// temporarily keep track of stuff
@@ -418,6 +421,7 @@ async function onWsMessage (ev : MessageEvent) {
 		}
 	} catch(err) {
 		cog('something has gone horribly wrong.');
+		cog(err);
 	}
 }
 
@@ -587,7 +591,8 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 
 	// keep the hole punched
 	let PersistentKeepalive = setInterval(() => {
-		ps_send(punchMsg);
+		if (remote_info.port)
+			ps_send(punchMsg);
 	}, 25000);
 
 	// give the audience what they want
@@ -779,8 +784,8 @@ async function onWsMessage_copium(ev: MessageEvent) {
 					executablePath: `opm-data/copium${os.type() === 'Windows_NT' ? '.exe' : ''}`,
 					isServerMode: postingAds,
 					appPort: wx.app_port,
-					coordHost: grandFacade_addr,
-					coordPort: grandFacade_port,
+					coordHost: grandFacade_addr(wx.remote_addr),
+					coordPort: grandFacade_port(wx.remote_addr),
 					requestId: request_id
 				};
 

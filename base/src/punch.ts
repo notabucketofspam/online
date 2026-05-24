@@ -296,7 +296,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 					// client is doing the join handshake thing
 					const ev_data: WsbcReply = parsedMessage;
 					const {request_id, flavour, punch_port} = ev_data;
-				
+					console.log("ws_onmessage", ev_data);
 					const wsPair = joinMap.get(request_id);
 					if (typeof wsPair !== 'undefined') {
 						const {wsClient, wsServer, wsMeta} = wsPair;
@@ -320,7 +320,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							if (wsMeta.use_relay){
 								// we want the client to talk to us
 								server_open.wx.remote_addr = (net.isIPv4(wsMeta.server_addr)?'4.':"6.")+"waluigi-servebeer.com";
-								server_open.wx.remote_port = rsPort;
+								server_open.wx.remote_port = net.isIPv4(wsMeta.server_addr) ? rsPort.v4 : rsPort.v6;
 							}
 
 							// now we need to tell the server to open a udp socket
@@ -345,7 +345,7 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							if (wsMeta.use_relay) {
 								// need to tell the client to go somewhere else
 								peer_punch_port.wx.remote_addr = (net.isIPv4(wsMeta.server_addr) ? '4.' : "6.") + "waluigi-servebeer.com";
-								peer_punch_port.wx.remote_port = rsPort;
+								peer_punch_port.wx.remote_port = net.isIPv4(wsMeta.server_addr) ? rsPort.v4 : rsPort.v6;
 								// also, we need to actually use the relay
 								theWsbcUdpRelay(wsMeta);
 							}
