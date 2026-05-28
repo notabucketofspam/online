@@ -1,5 +1,8 @@
 @ECHO off
 TITLE copium %~nx0
+IF NOT EXIST build (
+	MD build
+)
 
 REM Windows
 zig c++ -O3 copium.cpp -target x86_64-windows-gnu -o build/copium-Windows_NT-x86_64.exe -lws2_32
