@@ -12,6 +12,8 @@ declare module 'VocabQuiz' {
 		/**The client is behind a firewall and can't p2p with his broskis,
 		 * so he's gotta use the WSBC UDP relay.*/
 		useRelay?: boolean;
+		/**sha256 to identify this service*/
+		sku: string;
 	}
 
 	export interface WsEventData {
@@ -54,6 +56,8 @@ declare module 'VocabQuiz' {
 		addr: string;
 		/**the product key they're using to authenticate */
 		pkeyInfo ?: PkeyInfo;
+		/**some kinda id that tells me who you are*/
+		barcode?: string;
 	}
 
 	export interface WsbcReply {

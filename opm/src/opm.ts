@@ -341,7 +341,7 @@ async function onWsMessage (ev : MessageEvent) {
 				// we authenticated ok, so now we can list our services
 				refreshListings(ws);
 				wsClients[ws.url]!.refreshTimer = setInterval(() => {
-					refreshListings(ws);
+					sendWsPing(ws);
 				}, refreshTime);
 			} else if (flavour === 'client-open' || flavour === 'server-open') {
 				// WSBC (the game coordinator) wants us to reach out to someone
@@ -584,6 +584,7 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 
 	// punch sending helper function
 	const ps_send = (msg: Buffer) => {
+		if (remote_info.port)
 		punch_socket.send(msg, remote_info.port, remote_info.address, (err, bytes)=>{
 			if (err) cog('punch_socket', err);
 		});

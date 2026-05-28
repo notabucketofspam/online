@@ -642,6 +642,7 @@ setTimeout(function(){
     @prop {string} serviceName this is the name of the server, for display purposes
     @prop {string} username Who posted this?
     @prop {boolean=} useRelay the WSBC UDP relay
+    @prop {string} sku sha256 to identify a service
   */
 
   /**
@@ -695,7 +696,8 @@ setTimeout(function(){
       addr: button.dataset.addr,
       port: Number(button.dataset.port),
       serviceName: button.dataset.serviceName,
-      username: button.dataset.username
+      username: button.dataset.username,
+	  sku: button.dataset.sku
     };
     await pleaseLetMeJoin(punch);
 		const oldInnerHtml = button.innerHTML;
@@ -723,6 +725,7 @@ setTimeout(function(){
       data-port="${punch.port}"
       data-service-name="${punch.serviceName}"
       data-username="${punch.username}"
+      data-sku="${punch.sku}"
       ${window[`addr_v${toFam(punch.addr)}`]?'':'hidden' }
       >Connect via IPv${toFam(punch.addr)}</button>
       `;
@@ -751,7 +754,7 @@ setTimeout(function(){
     service = `
     <li class="service" id="${sp_tag}">
       <ul>
-        <li>Port: ${punch.port}</li>
+        <li hidden>Port: ${punch.port}</li>
         <li>ServiceName: ${punch.serviceName}</li>
         <li>username: ${punch.username}</li>
       </ul>

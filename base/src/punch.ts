@@ -1,7 +1,7 @@
 // all sorts of imports
-import * as fs from 'node:fs';
 import * as path from "node:path";
 import { Request, Response } from 'express';
+import crypto from "node:crypto";
 
 import * as odb from "./db";
 import {generate_reset_token, isAuthenticated, express_app as app, redisStore } from "./express_app";
@@ -38,6 +38,14 @@ async function getPunchList(req: Request, res: Response){
 			if (all_services.length !== 0) {
 				// we have some services
 
+				filteredView = all_services.map(punch => {
+					let {serviceName, username, sku, addr, port} = punch;
+					sku ??= generatePunchSku(punch);
+					addr = net.isIPv4(addr) ? '0.0.0.0' : "::";
+					return {serviceName, username, sku, addr, port};
+				});
+
+				/*
 				// result is a Map<username, names of other users that he trusts>
 				const result = await odb.getTrusts();
 				if (result !== null){
@@ -49,6 +57,7 @@ async function getPunchList(req: Request, res: Response){
 					// result was null, so for now we'll just limit it to same-username punches
 					filteredView = all_services.filter(punch=>punch.username === username);					
 				}
+				*/
 			} else {
 				// we've got no services
 			}
@@ -86,25 +95,28 @@ async function askToJoin(req: Request, res: Response){
 		} else {
 			// we got a live one
 
-			const reqPunch: Punch = (contentType === 'text/plain') ? JSON.parse(req.body) : req.body;
+			const reqPunchIn: Punch = (contentType === 'text/plain') ? JSON.parse(req.body) : req.body;
 			let useRelay = false;
-			if (typeof reqPunch.useRelay === 'boolean') {
-				useRelay = reqPunch.useRelay;
+			if (typeof reqPunchIn.useRelay === 'boolean') {
+				useRelay = reqPunchIn.useRelay;
 			}
+			const reqPunch = getPunchBySku(reqPunchIn.sku);
 			
 			// search for client with matching username and IP
 			const search: Punch = {
 				addr: reqAddr,
 				port: 0,
 				serviceName: '',
-				username: reqUsername
+				username: reqUsername,
+				sku:""
 			};
 			const wsClient = getClientByService(search);
 
 			// get the server who is hosting this service
-			const wsServer = getClientByService(reqPunch);
+			const wsServer = getWsClientByPunchSku(reqPunchIn.sku);
 
-			if (typeof wsClient !== 'undefined' && typeof wsServer !== 'undefined' ) {
+			if (typeof wsClient !== 'undefined' && typeof wsServer !== 'undefined' 
+			&& typeof reqPunch !== 'undefined') {
 				const request_id = generate_reset_token();
 				const client_open: WsEventData = {
 					request_id: request_id ,
@@ -165,7 +177,7 @@ async function askToJoin(req: Request, res: Response){
 				res.status(500).json({msg:"Unable to find opponent"});
 			} else if (typeof wsServer !== 'undefined'){
 				// "from my point of view the clients are evil!"
-				res.status(500).json({ msg: "Unable to find <i>you</i>, dear user.<br/>Make sure that opm is running on your pc." });
+				res.status(500).json({ msg: "Unable to find <i>you</i>, dear user.<br/>Make sure that OPM is running on your pc." });
 			}
 		}
 	} catch(err){
@@ -375,6 +387,8 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 							services.forEach(punch => {
 								punch.addr = addr;
 								punch.username = pkeyInfo.username;
+								punch.sku = generatePunchSku(punch);
+								punch.serviceName = punch.port ? punch.serviceName : '';
 							});
 							clientMap.set(ws, {pkeyInfo, services, addr});
 						} else if (typeof clientData.sid === 'string') {
@@ -465,6 +479,50 @@ function getClientByService(search: Punch): ws | undefined {
 		console.error(err);
 	}
 	return foundClient;
+}
+
+function getWsClientByPunchSku(searchSku: string): ws | undefined {
+	let foundClient: ws | undefined;
+	try {
+		searching: for (const client of wss.clients) {
+			let clientData = clientMap.get(client);
+			if (typeof clientData !== 'undefined') {
+				for (const service of clientData.services) {
+					if (service.sku === searchSku) {
+						foundClient = client;
+						break searching;
+					}
+				}
+			}
+		}
+	} catch (err) {
+		console.error(err);
+	}
+	return foundClient;
+}
+
+function getPunchBySku(searchSku: string): Punch | undefined {
+	let foundPunch: Punch | undefined;
+	try {
+		searching: for (const client of wss.clients) {
+			let clientData = clientMap.get(client);
+			if (typeof clientData !== 'undefined') {
+				for (const service of clientData.services) {
+					if (service.sku === searchSku) {
+						foundPunch = service;
+						break searching;
+					}
+				}
+			}
+		}
+	} catch (err) {
+		console.error(err);
+	}
+	return foundPunch;
+}
+
+function generatePunchSku(punch: Punch) {
+	return crypto.hash('sha256', punch.addr+punch.port+punch.serviceName+punch.username);
 }
 
 // exports? yes.
