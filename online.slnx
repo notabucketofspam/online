@@ -4,7 +4,11 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/Solution Items/" />
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+    <File Path="solutes/le-redis.sh" />
+    <File Path="solutes/redis.md" />
+  </Folder>
   <Project Path="base/base.esproj">
     <Platform Project="AnyCPU" />
     <Build />
