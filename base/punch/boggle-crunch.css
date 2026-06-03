@@ -1,0 +1,155 @@
+.notice-me {
+	font-variant: small-caps;
+	text-align: center;
+}
+/* stuff for the table of services*/
+ol#plist {
+	padding-left: 0;
+	list-style-type: none;
+}
+
+li.service {
+	border: 1px solid black;
+	padding: 3px;
+	list-style-type: none;
+	max-width: 5in;
+	overflow-x: visible;
+	margin-bottom: 3px;
+	user-select: none;
+}
+
+	li.service > ul {
+		padding-left: 20px;
+		margin: 0;
+	}
+
+div.some_buttons {
+	display: grid;
+	grid-template-areas: "v4 v6";
+	grid-template-columns: 1fr 1fr;
+}
+
+button.let_me_connect::before {
+	content: '\2B06\FE0F';
+}
+/*stuff for trusted users*/
+ul#trusted_users {
+	margin: 0;
+	padding: 0;
+}
+
+	ul#trusted_users > li {
+		list-style-type: none;
+	}
+
+		ul#trusted_users > li > button {
+			margin-right: 5px;
+			display: inline-block;
+			width: 21px;
+			height: 21px;
+			padding: 0;
+		}
+
+#trust_sidebar {
+	float: right;
+	max-width: fit-content;
+	border: 3px double black;
+	padding: 3px;
+}
+
+@media (max-width: 8in) {
+	#trust_sidebar {
+		float: none;
+	}
+}
+/*stuff for the brief constructed response at the bottom of the page */
+h2:has(+ ul), h2:has(+ ol), h2:has(+ details) {
+	margin-bottom: 0;
+}
+
+h2 + ul, h2 + ol {
+	margin-top: 0;
+}
+
+.pls-no-gap {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+
+div.necessary-documentation {
+	details {
+		border: 3px double black;
+		margin-bottom: 4px;
+	}
+
+		details > summary > h3 {
+			margin: 0;
+			display: inline-block;
+		}
+
+	summary {
+		user-select: none;
+		pointer-events: none;
+		cursor: default;
+		padding: 2px;
+	}
+}
+
+code {
+	background-color: #ddda;
+}
+
+span.choose-os {
+	display: inline-block;
+	border-style: outset;
+	border-width: 3px;
+	background-color: #ddda;
+	padding: 5px;
+	user-select: none;
+	cursor: default;
+}
+
+	span.choose-os:hover {
+		background-color: #ccca;
+	}
+
+	span.choose-os:active, span.choose-os.active {
+		border-style: inset;
+		background-color: #e3e3e3aa;
+	}
+
+div.software-download h3 {
+	margin: 0;
+	line-height: 1lh;
+}
+
+div.software-download ul.pls-no-gap {
+	min-height: 9lh;
+}
+
+span.linux-user {
+	letter-spacing: 2px;
+	font-style: italic;
+	font-family: cursive;
+	line-height: 1lh;
+}
+
+button.pseudoconnect {
+	display: inline-block;
+	line-height: 12px;
+	padding-top: 1px;
+	padding-bottom: 0;
+}
+
+	button.pseudoconnect::before {
+		content: "\2b06\fe0f Connect"
+	}
+
+div#ned-flanders {
+	box-shadow: #000 2px 2px;
+	max-width: fit-content;
+	border: 2px solid black;
+	border-radius: 3px;
+	padding: 3px;
+}
+
