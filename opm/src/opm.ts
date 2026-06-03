@@ -810,11 +810,12 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 
 	// listen for child process output
 	function stdout_ondata(data: Buffer) {
-		const output = data.toString();
+		const output = data.toString().trim();
 		console.log(`@${piddo}:cout << ${output}`);
 	}
 	function stderr_ondata(data: Buffer) {
-		console.error(`@${piddo}:cerr ${data.toString()}`);
+		const output = data.toString().trim();
+		console.error(`@${piddo}:cerr ${output}`);
 	}
 	if (listenToKid) {
 		kiddo.stdout?.on('data', stdout_ondata);

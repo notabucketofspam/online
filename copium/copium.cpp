@@ -188,11 +188,11 @@ int main(int argc, char* argv[]) {
     if (is_ipv6) {
       char ip_str[INET6_ADDRSTRLEN];
       inet_ntop(AF_INET6, &((struct sockaddr_in6*)&current_addr)->sin6_addr, ip_str, sizeof(ip_str));
-      std::cout << "READY:" << ip_str << " " << ntohs(((struct sockaddr_in6*)&current_addr)->sin6_port) << std::endl;
+      std::cout << "READY " << ip_str << " " << ntohs(((struct sockaddr_in6*)&current_addr)->sin6_port) << std::endl;
     } else {
       char ip_str[INET_ADDRSTRLEN];
       inet_ntop(AF_INET, &((struct sockaddr_in*)&current_addr)->sin_addr, ip_str, sizeof(ip_str));
-      std::cout << "READY:" << ip_str << " " << ntohs(((struct sockaddr_in*)&current_addr)->sin_port) << std::endl;
+      std::cout << "READY " << ip_str << " " << ntohs(((struct sockaddr_in*)&current_addr)->sin_port) << std::endl;
     }
   }
 
