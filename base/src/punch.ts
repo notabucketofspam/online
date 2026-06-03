@@ -493,8 +493,8 @@ function getPunchServices(): Punch[]{
 	return all_services;
 }
 
-function getClientByService(search: Punch): ws | undefined {
-	let foundClient: ws | undefined;
+function getClientByService(search: Punch): ws.WebSocket | undefined {
+	let foundClient: ws.WebSocket | undefined;
 	try {
 		searching: for (const client of wss.clients) {
 			let clientData = clientMap.get(client);
@@ -516,8 +516,8 @@ function getClientByService(search: Punch): ws | undefined {
 	return foundClient;
 }
 
-function getWsClientByPunchSku(searchSku: string): ws | undefined {
-	let foundClient: ws | undefined;
+function getWsClientByPunchSku(searchSku: string): ws.WebSocket | undefined {
+	let foundClient: ws.WebSocket | undefined;
 	try {
 		searching: for (const client of wss.clients) {
 			let clientData = clientMap.get(client);
