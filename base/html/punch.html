@@ -24,6 +24,7 @@
     max-width: 5in;
     overflow-x: visible;
     margin-bottom: 3px;
+    user-select:none;
   }
   li.service > ul {
     padding-left: 20px;
@@ -180,7 +181,7 @@ div#ned-flanders{
 <h2>Table of Services</h2>
 <ol id="plist"></ol>
 <div>
-  <label>
+  <label style="user-select:none;">
     <input type="checkbox" id="please_use_relay"/>
     Use the WSBC UDP relay
   </label>
@@ -495,6 +496,20 @@ div#ned-flanders{
 <!-- and here's where all the scripts have ended up for now :^) -->
 <script src="/js/everything.js"></script>
 <script>
+	var please_use_relay = document.getElementById("please_use_relay");
+	please_use_relay.addEventListener('change', function(ev) {
+		const all_viaIPv6 = Array.from(document.getElementsByClassName('viaIPv6'));
+    if (ev.target.checked){
+			all_viaIPv6.forEach(button => {
+				button.setAttribute('disabled', '');
+			});
+    } else {
+			all_viaIPv6.forEach(button => {
+				button.removeAttribute('disabled');
+			});
+		}
+  });
+
   var macuser = document.createElement('AUDIO');
   macuser.setAttribute('src', '/page/soundboard/opodes/GordonMahUng/fuck%20you%20Steve%20Jobs.opus');
   macuser.volume = 0.5;
@@ -739,15 +754,16 @@ setTimeout(function(){
    * @returns {string}
   */
   function makeConnectButton(punch){
+		let tofu = toFam(punch.addr);
     var button_html = `
-      <button class="let_me_connect" style="grid-area:v${toFam(punch.addr)}"
+      <button class="let_me_connect viaIPv${tofu}" style="grid-area:v${tofu}"
       data-addr="${punch.addr}"
       data-port="${punch.port}"
       data-service-name="${punch.serviceName}"
       data-username="${punch.username}"
       data-sku="${punch.sku}"
-      ${window[`addr_v${toFam(punch.addr)}`]?'':'hidden' }
-      >Connect via IPv${toFam(punch.addr)}</button>
+      ${window[`addr_v${tofu}`]?'':'hidden' }
+      >Connect via IPv${tofu}</button>
       `;
     return button_html;
   }
