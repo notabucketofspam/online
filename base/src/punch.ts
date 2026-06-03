@@ -42,6 +42,7 @@ async function getPunchList(req: Request, res: Response){
 					let {serviceName, username, sku, addr, port} = punch;
 					sku ??= generatePunchSku(punch);
 					addr = net.isIPv4(addr) ? '0.0.0.0' : "::";
+					port = -1;
 					return {serviceName, username, sku, addr, port};
 				});
 			} else {
