@@ -1,0 +1,22 @@
+[Unit]
+Description=redis-server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=wsbc
+Group=wsbc
+
+WorkingDirectory=/opt/redis-unstable
+ExecStart=/opt/redis-unstable/src/redis-server /opt/redis-unstable/redis.conf
+
+Restart=always
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+# NOTE: this is totally unrelated to the "redis on windows" thing

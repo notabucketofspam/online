@@ -1,0 +1,20 @@
+[Unit]
+Description=online
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=wsbc
+Group=wsbc
+
+WorkingDirectory=/httpd/online
+ExecStart=/usr/bin/node /httpd/online
+
+Restart=always
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -12,6 +12,6 @@ rsync \
   -e "ssh -i \"./notkeys/key\"" \
   ./ ubuntu@193.122.154.50:/httpd/online/
 echo "rsync OK"
-ssh -i "./notkeys/key" ubuntu@193.122.154.50 "pm2 restart online > /dev/null"
+ssh -i "./notkeys/key" ubuntu@193.122.154.50 "~/restart-online"
 echo "Done"
 # sleep 2
