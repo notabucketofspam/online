@@ -44,20 +44,6 @@ async function getPunchList(req: Request, res: Response){
 					addr = net.isIPv4(addr) ? '0.0.0.0' : "::";
 					return {serviceName, username, sku, addr, port};
 				});
-
-				/*
-				// result is a Map<username, names of other users that he trusts>
-				const result = await odb.getTrusts();
-				if (result !== null){
-					// only display services for users whom trust this user
-					filteredView = all_services.filter(punch=>
-						result.get(punch.username)?.includes(username) || punch.username === username
-					);
-				} else {
-					// result was null, so for now we'll just limit it to same-username punches
-					filteredView = all_services.filter(punch=>punch.username === username);					
-				}
-				*/
 			} else {
 				// we've got no services
 			}
@@ -119,62 +105,6 @@ async function askToJoin(req: Request, res: Response){
 			&& typeof reqPunch !== 'undefined') {
 				await performJunction({wsClient, wsServer, reqPunch, reqUsername, reqAddr, useRelay, res});
 
-				/*
-				const request_id = generate_reset_token();
-				const client_open: WsEventData = {
-					request_id: request_id ,
-					flavour: 'client-open',
-					wx: {
-						app_port: reqPunch.port ,
-						remote_addr: reqPunch.addr ,
-						remote_port: 0
-					}
-				};
-
-				let shouldSend = false;
-				if (reqUsername === reqPunch.username){
-					// same-user, so we don't have to check the database for trust issues
-					shouldSend = true;
-				} else {
-					// check odb for trust
-					const result = await odb.getTrusts();
-					if (result !== null){
-						const isTrusted = result.get(reqPunch.username)?.includes(reqUsername);
-						if (isTrusted) {
-							// our guy is trusted
-							shouldSend = true;
-						} else {
-							// user isnt trusted
-							res.status(500).json({msg:"Target user doesn't trust you yet."});
-						}
-					} else {
-						// result was null
-						res.status(500).json({msg:"database error"});
-					}
-				}
-
-				if (shouldSend){
-					const wsMeta: WsPairMeta = {
-						client_addr: reqAddr,
-						client_port: 0,
-						server_addr: reqPunch.addr,
-						server_port: 0,
-						app_port: reqPunch.port,
-						use_relay: useRelay
-					};
-					joinMap.set(request_id, {wsClient, wsServer, wsMeta});
-					if (useRelay) {
-						// he wants to use the relay
-						client_open.wx.remote_addr = (net.isIPv4(wsMeta.server_addr) ? '4.' : "6.") + "waluigi-servebeer.com";
-					}
-					wsClient.send(JSON.stringify(client_open));
-					res.status(200).json({msg:'ok'});
-					// eventually delete the temp data in joinMap
-					setTimeout(function(){
-						joinMap.delete(request_id);
-					}, 10000);
-				}
-				*/
 			} else if (typeof wsClient !== 'undefined') {
 				// couldn't find a websocket client advertising this service
 				// specifically, wsClient was ok, but wsServer was bad
