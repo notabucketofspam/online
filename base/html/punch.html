@@ -772,7 +772,8 @@ setTimeout(function(){
   *@param {Punch} punch
   *@returns {Promise<void>}
   */
-  async function pleaseLetMeJoin (punch) {
+async function pleaseLetMeJoin (punch) {
+  try {
     var contentType = 'application/json';
     // var fetch_url = '/api/punch/join';
     var fetch_url = `http://127.0.0.1:${httpd_port}/link`;
@@ -787,6 +788,7 @@ setTimeout(function(){
       mode: 'cors',
       cache: 'no-store',
       headers: {'Content-Type': contentType},
+      targetAddressSpace: 'loopback',
       body: JSON.stringify(punch)
     });
     if (res.status === 306) {
@@ -811,7 +813,15 @@ setTimeout(function(){
       }catch(err){}
       alert_II(`Problem:<br/>${real_text}`);
     }
-  }
+	} catch (errr) {
+		console.log(errr);
+		if (errr.name === 'TypeError') {
+			alert_II('Problem:<br/>OPM is (probably) not running.');
+		} else {
+		  alert_II(`Problem:<br/>${errr.message}`);
+    }
+	}
+}
 </script>
 </body>
 </html>
