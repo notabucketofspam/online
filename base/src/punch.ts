@@ -1,5 +1,5 @@
 // all sorts of imports
-import * as path from "node:path";
+import path from "node:path";
 import { Request, Response } from 'express';
 import crypto from "node:crypto";
 
@@ -8,6 +8,7 @@ import {generate_reset_token, isAuthenticated, express_app as app, redisStore } 
 import {Punch, ClientData, WsbcReply, WsEventData, WsPair, WsPairMeta } from "VocabQuiz";
 
 import {SessionData} from "express-session";
+import express from 'express';
 
 // ========================================================
 // this is all the express-related punch stuff
@@ -122,7 +123,7 @@ async function askToJoin(req: Request, res: Response){
 }
 
 app.get("/ip", get_ip);
-app.get("/punch", getPunchHtml);
+app.use("/punch", express.static(path.join(__dirname, "..", 'punch')));
 app.get("/api/punch/list", isAuthenticated, getPunchList);
 app.post("/api/punch/join", isAuthenticated, askToJoin);
 
