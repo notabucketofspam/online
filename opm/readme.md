@@ -7,3 +7,8 @@ list of some stuff that may not be obvious:
 	- you just need one of the `.zip` files from the "Binary Downloads" section
 - there's also the `node` file that's in `bigassets`. it's the linux binary for nodejs.
 - i'm using putty / pscp for the push commands bc it's simple.
+- there's some `systemd` files in `assets`
+  - `sudo cp opm.service opm.timer /etc/systemd/system/`
+  - `sudo systemctl daemon-reload`
+  - `sudo systemctl enable --now opm.timer`
+  - these are important bc, when the system boots, IPv6 takes a lil bit longer to init than IPv4, so we need a smidge of delay to keep `opm` from breaking

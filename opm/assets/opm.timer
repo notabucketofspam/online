@@ -1,0 +1,10 @@
+[Unit]
+Description=OPM slow-start
+After=network-online.target
+Wants=network-online.target
+
+[Timer]
+OnActiveSec=15
+
+[Install]
+WantedBy=timers.target
