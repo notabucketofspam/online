@@ -275,7 +275,7 @@ function httpd_onrequest(req: http.IncomingMessage, res: http.ServerResponse) {
 		// Handle the Preflight (OPTIONS) request instantly
 		res.writeHead(204);
 		res.end();
-	} else if (req.method === 'POST' && req.url === '/link') {
+	} else if (req.method === 'POST' && req.url === '/join') {
 		// Handle the actual Token POST request
 
 		let body = '';
@@ -286,7 +286,7 @@ function httpd_onrequest(req: http.IncomingMessage, res: http.ServerResponse) {
 			try {
 				req.off('data', reqondata);
 				const punch: Punch = JSON.parse(body);
-				console.log("Received punch from browser with sku:", punch.sku);
+				console.log("RECEIVED punch sku:", punch.sku);
 
 				// try to ask WSBC if we can join
 				doWannaJoin(punch);
