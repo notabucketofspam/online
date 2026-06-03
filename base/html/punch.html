@@ -767,13 +767,15 @@ setTimeout(function(){
     return service;
   }
 
+  var httpd_port = 39648;
   /**
   *@param {Punch} punch
   *@returns {Promise<void>}
   */
   async function pleaseLetMeJoin (punch) {
     var contentType = 'application/json';
-    var fetch_url = '/api/punch/join';
+    // var fetch_url = '/api/punch/join';
+    var fetch_url = `http://127.0.0.1:${httpd_port}/link`;
     
     let useRelay = document.getElementById("please_use_relay")?.checked ?? false;
     if (useRelay){

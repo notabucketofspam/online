@@ -12,6 +12,8 @@ declare module 'ProperNouns' {
 		serviceName : string;
 		/**Who posted this?*/
 		username: string;
+		/**sha256 to identify this service*/
+		sku: string;
 	}
 
 	/**info about a WebSocket that's connected to WSBC*/

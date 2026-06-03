@@ -50,6 +50,7 @@ function init_settings() {
 	wsbc_hostname = settings.use_localhost ? 'localhost' : 'waluigi-servebeer.com';
 	ws_protocol = settings.use_localhost ? `ws:` : `wss:`;
 	http_protocol = settings.use_localhost ? `http:` : `https:`;
+	wsbc_origin = `${http_protocol}//${wsbc_hostname}`;
 	onWsMessage_actual = settings.use_copium ? onWsMessage_copium : onWsMessage;
 	saveSettings();
 }
@@ -68,7 +69,8 @@ const empty_service: Punch = {
 	addr: "",
 	port: 0,
 	serviceName: "",
-	username: ""
+	username: "",
+	sku: ""
 };
 
 function init_ads(){
@@ -123,7 +125,7 @@ async function init_login_II(cookie_txt: string) {
 
 /** we actually *do* have a cookie, so let's try to use that instead */
 async function loginWithCookie_II(cookie_txt: string){
-	const res = await fetch(`${http_protocol}//${wsbc_hostname}/api/users/info`, {
+	const res = await fetch(`${wsbc_origin}/api/users/info`, {
 		method: 'GET',
 		headers: {
 			'Cookie': astext(cookie_txt)
@@ -143,7 +145,7 @@ async function loginWithUserCredentials_II(cookie_txt: string) {
 		email: user_email,
 		password: user_password
 	});
-	const res = await fetch(`${http_protocol}//${wsbc_hostname}/api/users/login`, {
+	const res = await fetch(`${wsbc_origin}/api/users/login`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -241,6 +243,74 @@ async function determineRealStacks_II() {
 		realStacks.v6 = false;
 	}
 	return realStacks.v4 || realStacks.v6;
+}
+
+// ================================================================================================
+// ====================================== a small http server =====================================
+// ================================================================================================
+import http from 'node:http';
+
+// Change this to the actual URL of your Coordinator Server's frontend
+var wsbc_origin = 'https://waluigi-servebeer.com';
+var httpd_port = 39648;
+
+function init_httpd() {
+	const server = http.createServer();
+	server.on('request', httpd_onrequest);
+	server.once('listening', httpd_onlistening);
+	server.listen(httpd_port, '127.0.0.1');
+}
+
+function httpd_onrequest(req: http.IncomingMessage, res: http.ServerResponse) {
+	// Attach the required CORS Headers to EVERY response
+	res.setHeader('Access-Control-Allow-Origin', wsbc_origin);
+	res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+	res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+	if (req.method === 'OPTIONS') {
+		// Handle the Preflight (OPTIONS) request instantly
+		res.writeHead(204);
+		res.end();
+	} else if (req.method === 'POST' && req.url === '/link') {
+		// Handle the actual Token POST request
+
+		let body = '';
+		const reqondata = (chunk: any) => {
+			body += chunk.toString();
+		}
+		const reqonceend = async () => {
+			try {
+				req.off('data', reqondata);
+				const punch: Punch = JSON.parse(body);
+				console.log("Received punch from browser with sku:", punch.sku);
+
+				// try to ask WSBC if we can join
+				const res_II = await fetch(`${wsbc_origin}/api/punch/join`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify(punch)
+				});
+				// send the response back to the browser
+				res.writeHead(res_II.status, {'Content-Type': 'application/json'});
+				res.end(await res_II.text());
+			} catch (error) {
+				// real bad, chief
+				res.writeHead(400, {'Content-Type': 'application/json'});
+				res.end(JSON.stringify({msg: 'Invalid JSON'}));
+			}
+		};
+		req.on('data', reqondata);
+		req.once('end', reqonceend);
+	} else {
+		// Catch-all for wrong URLs or methods
+		res.writeHead(404);
+		res.end();
+	}
+}
+function httpd_onlistening() {
+	console.log(`httpd listening at http://127.0.0.1:${httpd_port}`);
 }
 
 // ================================================================================================
@@ -884,6 +954,9 @@ async function init_real(){
 			cog("You are offline (probably).");
 			await setTimeoutP(1e4);
 		}
+	}
+	if (!postingAds) {
+		init_httpd();
 	}
 	init_websockets();
 }
