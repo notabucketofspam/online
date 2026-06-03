@@ -270,7 +270,10 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 
 									// everything checks out, so we can add this guy to the clientMap
 									const services : Punch[] = [];
-									clientMap.set(ws, {pkeyInfo, services, addr});
+									const userId = pkeyInfo.userId;
+									const clientData: ClientData = {pkeyInfo, services, addr, userId};
+									clientData.barcode = generateClientBarcode(clientData);
+									clientMap.set(ws, clientData);
 									// console.log(`User ${pkeyInfo.username} authenticated successfully with product key ${pkeyInfo.pkey}`);
 									ws.send(JSON.stringify({flavour:"authn-ok"}));
 								} else {
@@ -294,8 +297,12 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 						sid = decodeURIComponent(sid);
 						const rx = /s:(.*?)\./;
 						sid = rx.exec(sid)?.[1] ?? sid;
+						const session: SessionData | undefined = await redisStore.get(sid);
+						const userId = session?.userId ?? 0;
 						const services: Punch[] = [];
-						clientMap.set(ws, {sid, services, addr});
+						const clientData: ClientData = {sid, services, addr, userId};
+						clientData.barcode = generateClientBarcode(clientData);
+						clientMap.set(ws, clientData);
 						// console.log(`Client with IP ${addr} authenticated with session ID ${sid}`);
 						ws.send(JSON.stringify({flavour: "authn-ok"}));
 					} else {
@@ -380,31 +387,50 @@ function wss_onconnection (ws : ws.WebSocket, req : Request) {
 
 					let clientData = clientMap.get(ws);
 					if (typeof clientData !== 'undefined') {
+						let username: string | undefined;
+						let userId: number | undefined;
+						let pkeyInfo: PkeyInfo | undefined;
+						let sid: string | undefined;
+						let validAuthn = false;
+
 						// check user's info
 						if (typeof clientData.pkeyInfo === 'object') {
 							// client is using product key
-							const pkeyInfo = clientData.pkeyInfo;
-							services.forEach(punch => {
-								punch.addr = addr;
-								punch.username = pkeyInfo.username;
-								punch.sku = generatePunchSku(punch);
-								punch.serviceName = punch.port ? punch.serviceName : '';
-							});
-							clientMap.set(ws, {pkeyInfo, services, addr});
+							pkeyInfo = clientData.pkeyInfo;
+							username = pkeyInfo.username;
+							userId = pkeyInfo.userId;
+							validAuthn = true;
 						} else if (typeof clientData.sid === 'string') {
 							// client logged in with cookie session data
-
-							const sid = clientData.sid;
+							sid = clientData.sid;
 							const session : SessionData | undefined = await redisStore.get(sid);
-							const username = session?.username ?? '';
-							services.forEach(punch => {
-								punch.addr = addr;
-								punch.username = username;
-							});
-							clientMap.set(ws, {sid, services, addr});
+							username = session?.username ?? '';
+							userId = session?.userId ?? 0;
+							validAuthn = true;
 						} else {
 							// clientData doesn't have pkeyInfo or sid
 							console.error('Client data has no authentication info:', clientData);
+						}
+
+						if (validAuthn && typeof username === 'string' && typeof userId === 'number') {
+							// set the services
+							services.forEach(punch => {
+								punch.addr = addr;
+								punch.username = username;
+								punch.serviceName = punch.port ? punch.serviceName : '';
+								punch.sku = generatePunchSku(punch);
+							});
+							// set the actual clientData
+							const clientData_II: ClientData = {services, addr, userId};
+							if (typeof pkeyInfo !== 'undefined') {
+								clientData_II.pkeyInfo = pkeyInfo;
+							} else if (typeof sid === 'string') {
+								clientData_II.sid = sid;
+							}
+							clientData_II.barcode = generateClientBarcode(clientData_II);
+							clientMap.set(ws, clientData_II);
+						} else {
+							// authentication info was invalid
 						}
 					} else {
 						// clientData is undefined
@@ -523,6 +549,21 @@ function getPunchBySku(searchSku: string): Punch | undefined {
 
 function generatePunchSku(punch: Punch) {
 	return crypto.hash('sha256', punch.addr+punch.port+punch.serviceName+punch.username);
+}
+
+function generateClientBarcode(clientData: ClientData): string {
+	let specialSpice = '';
+	if (typeof clientData.sid === 'string') {
+		specialSpice = clientData.sid;
+	} else if (typeof clientData.pkeyInfo === 'object' && typeof clientData.pkeyInfo.pkey === 'string') {
+		specialSpice = clientData.pkeyInfo.pkey;
+	} else {
+		// worst-case scenario is that we address him by his address instead of his name
+		specialSpice = clientData.addr;
+	}
+	const userId = clientData.userId;
+
+	return crypto.hash('sha256',specialSpice+userId);
 }
 
 // exports? yes.

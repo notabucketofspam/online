@@ -58,6 +58,8 @@ declare module 'VocabQuiz' {
 		pkeyInfo ?: PkeyInfo;
 		/**some kinda id that tells me who you are*/
 		barcode?: string;
+		/**this userId, perchance.*/
+		userId: number;
 	}
 
 	export interface WsbcReply {
