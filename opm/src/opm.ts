@@ -9,6 +9,7 @@ const cog = console.log;
 import net from "node:net";
 import dgram from 'node:dgram';
 import process from 'node:process';
+import {setTimeout as setTimeoutP} from 'node:timers/promises';
 
 import {Punch, SettingsJson} from 'ProperNouns';
 const grandFacade_port = (remote_addr: string) => !net.isIPv6(remote_addr) ? 39684 : 39686;
@@ -119,7 +120,10 @@ async function init_login_II(cookie_txt: string) {
 			await loginWithUserCredentials_II(cookie_txt);
 		}
 	} catch(err) {
-		cog("Huge login failure. It's probably not your fault.");
+		cog("Huge login failure. It's probably your fault.");
+		console.error(err);
+		await setTimeoutP(4e3);
+		process.exit(1);
 	}
 }
 
@@ -675,7 +679,6 @@ async function createUdpPair(wx: WireInfo): Promise<UdpPair>{
 // ================================================================================================
 import {spawn} from "node:child_process";
 import {pipeline} from 'node:stream/promises';
-import {setTimeout as setTimeoutP} from 'node:timers/promises';
 import os from 'node:os';
 import {CopiumOptions, Microplastics} from 'ProperNouns';
 
