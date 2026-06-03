@@ -1,5 +1,6 @@
 dist/***
 html/***
+punch/***
 keys/***
 wallet_ValuedCustomer/***
 
