@@ -32,6 +32,14 @@ declare module 'VocabQuiz' {
 		remote_port: number;
 	}
 
+	export interface WannaJoin {
+		/**the relevant punch sku*/
+		sku: string;
+		/**it's like WsEventData, but different*/
+		flavour: 'wanna-join';
+		useRelay?: boolean;
+	}
+
 	export interface WsPairMeta {
 		client_addr: string;
 		client_port: number;
@@ -60,6 +68,8 @@ declare module 'VocabQuiz' {
 		barcode?: string;
 		/**this userId, perchance.*/
 		userId: number;
+		/**username */
+		username: string;
 	}
 
 	export interface WsbcReply {

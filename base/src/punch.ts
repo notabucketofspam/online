@@ -117,6 +117,9 @@ async function askToJoin(req: Request, res: Response){
 
 			if (typeof wsClient !== 'undefined' && typeof wsServer !== 'undefined' 
 			&& typeof reqPunch !== 'undefined') {
+				await performJunction({wsClient, wsServer, reqPunch, reqUsername, reqAddr, useRelay, res});
+
+				/*
 				const request_id = generate_reset_token();
 				const client_open: WsEventData = {
 					request_id: request_id ,
@@ -171,6 +174,7 @@ async function askToJoin(req: Request, res: Response){
 						joinMap.delete(request_id);
 					}, 10000);
 				}
+				*/
 			} else if (typeof wsClient !== 'undefined') {
 				// couldn't find a websocket client advertising this service
 				// specifically, wsClient was ok, but wsServer was bad
@@ -197,7 +201,7 @@ import ws from 'ws';
 import Stream from 'node:stream';
 import http from 'node:http';
 import net from "node:net";
-import {PkeyInfo} from 'VocabQuiz';
+import {PkeyInfo, WannaJoin} from 'VocabQuiz';
 
 let wss: ws.WebSocketServer;
 
@@ -281,7 +285,8 @@ async function ws_onmessage (this: ws.WebSocket,message : ws.RawData, isBinary: 
 								// everything checks out, so we can add this guy to the clientMap
 									const services : Punch[] = [];
 								const userId = pkeyInfo.userId;
-									const clientData: ClientData = {pkeyInfo, services, addr, userId};
+								const username = pkeyInfo.username;
+									const clientData: ClientData = {pkeyInfo, services, addr, userId, username};
 								clientData.barcode = generateClientBarcode(clientData);
 								clientMap.set(wsConn, clientData);
 								// console.log(`User ${pkeyInfo.username} authenticated successfully with product key ${pkeyInfo.pkey}`);
@@ -301,16 +306,17 @@ async function ws_onmessage (this: ws.WebSocket,message : ws.RawData, isBinary: 
 				} else if (typeof parsedMessage['Cookie'] === 'string') {
 					// client wants to set the session id
 					let sid: string = parsedMessage['Cookie'];
-						if (sid.includes('connect.sid=')){
-							sid = sid.replace('connect.sid=','');
+					if (sid.includes('connect.sid=')){
+						sid = sid.replace('connect.sid=','');
 					}
 					sid = decodeURIComponent(sid);
 					const rx = /s:(.*?)\./;
 					sid = rx.exec(sid)?.[1] ?? sid;
 					const session: SessionData | undefined = await redisStore.get(sid);
 					const userId = session?.userId ?? 0;
+					const username = session?.username ?? '';
 					const services: Punch[] = [];
-						const clientData: ClientData = {sid, services, addr, userId};
+						const clientData: ClientData = {sid, services, addr, userId, username};
 					clientData.barcode = generateClientBarcode(clientData);
 					clientMap.set(wsConn, clientData);
 					// console.log(`Client with IP ${addr} authenticated with session ID ${sid}`);
@@ -431,7 +437,7 @@ async function ws_onmessage (this: ws.WebSocket,message : ws.RawData, isBinary: 
 							punch.sku = generatePunchSku(punch);
 						});
 						// set the actual clientData
-							const clientData_II: ClientData = {services, addr, userId};
+							const clientData_II: ClientData = {services, addr, userId, username};
 						if (typeof pkeyInfo !== 'undefined') {
 							clientData_II.pkeyInfo = pkeyInfo;
 						} else if (typeof sid === 'string') {
@@ -445,6 +451,35 @@ async function ws_onmessage (this: ws.WebSocket,message : ws.RawData, isBinary: 
 				} else {
 					// clientData is undefined
 					console.error('Received services list from unauthenticated client:', parsedMessage);
+				}
+			} else if (typeof parsedMessage['flavour'] === 'string'
+			&& parsedMessage['flavour'] === 'wanna-join'
+			&& typeof parsedMessage['sku'] === 'string') {
+				// the WS client wants to join someone
+
+				const sku = parsedMessage['sku'];
+				let useRelay = false;
+				if (typeof parsedMessage['useRelay'] === 'boolean') {
+					useRelay = parsedMessage['useRelay'];
+				}
+				const wsServer = getWsClientByPunchSku(sku);
+				const clientData = clientMap.get(wsConn);
+				const reqPunch = getPunchBySku(sku);
+
+				if (typeof clientData !== 'undefined'
+				&& typeof wsServer !== 'undefined'
+				&& typeof reqPunch !== 'undefined') {
+					// and knowing is half the battle
+
+					const reqAddr = clientData.addr;
+					const reqUsername = clientData.username;
+					const wsClient = wsConn;
+					const res = undefined;
+
+					await performJunction({wsClient,wsServer,reqPunch,reqUsername,reqAddr,useRelay,res});
+				} else {
+					// we are missing some important details
+					console.error('Received wanna-join message with missing details:', parsedMessage);
 				}
 			} else {
 				// we have received junk mail
@@ -573,6 +608,89 @@ function generateClientBarcode(clientData: ClientData): string {
 	const userId = clientData.userId;
 
 	return crypto.hash('sha256',specialSpice+userId);
+}
+
+interface JunctionOptions {
+	wsClient: ws.WebSocket;
+	wsServer: ws.WebSocket;
+	reqPunch: Punch;
+	reqUsername: string;
+	reqAddr: string;
+	useRelay: boolean;
+	res: Response | undefined;
+}
+async function performJunction({wsClient, wsServer, reqPunch, reqUsername, reqAddr, useRelay, res}: JunctionOptions) {
+	let algood = false;
+	try {
+		const request_id = generate_reset_token();
+		const client_open: WsEventData = {
+			request_id: request_id,
+			flavour: 'client-open',
+			wx: {
+				app_port: reqPunch.port,
+				remote_addr: reqPunch.addr,
+				remote_port: 0
+			}
+		};
+
+		let shouldSend = false;
+		if (reqUsername === reqPunch.username) {
+			// same-user, so we don't have to check the database for trust issues
+			shouldSend = true;
+		} else {
+			// check odb for trust
+			const result = await odb.getTrusts();
+			if (result !== null) {
+				const isTrusted = result.get(reqPunch.username)?.includes(reqUsername);
+				if (isTrusted) {
+					// our guy is trusted
+					shouldSend = true;
+				} else {
+					// user isnt trusted
+					if (res) {
+						res.status(500).json({msg: "Target user doesn't trust you yet."});
+					}
+				}
+			} else {
+				// result was null
+				if (res) {
+					res.status(500).json({msg: "database error"});
+				}
+			}
+		}
+
+		if (shouldSend) {
+			const wsMeta: WsPairMeta = {
+				client_addr: reqAddr,
+				client_port: 0,
+				server_addr: reqPunch.addr,
+				server_port: 0,
+				app_port: reqPunch.port,
+				use_relay: useRelay
+			};
+			joinMap.set(request_id, {wsClient, wsServer, wsMeta});
+			if (useRelay) {
+				// he wants to use the relay
+				client_open.wx.remote_addr = (net.isIPv4(wsMeta.server_addr) ? '4.' : "6.") + "waluigi-servebeer.com";
+			}
+			wsClient.send(JSON.stringify(client_open));
+			if (res){
+				res.status(200).json({msg: 'ok'});
+			}
+			// eventually delete the temp data in joinMap
+			setTimeout(function() {
+				joinMap.delete(request_id);
+			}, 10000);
+			algood = true;
+		}
+
+	} catch (err) {
+		console.error(err);
+		if (res) {
+			res.status(500).json({msg: "error with join"});
+		}
+	}
+	return algood;
 }
 
 // exports? yes.

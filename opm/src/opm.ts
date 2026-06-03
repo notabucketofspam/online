@@ -289,18 +289,11 @@ function httpd_onrequest(req: http.IncomingMessage, res: http.ServerResponse) {
 				console.log("Received punch from browser with sku:", punch.sku);
 
 				// try to ask WSBC if we can join
-				const res_II = await fetch(`${wsbc_origin}/api/punch/join`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Cookie': astext('opm-data/cookie.txt')
-					},
-					body: JSON.stringify(punch)
-				});
-				const res_II_text = await res_II.text();
+				doWannaJoin(punch);
+
 				// send the response back to the browser
-				res.writeHead(res_II.status, {'Content-Type': 'application/json'});
-				res.end(res_II_text);
+				res.writeHead(200, {'Content-Type': 'application/json'});
+				res.end('{"msg":"ok"}');
 			} catch (error) {
 				console.error(error);
 				// real bad, chief
@@ -318,6 +311,49 @@ function httpd_onrequest(req: http.IncomingMessage, res: http.ServerResponse) {
 }
 function httpd_onlistening() {
 	console.log(`httpd listening at http://127.0.0.1:${httpd_port}`);
+}
+
+function doWannaJoin(punch: Punch) {
+	try {
+		let useRelay = false;
+		if (typeof punch.useRelay === 'boolean') {
+			useRelay = punch.useRelay;
+		}
+		if (typeof punch.sku === 'string' && punch.sku.length > 0 
+		&& typeof punch.addr === 'string' && punch.addr.length > 0) {
+			// the punch seems to be adequately valid
+
+			let wsUrl = `${ws_protocol}//${wsbc_hostname}/wss`;
+			if (!settings.use_localhost && realStacks.v4 && (net.isIPv4(punch.addr) || useRelay)) {
+				// when using the relay, the address will be a url,
+				// but also it only works for IPv4 right now
+				wsUrl = `${ws_protocol}//4.${wsbc_hostname}/wss`;
+			} else if (!settings.use_localhost && realStacks.v6 && net.isIPv6(punch.addr)) {
+				// use the IPv6 websocket
+				wsUrl = `${ws_protocol}//6.${wsbc_hostname}/wss`;
+			} else {
+				// probably just localhost
+			}
+
+			if (typeof wsClients[wsUrl] !== 'undefined') {
+				// we have the websocket for this kind of ip address
+				const wannaJoinData = {
+					sku: punch.sku,
+					flavour: 'wanna-join',
+					useRelay
+				};
+				wsClients[wsUrl]!.ws.send(JSON.stringify(wannaJoinData));
+			} else {
+				// no client?
+				throw new Error("no websocket client available for this punch");
+			}
+		} else {
+			// your punch was trash
+			throw new Error("invalid punch data");
+		}
+	} catch (err) {
+		console.error(err);
+	}
 }
 
 // ================================================================================================

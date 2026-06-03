@@ -14,13 +14,14 @@ declare module 'ProperNouns' {
 		username: string;
 		/**sha256 to identify this service*/
 		sku: string;
+		/**P E R C H A N C E*/
+		useRelay?: boolean;
 	}
 
 	/**info about a WebSocket that's connected to WSBC*/
 	export interface WsClientInfo {
 		ws: WebSocket;
 		services: Punch[];
-		copiumTimer?: NodeJS.Timeout;
 		refreshTimer?: NodeJS.Timeout;
 	}
 	
