@@ -292,14 +292,17 @@ function httpd_onrequest(req: http.IncomingMessage, res: http.ServerResponse) {
 				const res_II = await fetch(`${wsbc_origin}/api/punch/join`, {
 					method: 'POST',
 					headers: {
-						'Content-Type': 'application/json'
+						'Content-Type': 'application/json',
+						'Cookie': astext('opm-data/cookie.txt')
 					},
 					body: JSON.stringify(punch)
 				});
+				const res_II_text = await res_II.text();
 				// send the response back to the browser
 				res.writeHead(res_II.status, {'Content-Type': 'application/json'});
-				res.end(await res_II.text());
+				res.end(res_II_text);
 			} catch (error) {
+				console.error(error);
 				// real bad, chief
 				res.writeHead(400, {'Content-Type': 'application/json'});
 				res.end(JSON.stringify({msg: 'Invalid JSON'}));
