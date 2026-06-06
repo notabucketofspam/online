@@ -25,7 +25,7 @@ fs.mkdirSync('opm-data', {recursive:true});
 const settings: SettingsJson = {
 	is_advertiser: 0,
 	use_localhost: 0,
-	use_copium: 0
+	use_copium: 1
 };
 
 /** try to load settings from disk */
