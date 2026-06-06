@@ -113,9 +113,9 @@ async function handleAdd(req: Request, res: Response) {
 
 
 async function handleLogin(req: Request, res: Response) {
-		const { email, password } = req.body;
 
 		try {
+			const { email, password } = req.body;
 				const user = await odb.getUserByEmail(email);
 				if (user && odb.verifyPassword(password, user.PASSWORDHASH, user.SALT)) {
 						// Successful login: store user data in session
