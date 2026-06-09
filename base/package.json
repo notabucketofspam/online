@@ -25,6 +25,7 @@
     "cron": "^4.4.0",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "livekit-server-sdk": "^2.15.4",
     "oci-sdk": "^2.132.0",
     "oracledb": "^7.0.0",
     "redis": "^6.0.0",
