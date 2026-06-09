@@ -1,9 +1,7 @@
 // also, some of this stuff was taken directly from
 // Oracle's docs (which was apparently also machine-generated btw)
 
-import * as path from "node:path";
-import * as fs from "node:fs";
-const astext_II = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
+import {astext as astext_II} from "./util_dump";
 
 import * as emaildataplane from "oci-emaildataplane";
 import common = require("oci-common");

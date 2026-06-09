@@ -1,5 +1,3 @@
-import * as path from "node:path";
-import * as fs from "node:fs";
 import * as oracledb from 'oracledb';
 import * as cron from 'cron';
 import { express_app } from './express_app'; // Import the Express app
@@ -8,7 +6,7 @@ import {grandFacade} from './udp';
 import {initWSS} from "./punch";
 import "./product_key";
 
-const astext = (x: string) => fs.readFileSync(path.normalize(x), { encoding: "utf8" });
+import {astext} from "./util_dump";
 
 process.env.TNS_ADMIN = "./wallet_ValuedCustomer/";
 
