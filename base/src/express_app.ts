@@ -39,6 +39,20 @@ app.set('trust proxy', true);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+//const useLocalhost = fs.existsSync('notkeys/use-localhost.txt');
+//import cors from 'cors';
+//const corsOptions = {
+//	origin: /waluigi-servebeer\.com$/,
+//	methods: ['GET', 'POST', 'OPTIONS'],
+//	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+//	exposedHeaders: ['set-cookie'],
+//	preflightContinue: false,
+//	credentials: true,
+//};
+//if (!useLocalhost){
+//	app.use(cors());
+//}
+
 function getSecret() {
 		try {
 				const secret = fs.readFileSync(path.normalize("keys/session_secret"), { encoding: null });
