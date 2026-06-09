@@ -14,22 +14,22 @@
   "devDependencies": {
     "@types/connect-redis": "^0.0.23",
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/express-session": "^1.18.2",
-    "@types/node": "^24.5.2",
-    "@types/oracledb": "^6.9.1",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
+    "@types/node": "^25.9.2",
+    "@types/oracledb": "^7.0.0",
     "@types/ws": "^8.18.1",
-    "typescript": "^5.9.2"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "connect-redis": "^9.0.0",
     "cors": "^2.8.6",
-    "cron": "^4.3.3",
-    "express": "^5.1.0",
-    "express-session": "^1.18.2",
-    "oci-sdk": "^2.123.0",
-    "oracledb": "^6.9.0",
-    "redis": "^5.8.2",
-    "ws": "^8.20.0"
+    "cron": "^4.4.0",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "oci-sdk": "^2.132.0",
+    "oracledb": "^7.0.0",
+    "redis": "^6.0.0",
+    "ws": "^8.21.0"
   }
 }
