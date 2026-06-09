@@ -7,7 +7,7 @@ import {SessionData} from 'express-session';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
 import * as crypto from 'node:crypto';
-import * as fs from 'node:fs';
+import fs from 'node:fs';
 
 // Configure Redis client (assuming default setup on localhost:6379)
 const redisClient = createClient({
@@ -39,19 +39,19 @@ app.set('trust proxy', true);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-//const useLocalhost = fs.existsSync('notkeys/use-localhost.txt');
-//import cors from 'cors';
-//const corsOptions = {
-//	origin: /waluigi-servebeer\.com$/,
-//	methods: ['GET', 'POST', 'OPTIONS'],
-//	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-//	exposedHeaders: ['set-cookie'],
-//	preflightContinue: false,
-//	credentials: true,
-//};
-//if (!useLocalhost){
-//	app.use(cors());
-//}
+const useLocalhost = fs.existsSync('notkeys/use-localhost.txt');
+import cors from 'cors';
+const corsOptions = {
+	origin: /waluigi-servebeer\.com$/,
+	methods: ['GET', 'POST', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+	exposedHeaders: ['set-cookie'],
+	preflightContinue: false,
+	credentials: true,
+};
+if (!useLocalhost){
+	app.use(cors(corsOptions));
+}
 
 function getSecret() {
 		try {
