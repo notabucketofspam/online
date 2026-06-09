@@ -5,6 +5,7 @@ import { setPool, checkPlease } from './db'; // Import the setPool function
 import {grandFacade} from './udp';
 import {initWSS} from "./punch";
 import "./product_key";
+import "./livekit";
 
 import {astext} from "./util_dump";
 
