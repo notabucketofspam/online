@@ -46,7 +46,7 @@ const corsOptions = {
 	methods: ['GET', 'POST', 'OPTIONS'],
 	allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 	exposedHeaders: ['set-cookie'],
-	preflightContinue: false,
+	// preflightContinue: false,
 	credentials: true,
 };
 if (!useLocalhost){

@@ -1,5 +1,5 @@
 import {Request, Response} from 'express';
-import {AccessToken} from 'livekit-server-sdk';
+import {AccessToken, RoomServiceClient} from 'livekit-server-sdk';
 import path from 'node:path';
 import express from 'express';
 
@@ -29,7 +29,7 @@ async function lkJoinVoice(req: Request, res: Response) {
 				canSubscribe: true
 			});
 
-			const token = access_token.toJwt();
+			const token = await access_token.toJwt();
 			res.json({token});
 
 		} else {
@@ -42,9 +42,32 @@ async function lkJoinVoice(req: Request, res: Response) {
 	}
 }
 
+const roomService = new RoomServiceClient(
+	'http://localhost:7880',
+	LIVEKIT_API_KEY,
+	LIVEKIT_API_SECRET
+);
+
+async function getActiveRooms(req: Request, res: Response) {
+	try {
+		// Ask LiveKit for every room that currently exists
+		const rooms = await roomService.listRooms();
+
+		// Clean up the data object before sending it to the browser
+		const publicRooms = rooms.map(room => ({
+			name: room.name,
+			participantCount: room.numParticipants,
+			creationTime: Number(room.creationTime)
+		}));
+
+		res.json(publicRooms);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({error: 'Failed to fetch rooms from LiveKit'});
+	}
+}
+
 app.post('/api/join-voice', isAuthenticated, lkJoinVoice);
+app.get('/api/active-rooms', getActiveRooms);
 app.use("/livekit", express.static(path.join(__dirname, "..", 'livekit')));
 
-export function please_livekit() {
-
-}

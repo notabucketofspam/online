@@ -22,6 +22,7 @@ async function joinVoiceChannel(roomcode) {
     });
     const data = await response.json();
     const token = data.token;
+    console.log(token);
 
     const room = lk_sauce.room;
     room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
@@ -46,5 +47,45 @@ document.getElementById('join-btn').addEventListener('click', () => {
   const roomcode = document.getElementById('roomcode-input').value ?? 'general-chat';
   joinVoiceChannel(roomcode);
 });
+
+async function leaveVoiceChannel() {
+  try {
+    await room.disconnect();
+    document.getElementById('audio-container').innerHTML = '';
+    console.log('Disconnected from the room.');
+	} catch (err) { }
+  const room = lk_sauce.room;
+}
+
+document.getElementById('leave-btn').addEventListener('click', leaveVoiceChannel);
+
+async function loadActiveRooms() {
+  const response = await fetch('/api/active-rooms');
+  const activeRooms = await response.json();
+
+  const container = document.getElementById('room-list-container');
+  container.innerHTML = ''; // Clear the old list
+
+  if (activeRooms.length === 0) {
+    container.innerHTML = '<p>No one is online right now.</p>';
+    return;
+  }
+
+	typeof activeRooms.forEach === 'function' &&
+  activeRooms.forEach(room => {
+    const roomDiv = document.createElement('div');
+    roomDiv.className = 'room-card';
+    roomDiv.innerHTML = `
+      <strong>${room.name}</strong> 
+      <span>(${room.participantCount} online)</span>
+      <button onclick="joinVoiceChannel('${room.name}')">Join</button>
+    `;
+    container.appendChild(roomDiv);
+  });
+}
+
+// Call this when the page loads, or put it on a setInterval to auto-refresh
+loadActiveRooms();
+document.getElementById('loadactiverooms').addEventListener('click', loadActiveRooms);
 
 lk_init();
