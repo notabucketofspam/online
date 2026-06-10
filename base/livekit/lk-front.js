@@ -171,7 +171,7 @@ async function loadActiveRooms() {
   });
 }
 
-// Call this when the page loads, or put it on a setInterval to auto-refresh
+if (window.location.hostname !== 'localhost')
 loadActiveRooms();
 document.getElementById('loadactiverooms').addEventListener('click', loadActiveRooms);
 

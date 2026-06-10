@@ -9,11 +9,26 @@
 #everyone-is-here *{
 margin:0;
 }
+.logged-in-as {
+  border-style:double;
+  border-color:#000;
+  border-width:3px;
+  max-width:min-content;
+  padding:2px;
+  float:right;
+}
+	@media (max-width:400px) {
+		.logged-in-as {
+			float: none;
+			margin: 0 auto;
+			margin-bottom: 10px;
+		}
+	}
 </style>
 </head>
 <body>
 
-<div class="sef lard">
+<div class="sef lard" id="livekit-platter">
   <h1>LiveKit Chat</h1>
   <div>
     <div id="lobby-view">
@@ -47,7 +62,14 @@ margin:0;
 <script src="/livekit/lk-front.js" type="module"></script>
 <script src="/livekit/winmedia.js"></script>
 <script>
-  
+  check_online(function (jazz) {
+    if (jazz.username) {
+			var loggedInDiv = document.createElement('div');
+			loggedInDiv.innerHTML = `Logged in as <div><b>${jazz.username}</b><div>`;
+			loggedInDiv.className = 'logged-in-as';
+			document.getElementById('livekit-platter').prepend(loggedInDiv);
+    }
+  });
 </script>
 </body>
 </html>
