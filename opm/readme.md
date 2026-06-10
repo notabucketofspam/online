@@ -6,7 +6,8 @@ list of some stuff that may not be obvious:
 	- here's a handy link to some downloads for [Node.js v25.9.0](https://nodejs.org/en/download/archive/v25.9.0)
 	- you just need one of the `.zip` files from the "Binary Downloads" section
 - there's also the `node` file that's in `bigassets`. it's the linux binary for nodejs.
-- i'm using putty / pscp for the push commands bc it's simple.
+- these are just binaries for x86_64, not aarch64.
+- i'm using rsync for the push commands bc it's slightly faster than putty / pscp.
 - there's some `systemd` files in `assets`
   - `sudo cp opm.service opm.timer /etc/systemd/system/`
   - `sudo systemctl daemon-reload`

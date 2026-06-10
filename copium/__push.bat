@@ -5,8 +5,8 @@ REM build copium
 CMD /K "__build.bat&& EXIT"
 
 REM push to remote
-SET what_files=build\*
-pscp %what_files% OCI-cool:/httpd/dlc/copium/
+SET what_files=build/*
+CALL mexec "rsync %what_files% cool:/httpd/dlc/copium/"
 
 ECHO DONE
-timeout /t 2 > nul
+REM timeout /t 2 > nul
