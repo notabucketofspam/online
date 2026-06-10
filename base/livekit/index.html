@@ -4,32 +4,51 @@
 <head><meta charset="utf-8" />
 <link rel="stylesheet" type="text/css" href="/css/great-scott.css"/>
 <meta name="viewport" content="width=device-width, user-scalable=yes"/>
-<title>Chat</title>
+<title>LiveKit Chat - waluigi-servebeer.com</title>
 <style>
-
+#everyone-is-here *{
+margin:0;
+}
 </style>
 </head>
 <body>
 
 <div class="sef lard">
-  <h1>LiveKit</h1>
+  <h1>LiveKit Chat</h1>
   <div>
-    <input type="text" id="roomcode-input" placeholder="Enter room code" value="general-chat"/>
-    <button id="join-btn">Join Voice</button>  
-    <button id="leave-btn">Leave Voice</button>
-    <div id="audio-container"></div>
+    <div id="lobby-view">
+      <input type="text" id="roomcode-input" placeholder="Enter room code" value="general-chat"/>
+      <button id="join-btn">Join Voice</button>
+    </div>
+
+    <div id="active-call-view" style="display: none;">
+      <div class="call-header">
+        <span id="current-room-title">Connected to: None</span>
+        <button id="leave-btn">Disconnect</button>
+      </div>
+      <div id="everyone-is-here">
+        <h4>People in Channel</h4>
+        <ul id="participant-list"></ul>
+      </div>
+    </div>
 
     <hr/>
-    <button id="loadactiverooms">Load Active Rooms</button>
-    <div id="room-list-container"></div>
+
+    <div>
+      <button id="loadactiverooms">Load Active Rooms</button>
+      <div id="room-list-container"></div>
+    </div>
   </div>
+
+  <div id="audio-container"></div>
 </div>
 
 <script src="/js/everything.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js" type="module"></script>
 <script src="/livekit/lk-front.js" type="module"></script>
+<script src="/livekit/winmedia.js"></script>
 <script>
-
+  
 </script>
 </body>
 </html>
+
