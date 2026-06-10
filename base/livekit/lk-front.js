@@ -113,7 +113,7 @@ async function joinVoiceChannel(roomcode) {
     // console.log('Successfully connected to the room!');
 
 		// actually use the microphone
-    await room.localParticipant.setMicrophoneEnabled({
+    await room.localParticipant.setMicrophoneEnabled(true, {
 			echoCancellation: true,
 			noiseSuppression: true,
       voiceIsolation: true,
