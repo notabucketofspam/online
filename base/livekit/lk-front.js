@@ -1,13 +1,16 @@
-import {Room, RoomEvent, Track} from 'https://esm.sh/livekit-client';
+import {Room, RoomEvent, Track, createLocalAudioTrack} from 'https://esm.sh/livekit-client';
 
 var LIVEKIT_URL = 'wss://livekit.waluigi-servebeer.com';
 /**@type{Room} */
 var room = undefined;
-window.livekit = { 
+var audioContext = undefined;
+var livekit = { 
   room, 
   joinVoiceChannel,
+	audioContext,
   init() {
     room = new Room();
+		audioContext = new AudioContext();
   },
   sound: {
     join: 'MLG/Discord%20join%20voice%20chat',
@@ -15,6 +18,7 @@ window.livekit = {
     disconnect: 'MLG/Discord%20disconnect%20voice%20chat',
   }
 };
+window.livekit = livekit;
 livekit.init();
 
 function updateParticipantList() {
@@ -107,7 +111,14 @@ async function joinVoiceChannel(roomcode) {
 
     await room.connect(LIVEKIT_URL, token);
     // console.log('Successfully connected to the room!');
-    await room.localParticipant.setMicrophoneEnabled(true);
+
+		// actually use the microphone
+    await room.localParticipant.setMicrophoneEnabled({
+			echoCancellation: true,
+			noiseSuppression: true,
+      voiceIsolation: true,
+			autoGainControl: true
+    });
 
     document.getElementById('lobby-view').style.display = 'none';
     document.getElementById('active-call-view').style.display = 'block';
