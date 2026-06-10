@@ -65,7 +65,7 @@ margin:0;
   check_online(function (jazz) {
     if (jazz.username) {
 			var loggedInDiv = document.createElement('div');
-			loggedInDiv.innerHTML = `Logged in as <div><b>${jazz.username}</b><div>`;
+			loggedInDiv.innerHTML = `Logged in as <div><b>${jazz.username}</b></div>`;
 			loggedInDiv.className = 'logged-in-as';
 			document.getElementById('livekit-platter').prepend(loggedInDiv);
     }
