@@ -14,6 +14,11 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="chat/chat.esproj">
+    <Platform Project="AnyCPU" />
+    <Build />
+    <Deploy />
+  </Project>
   <Project Path="copium/copium.vcxproj" Id="a4dc09ef-7f09-4114-a9b6-532bfd04f113" />
   <Project Path="opm/opm.esproj">
     <Platform Project="AnyCPU" />
