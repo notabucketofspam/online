@@ -323,7 +323,9 @@ int main(int argc, char* argv[]) {
               local_addr_storage = sender_addr;
               local_app_len = sender_len;
               local_app_known = true;
-              std::cout << "local addr now known" << std::endl;
+              char ip_str[INET_ADDRSTRLEN];
+              inet_ntop(AF_INET, &((struct sockaddr_in*)&local_addr_storage)->sin_addr, ip_str, sizeof(ip_str));
+              std::cout << "local addr is known. Try to connect to " << ip_str << std::endl;
             } else {
               // we already know the local app's info
             }
