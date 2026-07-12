@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head><meta charset="utf-8" />
+<html>
+<head>
 <link rel="stylesheet" type="text/css" href="/css/great-scott.css"/>
 <meta name="viewport" content="width=device-width, user-scalable=yes"/>
 <title>LiveKit Chat - waluigi-servebeer.com</title>
@@ -24,6 +24,17 @@ margin:0;
 			margin-bottom: 10px;
 		}
 	}
+.isSpeaking {
+  text-shadow:
+     1px  0px 0px #00FF00,
+     1px  1px 0px #00FF00,
+     0px  1px 0px #00FF00,
+    -1px  1px 0px #00FF00,
+    -1px  0px 0px #00FF00,
+    -1px -1px 0px #00FF00,
+     0px -1px 0px #00FF00,
+     1px -1px 0px #00FF00;
+}
 </style>
 </head>
 <body>
@@ -70,6 +81,17 @@ margin:0;
 			document.getElementById('livekit-platter').prepend(loggedInDiv);
     }
   });
+
+  function initializeLiveKit() {
+    if (window.init_livekit_dom) {
+      window.init_livekit_dom();
+    } else {
+      // maybe it just takes a lil longer to load sometimes...
+      window.requestAnimationFrame(initializeLiveKit);
+    }
+  }
+
+  initializeLiveKit();
 </script>
 </body>
 </html>

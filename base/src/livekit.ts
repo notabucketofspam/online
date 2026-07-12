@@ -56,6 +56,7 @@ async function getActiveRooms(req: Request, res: Response) {
 		// Clean up the data object before sending it to the browser
 		const publicRooms = rooms.map(room => ({
 			name: room.name,
+			sid: room.sid,
 			participantCount: room.numParticipants,
 			creationTime: Number(room.creationTime)
 		}));
