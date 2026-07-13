@@ -12,12 +12,6 @@ please_use_relay.addEventListener('change', function(ev) {
   }
 });
 
-var macuser = document.createElement('AUDIO');
-macuser.setAttribute('src', '/page/soundboard/opodes/GordonMahUng/fuck%20you%20Steve%20Jobs.opus');
-macuser.volume = 0.5;
-//document.appendChild(macuser);
-var how_does_it_work = document.getElementById('how_does_it_work');
-how_does_it_work.volume = 0.2;
 
 /**@param {PointerEvent}ev*/
 function showSoftwareDownloads(ev) {
