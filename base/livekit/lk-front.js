@@ -305,6 +305,9 @@ function displayView(roomcode){
 }
 
 async function loadActiveRooms() {
+  if (window.location.hostname === 'localhost') {
+    return;
+  }
   try {
     const response = await fetch('/api/active-rooms',{
 		  method: 'GET',
