@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs";
 import {generateMSProductKey} from "../product_key";
 import {astext} from "../util_dump";
 
@@ -8,9 +9,9 @@ import {astext} from "../util_dump";
  * @returns
  */
 export async function generateTrash(prompt:object) {
-	return await new Promise<Blob>(function(resolve, reject) {
-		/**the blob that has the final image in it*/
-		let resblob = new Blob([]);
+	return await new Promise<Buffer|null>(function(resolve, reject) {
+		/**the buffer that has the final image in it*/
+		let resb: Buffer | null;
 
 		const endpoint = astext(path.join(process.cwd(),'keys','garbage_island'));
 		const client_id = generateMSProductKey();
@@ -36,8 +37,8 @@ export async function generateTrash(prompt:object) {
 					// this is (probably) the image that we want
 					const img = message.data.output.images[0];
 					const iurl = `http://${endpoint}/view?filename=${img.filename}&subfolder=${img.subfolder}&type=${img.type}`
-					fetch(iurl).then(res=>res.blob()).then(blob=>{
-						resblob = blob;
+					fetch(iurl).then(res=>res.arrayBuffer()).then(buf=>{
+						resb = Buffer.from(buf);
 						// we got what we came for, so gtfo
 						socket.close();
 					});
@@ -68,12 +69,12 @@ export async function generateTrash(prompt:object) {
 				clearTimeout(giveup_timer);
 			} catch(er){}
 			// and now we determine what we are giving back
-			if (resblob.size){
+			if (resb){
 				// Ladies and gentlemen, we got him.
-				resolve(resblob);
+				resolve(resb);
 			} else {
 				// we got nothing
-				reject(resblob);
+				reject(resb);
 			}
 		}
 
@@ -84,3 +85,93 @@ export async function generateTrash(prompt:object) {
 		socket.addEventListener('close', socket_onClose);
 	});
 }
+
+/**
+ * check the freshness of a content file.
+ * if he's stale, give nothing.
+ * if he's hella fresh, return our man.
+ */
+async function chkfresh(fname: string, fresh: number) {
+	let lastcontent: Buffer | null = null;
+	try {
+		// try to read the content file
+		const fd = await fs.promises.open(fname, 'r+');
+		const staten = await fd.stat();
+		if (Date.now() - staten.mtimeMs > fresh) {
+			// ... it's kinda old
+		} else {
+			// ... it's adequately fresh
+			lastcontent = await fd.readFile({encoding: null});
+		}
+
+		//get that guy outta here
+		await fd.close();
+	} catch (erro) {
+		// looks like there's no content file
+	}
+	return lastcontent;
+}
+/**
+ * pretty much, if we dont have a fresh-enough content file, then:
+ * - we give the user back the one that's on-deck, if possible
+ * - we generate a new man
+ */
+export async function getWhatsOnDeck(prompt: object, fname: string, fresh: number) {
+	let content: Buffer | null = null;
+	try {
+		// check existing content
+		const lastcontent_maybe = await chkfresh(fname, fresh);
+		if (lastcontent_maybe) {
+			// Man Adequate
+			content = lastcontent_maybe;
+		} else {
+			// man inadequate
+			const fname_next = fname+'.next';
+			const nextcontent_hopefully = await chkfresh(fname_next, 0);
+			if (nextcontent_hopefully) {
+				// That's him, officer.
+				content = nextcontent_hopefully;
+				// do not wait for him to die
+				fs.promises.rename(fname_next, fname)
+					.then(() => fs.promises.utimes(fname, new Date(), new Date()))
+					.then(() => manMeaSand(prompt, fname_next))
+					.catch(er=>console.error);
+			} else {
+				// we have neither of them
+				// generate at least one new guy. we have to wait this time.
+				const aBrandNewMan = await generateTrash(prompt);
+				if (aBrandNewMan) {
+					content = aBrandNewMan;
+					// do not wait for the next one
+					fs.promises.writeFile(fname, aBrandNewMan)
+						.then(() => manMeaSand(prompt, fname_next))
+						.catch(er=>console.error);
+				} else {
+					// we are so screwed
+				}
+			}
+		}
+	} catch(err) {
+		// something has gone horribly wrong
+		console.error(err);
+	}
+	return content;
+}
+
+/**
+ * Mr. Sandman, man me a sand
+ * make him the cutest man car door hook hand
+ */
+async function manMeaSand(prompt: object, fname: string) {
+	try {
+		const buf = await generateTrash(prompt);
+		if (buf) {
+			await fs.promises.writeFile(fname, buf);
+		} else {
+			// well, cant say we didnt try lol
+		}
+	} catch(errno){
+		console.error(errno);
+	}
+}
+
