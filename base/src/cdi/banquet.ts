@@ -61,7 +61,7 @@ const banquetPrompt = () => ({
   "6": {
     "class_type": "CLIPTextEncode",
     "inputs": {
-      "text": `A package of Banquet frozen dinner. The package is sitting on a freezer shelf in a store. Written on the packaging shall be one of the following phrases: "Extra Beans", "Extra Long", "Extra Calories", "Extra Sauce", "Extra SO-DIMM Slots", "Extra Banquet", "Bonus Songs", "Extra Natural", "Extra Pop", "More Grunge", "Extra Particles", "Extra Plop", "Extra Texture", "100% Natural 'Crab'", "Very Special", "Reduced Guilt". All text shall be legible. All text shall be written in the English language.`,
+      "text": `A package of Banquet Frozen Dinner sitting on a freezer shelf in the freezer aisle in a grocery store. "${banquetPhrase()}" is written on the package. White fluorescent overhead lighting.`,
       "clip": ["4",1]
     },
   },
@@ -87,4 +87,13 @@ const banquetPrompt = () => ({
     },
   }
 });
+const banquetPhrases = [
+  "Extra Beans", "Extra Long", "Extra Calories", "Extra Sauce", 
+  "Extra SO-DIMM Slots", "Extra Banquet", "Bonus Songs", 
+  "Extra Natural", "Extra Pop", "More Grunge", "Extra Particles", 
+  "Extra Plop", "Extra Texture", "100% Natural 'Crab'", 
+  "Very Special", "Reduced Guilt"
+];
+const banquetPhrase = () => banquetPhrases[crypto.randomInt(banquetPhrases.length)];
+
 
