@@ -3,6 +3,7 @@ import os from "node:os";
 import crypto from "node:crypto";
 import {Request, Response} from "express";
 
+import {rember} from "../util_dump";
 import {express_app as app} from "../express_app";
 import {getWhatsOnDeck} from "./garbage_island";
 
@@ -61,14 +62,14 @@ const banquetPrompt = () => ({
   "6": {
     "class_type": "CLIPTextEncode",
     "inputs": {
-      "text": `A package of Banquet Frozen Dinner sitting on a freezer shelf in the freezer aisle in a grocery store. "${banquetPhrase()}" is written on the package. White fluorescent overhead lighting.`,
+      "text": `A frozen dinner package with the words ("${rember(adj)} ${rember(noun)}":1.3), sitting on a shelf.`,
       "clip": ["4",1]
     },
   },
   "7": {
     "class_type": "CLIPTextEncode",
     "inputs": {
-      "text": "Verizon Wireless",
+      "text": "",
       "clip": ["4",1]
     },
   },
@@ -87,13 +88,19 @@ const banquetPrompt = () => ({
     },
   }
 });
-const banquetPhrases = [
-  "Extra Beans", "Extra Long", "Extra Calories", "Extra Sauce", 
-  "Extra SO-DIMM Slots", "Extra Banquet", "Bonus Songs", 
-  "Extra Natural", "Extra Pop", "More Grunge", "Extra Particles", 
-  "Extra Plop", "Extra Texture", "100% Natural 'Crab'", 
-  "Very Special", "Reduced Guilt"
-];
-const banquetPhrase = () => banquetPhrases[crypto.randomInt(banquetPhrases.length)];
 
+const adj = [
+  "EXTRA", "EXTRA", "EXTRA", "EXTRA",
+  "EXTRA", "EXTRA", "BONUS", 
+  "EXTRA", "EXTRA", "MORE", "EXTRA", 
+  "EXTRA", "EXTRA", "100% NATURAL",
+  "VERY", "REDUCED",
+];
+const noun = [
+  "BEANS", "LONG", "CALORIES", "SAUCE",
+  "SO-DIMM SLOTS", "BANQUET", "SONGS",
+  "NATURAL", "POP", "GRUNGE", "PARTICLES",
+  "PLOP", "TEXTURE", "'CRAB'", 
+  "SPECIAL", "GUILT",
+];
 
