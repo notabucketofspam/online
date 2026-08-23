@@ -28,8 +28,9 @@ async function banquetProMax(req: Request, res: Response) {
 }
 app.get("/api/cdi/banquet", banquetProMax);
 
-const banquetPrompt = ()=>({
+const banquetPrompt = () => ({
   "3": {
+    "class_type": "KSampler",
     "inputs": {
       "seed": crypto.randomInt(2**48-1),
       "steps": 8,
@@ -37,102 +38,53 @@ const banquetPrompt = ()=>({
       "sampler_name": "euler",
       "scheduler": "sgm_uniform",
       "denoise": 1,
-      "model": [
-        "4",
-        0
-      ],
-      "positive": [
-        "6",
-        0
-      ],
-      "negative": [
-        "7",
-        0
-      ],
-      "latent_image": [
-        "5",
-        0
-      ]
+      "model": ["4",0],
+      "positive": ["6",0],
+      "negative": ["7",0],
+      "latent_image": ["5",0]
     },
-    "class_type": "KSampler",
-    "_meta": {
-      "title": "KSampler"
-    }
   },
   "4": {
+    "class_type": "CheckpointLoaderSimple",
     "inputs": {
       "ckpt_name": "sdxl_lightning_8step.safetensors"
     },
-    "class_type": "CheckpointLoaderSimple",
-    "_meta": {
-      "title": "Load Checkpoint"
-    }
   },
   "5": {
+    "class_type": "EmptyLatentImage",
     "inputs": {
       "width": 1024,
       "height": 1024,
       "batch_size": 1
     },
-    "class_type": "EmptyLatentImage",
-    "_meta": {
-      "title": "Empty Latent Image"
-    }
   },
   "6": {
-    "inputs": {
-      "text": "A package of Banquet frozen dinner. The package is sitting on a freezer shelf in a store. The packaging shall include one of the following phrases: \"Extra Beans\", \"Extra Long\", \"Extra Calories\", \"Extra Sauce\", \"Extra SO-DIMM Slots\", \"Extra Banquet\", \"Bonus Songs\", \"Extra Natural\", \"Extra Pop\", \"More Grunge\", \"Extra Particles\", \"Extra Plop\", \"Extra Texture\", \"100% Natural 'Crab'\", \"Very Special\", \"Reduced Guilt\".",
-      "clip": [
-        "4",
-        1
-      ]
-    },
     "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Prompt)"
-    }
+    "inputs": {
+      "text": `A package of Banquet frozen dinner. The package is sitting on a freezer shelf in a store. Written on the packaging shall be one of the following phrases: "Extra Beans", "Extra Long", "Extra Calories", "Extra Sauce", "Extra SO-DIMM Slots", "Extra Banquet", "Bonus Songs", "Extra Natural", "Extra Pop", "More Grunge", "Extra Particles", "Extra Plop", "Extra Texture", "100% Natural 'Crab'", "Very Special", "Reduced Guilt". All text shall be legible. All text shall be written in the English language.`,
+      "clip": ["4",1]
+    },
   },
   "7": {
+    "class_type": "CLIPTextEncode",
     "inputs": {
       "text": "Verizon Wireless",
-      "clip": [
-        "4",
-        1
-      ]
+      "clip": ["4",1]
     },
-    "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Prompt)"
-    }
   },
   "8": {
-    "inputs": {
-      "samples": [
-        "3",
-        0
-      ],
-      "vae": [
-        "4",
-        2
-      ]
-    },
     "class_type": "VAEDecode",
-    "_meta": {
-      "title": "VAE Decode"
-    }
+    "inputs": {
+      "samples": ["3",0],
+      "vae": ["4",2]
+    },
   },
   "9": {
+    "class_type": "SaveImage",
     "inputs": {
       "filename_prefix": "wsbc_banquet",
-      "images": [
-        "8",
-        0
-      ]
+      "images": ["8",0]
     },
-    "class_type": "SaveImage",
-    "_meta": {
-      "title": "Save Image"
-    }
   }
 });
 
