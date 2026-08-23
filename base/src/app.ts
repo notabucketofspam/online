@@ -6,6 +6,7 @@ import {grandFacade} from './udp';
 import {initWSS} from "./punch";
 import "./product_key";
 import "./livekit";
+import "./cdi/banquet";
 
 import {astext} from "./util_dump";
 

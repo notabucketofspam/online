@@ -1,12 +1,11 @@
 import path from "node:path";
 import fs from "node:fs";
+import {Buffer} from "node:buffer";
 import {generateMSProductKey} from "../product_key";
 import {astext} from "../util_dump";
 
 /**
  * this is the function that we use to generate an image with the EVGA FTW GTX 1080
- * @param prompt
- * @returns
  */
 export async function generateTrash(prompt:object) {
 	return await new Promise<Buffer|null>(function(resolve, reject) {
