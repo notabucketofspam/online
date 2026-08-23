@@ -1,5 +1,6 @@
 import path from "node:path";
 import os from "node:os";
+import crypto from "node:crypto";
 import {Request, Response} from "express";
 
 import {express_app as app} from "../express_app";
@@ -13,7 +14,7 @@ const contentpath = path.join(os.tmpdir(), "wsbc_banquet");
 const maxfresh = 8.64e5;
 async function banquetProMax(req: Request, res: Response) {
   try {
-		const bindo = await getWhatsOnDeck({}, contentpath, maxfresh);
+		const bindo = await getWhatsOnDeck(banquetPrompt(), contentpath, maxfresh);
     if (bindo){
       // send the bindo
 			res.status(200).contentType("image/png").send(bindo);
@@ -26,4 +27,112 @@ async function banquetProMax(req: Request, res: Response) {
   }
 }
 app.get("/api/cdi/banquet", banquetProMax);
+
+const banquetPrompt = ()=>({
+  "3": {
+    "inputs": {
+      "seed": crypto.randomInt(2**48-1),
+      "steps": 8,
+      "cfg": 1.5,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "4": {
+    "inputs": {
+      "ckpt_name": "sdxl_lightning_8step.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": "A package of Banquet frozen dinner. The package is sitting on a freezer shelf in a store. The packaging shall include one of the following phrases: \"Extra Beans\", \"Extra Long\", \"Extra Calories\", \"Extra Sauce\", \"Extra SO-DIMM Slots\", \"Extra Banquet\", \"Bonus Songs\", \"Extra Natural\", \"Extra Pop\", \"More Grunge\", \"Extra Particles\", \"Extra Plop\", \"Extra Texture\", \"100% Natural 'Crab'\", \"Very Special\", \"Reduced Guilt\".",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "Verizon Wireless",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "wsbc_banquet",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  }
+});
 
