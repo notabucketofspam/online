@@ -115,7 +115,7 @@ async function chkfresh(fname: string, fresh: number) {
  * - we give the user back the one that's on-deck, if possible
  * - we generate a new man
  */
-export async function getWhatsOnDeck(prompt: object, fname: string, fresh: number) {
+export async function getWhatsOnDeck(promptfn: ()=>object, fname: string, fresh: number) {
 	let content: Buffer | null = null;
 	try {
 		// check existing content
@@ -126,28 +126,31 @@ export async function getWhatsOnDeck(prompt: object, fname: string, fresh: numbe
 		} else {
 			// man inadequate
 			const fname_next = fname+'.next';
-			const nextcontent_hopefully = await chkfresh(fname_next, 0);
+			const nextcontent_hopefully = await chkfresh(fname_next, Number.MAX_SAFE_INTEGER);
 			if (nextcontent_hopefully) {
 				// That's him, officer.
 				content = nextcontent_hopefully;
-				// do not wait for him to die
-				fs.promises.rename(fname_next, fname)
-					.then(() => fs.promises.utimes(fname, new Date(), new Date()))
-					.then(() => manMeaSand(prompt, fname_next))
-					.catch(er=>console.error);
 			} else {
 				// we have neither of them
 				// generate at least one new guy. we have to wait this time.
-				const aBrandNewMan = await generateTrash(prompt);
+				const aBrandNewMan = await generateTrash(promptfn());
 				if (aBrandNewMan) {
 					content = aBrandNewMan;
-					// do not wait for the next one
-					fs.promises.writeFile(fname, aBrandNewMan)
-						.then(() => manMeaSand(prompt, fname_next))
-						.catch(er=>console.error);
 				} else {
 					// we are so screwed
 				}
+			}
+
+			// at this point, content is (hopefully) non-null.
+			// in both cases, we need to write nextcontent into lastcontent.
+			if (content) try {
+				await fs.promises.writeFile(fname, content);
+				// wait a lil bit before make the next one
+				setTimeout(function() {
+					manMeaSand(promptfn(), fname_next);
+				}, 10e3);
+			} catch (e) {
+				console.error(e);
 			}
 		}
 	} catch(err) {

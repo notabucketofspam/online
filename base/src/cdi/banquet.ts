@@ -15,7 +15,7 @@ const contentpath = path.join(os.tmpdir(), "wsbc_banquet");
 const maxfresh = 8.64e5;
 async function banquetProMax(req: Request, res: Response) {
   try {
-		const bindo = await getWhatsOnDeck(banquetPrompt(), contentpath, maxfresh);
+		const bindo = await getWhatsOnDeck(banquetPrompt, contentpath, maxfresh);
     if (bindo){
       // send the bindo
 			res.status(200).contentType("image/png").send(bindo);
