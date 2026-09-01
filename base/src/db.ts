@@ -22,7 +22,7 @@ interface User {
 }
 
 // Function to execute a database query
-async function queryDatabase(sql: string, params: oracledb.BindParameters, commit = false, options?: oracledb.ExecuteOptions) {
+export async function queryDatabase(sql: string, params: oracledb.BindParameters, commit = false, options?: oracledb.ExecuteOptions) {
 		let connection;
 		try {
 				connection = await pool.getConnection(); // Get a connection from the pool
