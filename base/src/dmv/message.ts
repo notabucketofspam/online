@@ -55,7 +55,44 @@ async function listMessages(req: Request, res: Response) {
 	}
 }
 
+async function updateMessage(req: Request, res: Response) {
+	try {
+		const user_id = req.session.userId;
+		const message_id = Number(req?.params?.message_id);
+		const message_content = req?.body?.message_content;
+		if (typeof user_id === 'number' && Number.isSafeInteger(message_id) && typeof message_content === 'string' && message_content) {
+			const sql = `update messages set content = :message_content where id = :message_id and user_id = :user_id`;
+			const params = {message_content, message_id, user_id};
+			await queryDatabase(sql, params, true);
+			res.status(200).json({message_id});
+		} else {
+			GIVE_UP(res, 'missing user_id, message_id, or message_content');
+		}
+	} catch (err) {
+		GIVE_UP(res, 'couldnt update message');
+	}
+}
+
+async function deleteMessage(req: Request, res: Response) {
+	try {
+		const user_id = req.session.userId;
+		const message_id = Number(req?.params?.message_id);
+		if (typeof user_id === 'number' && Number.isSafeInteger(message_id)) {
+			const sql = `delete from messages where id = :message_id and user_id = :user_id`;
+			const params = {message_id, user_id};
+			await queryDatabase(sql, params, true);
+			res.status(200).json({message_id});
+		} else {
+			GIVE_UP(res, 'missing user_id or message_id');
+		}
+	} catch (err) {
+		GIVE_UP(res, 'couldnt delete message');
+	}
+}
+
 router.post('/create', createMessage);
 router.get('/list/:channel_id', listMessages);
+router.put('/update/:message_id', updateMessage);
+router.delete('/delete/:message_id', deleteMessage);
 
 export default router;

@@ -50,8 +50,43 @@ async function listGuilds(req: Request, res: Response) {
 		GIVE_UP(res, 'couldnt list the guilds');
 	}
 }
+async function updateGuild(req: Request, res: Response) {
+	try {
+		const user_id = req.session.userId;
+		const guild_id = Number(req?.params?.guild_id);
+		const guild_name = req?.body?.guild_name;
+		if (typeof user_id === 'number' && Number.isSafeInteger(guild_id) && typeof guild_name === 'string' && guild_name) {
+			const sql = `update guilds set name = :guild_name where id = :guild_id and owner_id = :user_id`;
+			const params = {guild_name, guild_id, user_id};
+			await queryDatabase(sql, params, true);
+			res.status(200).json({guild_id});
+		} else {
+			GIVE_UP(res, 'missing user_id, guild_id, or guild_name');
+		}
+	} catch (err) {
+		GIVE_UP(res, 'couldnt update guild');
+	}
+}
+async function deleteGuild(req: Request, res: Response) {
+	try {
+		const user_id = req.session.userId;
+		const guild_id = Number(req?.params?.guild_id);
+		if (typeof user_id === 'number' && Number.isSafeInteger(guild_id)) {
+			const sql = `delete from guilds where id = :guild_id and owner_id = :user_id`;
+			const params = {guild_id, user_id};
+			await queryDatabase(sql, params, true);
+			res.status(200).json({guild_id});
+		} else {
+			GIVE_UP(res, 'missing user_id or guild_id');
+		}
+	} catch (err) {
+		GIVE_UP(res, 'couldnt delete guild');
+	}
+}
 
 router.post('/create', createGuild);
 router.get('/list', listGuilds);
+router.put('/update/:guild_id', updateGuild);
+router.delete('/delete/:guild_id', deleteGuild);
 
 export default router;
