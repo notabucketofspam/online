@@ -6,10 +6,13 @@ if test $MSYSTEM != MSYS;then
 	exit 1
 fi
 
+# put it in the home directory
+cd
+
 # get some junk
-pacman -S --needed tcl gcc make
-git clone https://github.com/dlfcn-win32/dlfcn-win32.git
-git clone https://github.com/redis/redis.git
+pacman -S --needed --noconfirm tcl gcc make git pkg-config python3
+git -C dlfcn-win32 pull || git clone https://github.com/dlfcn-win32/dlfcn-win32.git
+git -C redis pull || git clone https://github.com/redis/redis.git
 
 # double-check this
 if test $(which gcc) != /usr/bin/gcc;then
