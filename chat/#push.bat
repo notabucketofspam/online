@@ -1,6 +1,7 @@
 @ECHO off
 
-CMD /c "npm run build --silent"
+CALL tsc --build
+CALL vite build
 ECHO build done
 
 CALL mexec "./push.sh"

@@ -8,7 +8,7 @@
     <ShouldRunBuildScript>true</ShouldRunBuildScript>
     <!-- Folder where production build objects will be placed -->
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist</BuildOutputFolder>
-    <BuildCommand>npm run build --silent</BuildCommand>
+    <BuildCommand>vite build</BuildCommand>
   </PropertyGroup>
   <ProjectExtensions>
     <VisualStudio>

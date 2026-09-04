@@ -2,7 +2,7 @@
 TITLE %~nx0
 
 REM build opm
-CMD /K "npm run build --silent&& EXIT"
+CALL tsc --build
 ECHO build OK
 
 REM push to remote

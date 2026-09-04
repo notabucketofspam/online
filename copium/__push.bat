@@ -2,7 +2,7 @@
 TITLE copium %~nx0
 
 REM build copium
-CMD /K "__build.bat&& EXIT"
+CALL __build
 
 REM push to remote
 SET what_files=build/*

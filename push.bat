@@ -3,7 +3,7 @@ TITLE %~nx0
 
 ECHO Pushing base...
 CD base
-CALL mexec "./push.sh"
+CALL #push
 ECHO.
 CD ..
 
