@@ -41,5 +41,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true
-  }
+  },
+  "exclude": ["src/goobo"]
 }

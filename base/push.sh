@@ -1,6 +1,4 @@
 #!/bin/sh
-tsc --build
-echo "tsc OK"
 rsync \
   --compress \
   --times \
@@ -13,5 +11,4 @@ rsync \
   ./ ubuntu@193.122.154.50:/httpd/online/
 echo "rsync OK"
 ssh -i "./notkeys/key" ubuntu@193.122.154.50 "~/restart-online"
-echo "Done"
 # sleep 2

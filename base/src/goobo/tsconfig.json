@@ -1,0 +1,13 @@
+{
+	"compilerOptions": {
+		"lib": [ "ESNext", "DOM"],
+		"outDir": "../../dist/goobo",
+		"module": "esnext",
+		"target": "esnext",
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"allowSyntheticDefaultImports": true,
+		"types": [],
+		"skipLibCheck": true
+	}
+}
