@@ -7,6 +7,11 @@ import {initWSS} from "./punch";
 import "./product_key";
 import "./livekit";
 import "./cdi/banquet";
+import rt_baltimore from "./dmv/baltimore";
+import rt_goobo from "./interstate";
+
+express_app.use("/api/dmv", rt_baltimore);
+express_app.use("/api/goobo", rt_goobo);
 
 import {astext} from "./util_dump";
 
