@@ -19,7 +19,7 @@ function give_index_html(req: Request, res: Response) {
           <h1>Goobo Jr.</h1>
           <div id="goobo-root"></div>
           <script src="/js/everything.js"></script>
-          <script src="/api/goobo/detroit.js" type="module"></script>
+          <script src="/goobo/detroit.js" type="module"></script>
         </body>
       </html>
     `;
@@ -32,5 +32,50 @@ function give_index_html(req: Request, res: Response) {
 router.use("/", serve_static(path.join(__dirname, "goobo")));
 router.get("/", give_index_html);
 
-export default router;
+export {router as rt_goobo};
+
+// =========================
+// and now it's time to copy-paste some stuff from punch.ts
+import ws from "ws";
+import http from "node:http";
+import Stream from "node:stream";
+
+let wss: ws.WebSocketServer;
+interface Michigoner {
+  userId?:string;
+}
+const clientMap: WeakMap<ws.WebSocket, Michigoner> = new WeakMap();
+
+function initMichigan(server: ws.ServerOptions["server"]) {
+  wss = new ws.WebSocketServer({
+    server,
+    host: 'localhost',
+    clientTracking: true,
+    autoPong: true,
+    path: '/michigan'
+  });
+  wss.on('wsClientError', wss_onwsClientError);
+  wss.on('connection', wss_onconnection);
+}
+function wss_onwsClientError(err: Error, socket: Stream.Duplex, request: http.IncomingMessage) {
+  console.error(err, socket, request);
+}
+function wss_onconnection(wsConn: ws.WebSocket, req: Request) {
+	clientMap.set(wsConn, {});
+  wsConn.on('message', ws_onmessage);
+  wsConn.once('close', ws_onceclose);
+}
+async function ws_onmessage(this: ws.WebSocket, message: ws.RawData, isBinary: boolean) {
+  const wsConn = this;
+
+	try {
+  } catch (err) {
+  }
+}
+function ws_onceclose(this: ws.WebSocket, code: number, reason: Buffer) {
+  const wsConn = this;
+  wsConn.off('message', ws_onmessage);
+  clientMap.delete(wsConn);
+}
+export {initMichigan};
 
