@@ -4,6 +4,8 @@ export type Snowflake = number;
 /**I cant remember if oracle returns a Date object or just a unix timestamp*/
 export type Timestamp = Date | number;
 
+export type PseudoListener = {type:keyof HTMLElementEventMap, callback:(ev: Event) => void};
+
 /**a row of data from the CHANNELS table*/
 export interface ChannelRow {
   /**53b snowflake*/
