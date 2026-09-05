@@ -1,4 +1,4 @@
-import {vSetActiveChannel} from './channel-controller';
+import {vSetActiveChannel} from './attention-controller';
 import {nCreateMessage} from './create';
 import {MessageRow} from './shared-types';
 

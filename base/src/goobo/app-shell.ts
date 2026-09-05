@@ -1,9 +1,4 @@
-// import {createChatInput} from './chat-input';
-// import {createGuildModal} from './guild-modal';
-// import {createSidebar} from './sidebar';
-// import {createChatArea} from './chat-area';
-// import {createChannelItem} from './channel-item';
-import {vSetActiveChannel} from './channel-controller';
+
 import {
   nCreateChannel, 
   nCreateChatArea, 
