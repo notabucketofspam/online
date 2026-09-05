@@ -1,17 +1,12 @@
-
 import {
-  nCreateChannel, 
   nCreateChatArea, 
   nCreateChatInput,
-  nCreateGuildModal,
   nCreateSidebar,
-  nCreateMessage,
   nCreateButtonAddGuild
 } from './create';
 
-import {Snowflake} from "./shared-types";
-
-export function createAppShell(): HTMLElement {
+/** god this app is already a mess */
+export function nCreateAppShell(): HTMLElement {
   const appContainer = document.createElement('div');
   appContainer.className = 'app-layout';
 
@@ -30,8 +25,6 @@ export function createAppShell(): HTMLElement {
 
 	const addGuildBtn = nCreateButtonAddGuild([]);
   appContainer.appendChild(addGuildBtn);
-
-	//======================== god this app is already a mess =========================
 
   return appContainer;
 }

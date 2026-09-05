@@ -1,17 +1,17 @@
-import {createAppShell} from './app-shell';
+import {nCreateAppShell} from './app-shell';
 
 function spawn_goobo() {
   const goobo_root = document.getElementById('goobo-root');
   if (goobo_root) {
     goobo_root.innerHTML = '';
-    goobo_root.appendChild(createAppShell());
+    goobo_root.appendChild(nCreateAppShell());
   }
 }
 
 document.addEventListener('spam', ev => {
 	let cev = ev as CustomEvent;
 	let the_url = cev?.detail?.url;
-	if (typeof the_url === 'string' && the_url.startsWith('/api/goobo')) {
+	if (typeof the_url === 'string' && the_url.startsWith('/goobo')) {
     spawn_goobo();
   }
 });
