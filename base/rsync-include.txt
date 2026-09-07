@@ -4,5 +4,6 @@ livekit/***
 punch/***
 keys/***
 wallet_ValuedCustomer/***
+goobo/***
 
 package.json

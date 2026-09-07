@@ -7,29 +7,22 @@ const router = Router({mergeParams: true});
 
 function give_index_html(req: Request, res: Response) {
   try {
-    const the_index = `
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <link rel="stylesheet" type="text/css" href="/css/great-scott.css" />
-          <meta name="viewport" content="width=device-width, user-scalable=yes" />
-          <title>Goobo Jr. - waluigi-servebeer.com</title>
-        </head>
-        <body>
-          <h1>Goobo Jr.</h1>
-          <div id="goobo-root"></div>
-          <script src="/js/everything.js"></script>
-          <script src="/goobo/detroit.js" type="module"></script>
-        </body>
-      </html>
-    `;
-    res.status(200).send(the_index);
+    res.status(200).sendFile(path.join(process.cwd(), "goobo", "classic.html"));
   } catch (err) {
 		GIVE_UP(res, "couldnt give html");
   }
 }
+function immiscible_css(req: Request, res: Response) {
+  try {
+    res.status(200).sendFile(path.join(process.cwd(), "goobo", "immiscible.css"));
+  } catch (err) {
+		GIVE_UP(res, "couldnt give css");
+  }
+}
+
 
 router.use("/", serve_static(path.join(__dirname, "goobo")));
+router.get("/immiscible.css", immiscible_css);
 router.get("/", give_index_html);
 
 export {router as rt_goobo};

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" type="text/css" href="/css/great-scott.css" />
+  <meta name="viewport" content="width=device-width, user-scalable=yes" />
+  <title>Goobo - waluigi-servebeer.com</title>
+	<link rel="stylesheet" type="text/css" href="/goobo/immiscible.css" />
+</head>
+<body>
+	<h1>Goobo</h1>
+	<div id="goobo-classic">
+		<!-- The Windows Vista-like tree on the left that shows the list of guilds/channels -->
+		<div id="goobo-treeview">
+			<div>Guild list</div>
+			<div>
+				<button id="goobo-create-guild">Create Guild</button>
+			</div>
+			<ul id="guild-list"></ul>
+		</div>
+		<!-- the box in the middle that shows messages in the currently-selected channel.
+		You can also send messages using the input element here. -->
+		<div id="goobo-content">
+			<div>Content</div>
+			<div id="home-of-the-whopper">
+				<input type="text" id="the-impossible-whopper" />
+			</div>
+			<div id="goobo-refrigerator">
+				<ul id="the-fridge"></ul>
+			</div>
+		</div>
+		<!-- This area shows all of the people who are members of this guild -->
+		<div id="goobo-criminals">
+			<div>criminals</div>
+			<ul id="guild-members"></ul>
+		</div>
+	</div>
+
+	<!-- a GUILD that goes into the guild list -->
+	<template id="guild_t">
+		<li class="goobo-guild">
+			<div class="ggli-guild-name"></div>
+			<ul class="ggli-channel-list"></ul>
+		</li>
+	</template>
+	<!-- a CHANNEL that goes into a channel list (each guild has a channel list) -->
+	<template id="channel_t">
+		<li class="goobo-channel">
+			<div class="gcli-channel-name"></div>
+		</li>
+	</template>
+	<!-- a MESSAGE that goes into the-fridge -->
+	<template id="message_t">
+		<li class="goobo-message">
+			<div class="gmli-author"></div>
+			<div class="gmli-content"></div>
+		</li>
+	</template>
+	<!-- a USER that goes into the goobo-criminals list -->
+	<template id="user_t">
+		<li class="goobo-user">
+			<div class="guli-username"></div>
+		</li>
+	</template>
+
+	<script src="/js/everything.js"></script>
+	<script src="/goobo/detroit.js" type="module"></script>
+</body>
+</html>

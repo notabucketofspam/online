@@ -10,16 +10,32 @@ async function createGuild(req: Request, res: Response) {
 		if (typeof user_id === 'number' && typeof guild_name === 'string' && guild_name) {
 			//create the guild
 			const guild_id = pidgen.nextId();
-			const sql = `insert into guilds (id, name, owner_id) values (:guild_id, :guild_name, :user_id)`;
-			const params = {guild_id, guild_name, user_id};
-			await queryDatabase(sql, params);
-
-			// put the user into the guild as a member
-			const member_sql = `insert into guild_members (guild_id, user_id) values (:guild_id, :user_id)`;
-			const member_params = {guild_id, user_id};
-			await queryDatabase(member_sql, member_params, true);
-
-			res.status(200).json({guild_id});
+			const guild_sql = `insert into guilds (id, name, owner_id) values (:guild_id, :guild_name, :user_id)`;
+			const guild_params = {guild_id, guild_name, user_id};
+			const guild_result = await queryDatabase(guild_sql, guild_params, true);
+			if (guild_result && guild_result.rowsAffected === 1) {
+				// put the user into the guild as a member
+				const member_sql = `insert into guild_members (guild_id, user_id) values (:guild_id, :user_id)`;
+				const member_params = {guild_id, user_id};
+				const member_result = await queryDatabase(member_sql, member_params, true);
+				if (member_result && member_result.rowsAffected === 1) {
+					// we made the guild, and added the user
+					const channel_id = pidgen.nextId();
+					const channel_sql = `insert into channels (id, name, guild_id) values (:channel_id, :name, :guild_id)`;
+					const channel_params = {channel_id, guild_id, name: 'general'};
+					const channel_result = await queryDatabase(channel_sql, channel_params, true);
+					if (channel_result && channel_result.rowsAffected === 1) {
+						// ...and we added a channel
+						res.status(200).json({guild_id});
+					} else {
+						GIVE_UP(res, 'couldnt add a channel to the guild');
+					}
+				} else {
+					GIVE_UP(res, 'couldnt add user to guild');
+				}
+			} else {
+				GIVE_UP(res, 'couldnt create the guild');
+			}			
 		} else {
 			// don't have a user_id or guild_name
 			GIVE_UP(res, 'missing user_id or guild_name');
@@ -40,8 +56,12 @@ async function listGuilds(req: Request, res: Response) {
 				where gm.user_id = :user_id
 			`;
 			const params = {user_id};
-			const guilds = await queryDatabase(sql, params);
-			res.status(200).json({guilds});
+			const result = await queryDatabase(sql, params);
+			if (result && Array.isArray(result.rows)) {
+				res.status(200).json({guilds: result.rows});
+			} else {
+				GIVE_UP(res, 'couldnt list the guilds');
+			}
 		} else {
 			// don't have a user id, so we can't list the guilds
 			GIVE_UP(res, 'missing user_id');

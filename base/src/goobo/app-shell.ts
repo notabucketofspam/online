@@ -3,7 +3,7 @@ import {
   nCreateChatInput,
   nCreateSidebar,
   nCreateButtonAddGuild
-} from './create';
+} from './create.js';
 
 /** god this app is already a mess */
 export function nCreateAppShell(): HTMLElement {

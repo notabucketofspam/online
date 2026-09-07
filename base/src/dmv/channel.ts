@@ -30,13 +30,18 @@ async function listChannels(req: Request, res: Response) {
 		const guild_id = Number(req?.params?.guild_id);
 		if (typeof user_id === 'number' && Number.isSafeInteger(guild_id)) {
 			const sql = `
-				select id, name, type
+				select id, name, channel_type
 				from channels 
 				where guild_id = :guild_id
 			`;
 			const params = {guild_id};
-			const channels = await queryDatabase(sql, params);
-			res.status(200).json({channels});
+			const result = await queryDatabase(sql, params);
+			console.log('listChannels result:', result);
+			if (result && Array.isArray(result.rows)) {
+				res.status(200).json({channels: result.rows});
+			} else {
+				GIVE_UP(res, 'channels isnt an array');
+			}
 		} else {
 			// don't have a user_id or guild_id
 			GIVE_UP(res, 'missing user_id or guild_id');

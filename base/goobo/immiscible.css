@@ -1,0 +1,11 @@
+div#goobo-classic {
+	grid-template-columns: 1fr 2fr 1fr;
+	display: grid;
+}
+
+div[id^="goobo-"] {
+	border: 1px solid black;
+	padding: 1px;
+	margin:1px;
+}
+
