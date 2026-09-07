@@ -92,12 +92,16 @@ function theNewGuildModalDialog() {
 // ========================= ========================= =============================
 // ========================= and now we actually have to plant some goddamn trees
 
-type ListGuilds = {
-	guilds: [id: number,name: string][]
-};
-type ListChannels = {
-	channels: [id: number, name: string, channel_type: number][]
-};
+interface Channel {
+	id: number;
+	name:string;
+	channel_type:string;
+}
+interface Guild {
+	id: number;
+	name: string;
+	channels: Channel[];
+}
 
 async function populate_treeview(){
 	try {
@@ -107,11 +111,10 @@ async function populate_treeview(){
 		if (guild_list instanceof HTMLUListElement
 			&& guild_t instanceof HTMLTemplateElement
 			&& channel_t instanceof HTMLTemplateElement) {
-			// populate the treeview here
-			const listOfGuilds = await listGuilds();
-			for (const guild of listOfGuilds) {
-				const listOfChannels = await listChannelsInGuild(guild[0]);
-				const guildFragment = plantTree(guild, listOfChannels);
+			// populate the treeview here			
+			const listall = await channelListAll();
+			for (const guild of listall) {
+				const guildFragment = plantTree(guild);
 				guild_list.appendChild(guildFragment);
 			}
 		} else {
@@ -123,45 +126,30 @@ async function populate_treeview(){
 	}
 }
 
-async function listGuilds() {
+async function channelListAll(){
 	try {
-		const response = await fetch('/api/dmv/guild/list', {method: 'GET'});
+		const response = await fetch('/api/dmv/channel/list-all', {method: 'GET'});
 		if (response.ok) {
-			const data: ListGuilds = await response.json();
+			const data: {guilds: Guild[]} = await response.json();
 			return data.guilds;
-		} else {
-			console.error('couldnt get the guild list');
-			return [];
-		}
-	} catch (err) {
-		console.error(err);
-		return [];
-	}
-}
-
-async function listChannelsInGuild(guild_id: number) {
-	try {
-		const response = await fetch(`/api/dmv/channel/list/${guild_id}`, {method: 'GET'});
-		if (response.ok) {
-			const data: ListChannels = await response.json();
-			return data.channels;
 		} else {
 			console.error('couldnt get the channel list');
 			return [];
 		}
-	} catch (err) {
-		console.error(err);
+	} catch (errr) {
+		console.error(errr);
 		return [];
 	}
 }
 
-function plantTree(guild: ListGuilds['guilds'][number], channels: ListChannels['channels']){
+function plantTree(guild: Guild){
 	const ret_f = document.createDocumentFragment();
 	try {
 		const guild_t = document.getElementById('guild_t');
 		const channel_t = document.getElementById('channel_t');
-		const guild_id = guild[0];
-		const guild_name = guild[1];
+		const guild_id = guild.id;
+		const guild_name = guild.name;
+		const channels = guild.channels;
 		if (guild_t instanceof HTMLTemplateElement
 		&& channel_t instanceof HTMLTemplateElement
 		&& typeof guild_id === 'number'
@@ -179,7 +167,7 @@ function plantTree(guild: ListGuilds['guilds'][number], channels: ListChannels['
 			// actually show the channels
 			const ggli_channel_list = guild_f.querySelector('.ggli-channel-list');
 			if (ggli_channel_list instanceof HTMLUListElement) {
-				for (const [id, name, channel_type] of channels) {
+				for (const {id, name, channel_type} of channels) {
 					// import the channel template for each channel
 					const channel_f = document.importNode(channel_t.content, true);
 					// display the channel id and type

@@ -36,7 +36,6 @@ async function listChannels(req: Request, res: Response) {
 			`;
 			const params = {guild_id};
 			const result = await queryDatabase(sql, params);
-			console.log('listChannels result:', result);
 			if (result && Array.isArray(result.rows)) {
 				res.status(200).json({channels: result.rows});
 			} else {
@@ -86,9 +85,56 @@ async function deleteChannel(req: Request, res: Response) {
 	}
 }
 
+async function listAllChannelsForUser(req: Request, res: Response) {
+	try {
+		const user_id = req.session.userId;
+		if (user_id) {
+			// thanks gemini
+			const sql = `
+				SELECT 
+					g.id AS guild_id,
+					g.name AS guild_name,
+					COALESCE(
+						JSON_ARRAYAGG(
+							JSON_OBJECT(
+								'id' VALUE c.id,
+								'name' VALUE c.name,
+								'channel_type' VALUE c.channel_type
+							)
+						), 
+						'[]'
+					) AS channels
+				FROM guilds g
+				JOIN guild_members gm ON g.id = gm.guild_id
+				LEFT JOIN channels c ON g.id = c.guild_id
+				WHERE gm.user_id = :user_id
+				GROUP BY g.id, g.name;
+			`;
+			const params = {user_id};
+			const result = await queryDatabase(sql, params);
+			if (result && Array.isArray(result.rows)) {
+				const rows = result.rows as Array<[number, string, any]>;
+				const guilds = rows.map(([guild_id, guild_name, channels]) => ({
+					id: guild_id,
+					name: guild_name,
+					channels: JSON.parse(channels||'[]')
+				}));
+				res.status(200).json({guilds});
+			} else {
+				GIVE_UP(res, 'guilds isnt an array');
+			}
+		} else {
+			GIVE_UP(res, 'missing user_id');
+		}
+	} catch (err) {
+		GIVE_UP(res, 'couldnt list all channels for user');
+	}
+}
+
 router.post('/create', createChannel);
 router.get('/list/:guild_id', listChannels);
 router.put('/update/:channel_id', updateChannel);
 router.delete('/delete/:channel_id', deleteChannel);
+router.get('/list-all', listAllChannelsForUser);
 
 export default router;
