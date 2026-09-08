@@ -9,3 +9,60 @@ div[id^="goobo-"] {
 	margin:1px;
 }
 
+/*ARBOR DAY*/
+ul#guild-list{
+	padding:0;
+}
+.active {
+	background-color:#ff000033;
+}
+li.goobo-guild {
+	list-style-type: none;
+	padding: 0;
+}
+	li.goobo-guild:hover {
+		background-color: #0000ff33;
+	}
+li.goobo-channel:hover {
+	background-color: #00ff0033;
+}
+
+div.ggli-guild-name{
+	font-weight:bold;
+}
+ul.ggli-channel-list{
+	padding-left:20px;
+}
+
+/* BURGER PARLOUR*/
+
+li.goobo-message {
+	list-style-type: none;
+	padding:0;
+
+	div {
+		display: inline-block;
+	}
+
+		div.gmli-author {
+			font-weight: bold;
+		}
+}
+
+ul#the-fridge {
+	padding: 0;
+	margin: 0;
+}
+div#home-of-the-whopper {
+	input {
+		width: 97%;
+	}
+}
+
+/*CRIMINALS*/
+
+ul#guild-members {
+	padding-left: 20px;
+	margin:0;
+}
+

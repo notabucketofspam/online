@@ -104,9 +104,35 @@ async function deleteGuild(req: Request, res: Response) {
 	}
 }
 
+async function getUsersInGuild(req: Request, res: Response) {
+	try {
+		const guildId = Number(req?.params?.guild_id);
+		if (Number.isSafeInteger(guildId)) {
+			const sql = `
+				SELECT u.userid, u.username 
+				FROM users u
+				JOIN guild_members gm ON u.userid = gm.user_id
+				WHERE gm.guild_id = :guildId
+				ORDER BY u.username ASC`;
+			const params = {guildId};
+			const result = await queryDatabase(sql, params);
+			if (result && Array.isArray(result.rows)) {
+				res.status(200).json({users: result.rows});
+			} else {
+				GIVE_UP(res, 'couldnt get users in guild');
+			}
+		} else {
+			GIVE_UP(res, 'missing guild_id');
+		}
+	} catch (err) {
+		GIVE_UP(res, 'couldnt get users in guild');
+	}
+}
+
 router.post('/create', createGuild);
 router.get('/list', listGuilds);
 router.put('/update/:guild_id', updateGuild);
 router.delete('/delete/:guild_id', deleteGuild);
+router.get('/list-users/:guild_id', getUsersInGuild);
 
 export default router;

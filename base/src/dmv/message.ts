@@ -1,5 +1,6 @@
 import {Router, Request, Response} from 'express';
 import {GIVE_UP, pidgen, queryDatabase} from "./annapolis";
+import oracledb from "oracledb";
 
 const router = Router({mergeParams: true});
 
@@ -13,8 +14,11 @@ async function createMessage(req: Request, res: Response) {
 			const message_id = pidgen.nextId();
 			const sql = `insert into messages (id, content, channel_id, user_id) values (:message_id, :message_content, :channel_id, :user_id)`;
 			const params = {message_id, message_content, channel_id, user_id};
-			await queryDatabase(sql, params, true);
-			res.status(200).json({message_id});
+			const result = await queryDatabase(sql, params, true);
+			if (result && result.rowsAffected === 1)
+				res.status(200).json({message_id});
+			else
+				GIVE_UP(res, 'YOUR MESSAGE WAS NOT SAVED');
 		} else {
 			// don't have a user_id, channel_id, or message_content
 			GIVE_UP(res, 'missing user_id, channel_id, or message_content');
@@ -44,13 +48,23 @@ async function listMessages(req: Request, res: Response) {
 
 			// sort the messages
 			sql += ' order by id desc fetch first 50 rows only';
-			const messages = await queryDatabase(sql, params);
-			res.status(200).json({messages});
+			const messages = await queryDatabase(sql, params, false, {
+				fetchInfo: {
+					"CONTENT": {type: oracledb.STRING}
+				}
+			});
+			if (messages && Array.isArray(messages.rows)) {
+				// console.log(messages);
+				res.status(200).json(messages.rows);			
+			} else {
+				GIVE_UP(res, 'messages isnt an array');
+			}
 		} else {
 			// don't have a user_id or channel_id
 			GIVE_UP(res, 'missing user_id or channel_id');
 		}
 	} catch (err) {
+		console.error(err);
 		GIVE_UP(res, 'couldnt list messages');
 	}
 }
