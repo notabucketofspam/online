@@ -19,7 +19,7 @@ CALL __push.bat
 ECHO.
 CD ..
 
-ECHO Resetting brick...
+ECHO Checking brick...
 CALL mexec "./u_rubric.sh"
 
 timeout /t 10
