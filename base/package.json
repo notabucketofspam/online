@@ -19,7 +19,7 @@
     "@types/node": "^25.9.2",
     "@types/oracledb": "^7.0.0",
     "@types/ws": "^8.18.1",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "connect-redis": "^9.0.0",
