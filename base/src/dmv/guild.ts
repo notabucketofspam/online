@@ -128,11 +128,69 @@ async function getUsersInGuild(req: Request, res: Response) {
 		GIVE_UP(res, 'couldnt get users in guild');
 	}
 }
+async function listAllGuilds(req: Request, res: Response) {
+	try {
+		const user_id = req.session.userId;
+		if (typeof user_id === 'number') {
+			// list all guilds
+			const sql = `
+				SELECT 
+					g.id AS guild_id, 
+					g.name AS guild_name, 
+					u.username AS owner_username
+				FROM guilds g
+				JOIN users u ON g.owner_id = u.userid
+				ORDER BY g.name ASC;
+			`;
+			const params = {};
+			const result = await queryDatabase(sql, params);
+			if (result && Array.isArray(result.rows)) {
+				const rows = result.rows as any[][];
+				const guilds = rows.map((row: any[]) => ({
+					guild_id: Number(row[0]),
+					guild_name: String(row[1]),
+					owner_username: String(row[2])
+				}));
+				res.status(200).json({guilds});
+			} else {
+				GIVE_UP(res, 'couldnt list all the guilds');
+			}
+		} else {
+			// don't have a user id, so we can't list the guilds
+			GIVE_UP(res, 'missing user_id');
+		}
+	} catch (err) {
+		GIVE_UP(res, 'we gave up :-(');
+	}
+}
+
+async function joinGuild(req: Request, res: Response) {
+	try {
+		const user_id = req.session.userId;
+		const guild_id = Number(req?.body?.guild_id);
+		if (typeof user_id === 'number' && Number.isSafeInteger(guild_id)) {
+			const sql = `insert into guild_members (guild_id, user_id) values (:guild_id, :user_id)`;
+			const params = {guild_id, user_id};
+			const result = await queryDatabase(sql, params, true);
+			if (result && result.rowsAffected === 1) {
+				res.status(200).json({guild_id});			
+			} else {
+				GIVE_UP(res, 'There was a problem and you could not join guild. Sorry, pal.');
+			}
+		} else {
+			GIVE_UP(res, 'missing user_id or guild_id');
+		}
+	} catch	(err) {		
+		GIVE_UP(res, 'Could not join guild');
+	}
+}
 
 router.post('/create', createGuild);
 router.get('/list', listGuilds);
 router.put('/update/:guild_id', updateGuild);
 router.delete('/delete/:guild_id', deleteGuild);
 router.get('/list-users/:guild_id', getUsersInGuild);
+router.get('/list-all', listAllGuilds);
+router.post('/join', joinGuild);
 
 export default router;
