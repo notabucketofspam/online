@@ -7,11 +7,16 @@ import {
 	init_chatinput
 } from "./burger-parlour.js";
 
+import {
+	init_ListAllGuildsButton
+} from "./armodafinil.js";
+
 async function spawn_goobo() {
   const goobo_classic = document.getElementById('goobo-classic');
   if (goobo_classic) {
     // this is all of the init logic
 		init_createGuildButton();
+		init_ListAllGuildsButton();
 		init_chatinput();
 		await populate_treeview();
 

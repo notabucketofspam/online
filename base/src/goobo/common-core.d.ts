@@ -15,3 +15,9 @@ export interface Guild {
 
 export type MessageRow = [id: number, user_id: number, content: string];
 
+export interface ListAllGuildsItem {
+	guild_id: number;
+	guild_name: string;
+	owner_id: number;
+	owner_username: string;
+}

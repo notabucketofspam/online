@@ -34,6 +34,41 @@ ul.ggli-channel-list{
 	padding-left:20px;
 }
 
+/*ARMODAFINIL*/
+dialog.alert-sigma{
+	top:0px;
+}
+button.modal-close {
+	display:inline-block;
+	position:absolute;
+	right:12px;
+}
+table.list-all-guilds, table.list-all-guilds th, table.list-all-guilds td {
+	border-collapse: collapse;
+	border-width: 1px;
+	border-color: #000;
+	border-style: solid;
+}
+table.list-all-guilds thead{
+	background-color:#eee;
+}
+	table.list-all-guilds tbody:nth-child(even) {
+		background-color: #eef;
+	}
+	table.list-all-guilds tbody:nth-child(odd) {
+		background-color: #fee;
+	}
+span.modal-title {
+	font-weight: bold;
+	font-size: 1.1em;
+	display: inline-block;
+	justify-self: left;
+}
+div.modal-heading {
+	margin-bottom:0.5lh;
+}
+
+
 /* BURGER PARLOUR*/
 
 li.goobo-message {

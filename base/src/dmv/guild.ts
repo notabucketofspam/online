@@ -136,7 +136,8 @@ async function listAllGuilds(req: Request, res: Response) {
 			const sql = `
 				SELECT 
 					g.id AS guild_id, 
-					g.name AS guild_name, 
+					g.name AS guild_name,
+					u.userid AS owner_id,
 					u.username AS owner_username
 				FROM guilds g
 				JOIN users u ON g.owner_id = u.userid
@@ -149,7 +150,8 @@ async function listAllGuilds(req: Request, res: Response) {
 				const guilds = rows.map((row: any[]) => ({
 					guild_id: Number(row[0]),
 					guild_name: String(row[1]),
-					owner_username: String(row[2])
+					owner_id: Number(row[2]),
+					owner_username: String(row[3])
 				}));
 				res.status(200).json({guilds});
 			} else {
