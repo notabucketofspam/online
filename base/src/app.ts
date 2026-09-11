@@ -8,7 +8,7 @@ import "./product_key";
 import "./livekit";
 import "./cdi/banquet";
 import rt_baltimore from "./dmv/baltimore";
-import {rt_goobo} from "./interstate";
+import {rt_goobo, initMichigan } from "./interstate";
 
 express_app.use("/api/dmv", rt_baltimore);
 express_app.use("/goobo", rt_goobo);
@@ -45,6 +45,8 @@ async function init() {
 						console.log(`listening on ${port}`);
 				});
 				initWSS(server_real);
+
+			// initMichigan(server_real);
 
 				job.start();
 

@@ -1,6 +1,7 @@
 import {Router, Request, Response} from 'express';
 import {GIVE_UP, pidgen, queryDatabase} from "./annapolis";
 import oracledb from "oracledb";
+import {miracast} from "../interstate";
 
 const router = Router({mergeParams: true});
 
@@ -15,10 +16,16 @@ async function createMessage(req: Request, res: Response) {
 			const sql = `insert into messages (id, content, channel_id, user_id) values (:message_id, :message_content, :channel_id, :user_id)`;
 			const params = {message_id, message_content, channel_id, user_id};
 			const result = await queryDatabase(sql, params, true);
-			if (result && result.rowsAffected === 1)
+			if (result && result.rowsAffected === 1) {
 				res.status(200).json({message_id});
-			else
+				const item_mc = JSON.stringify({
+					channel_id,
+					message_row:[message_id, user_id, message_content]
+				});
+				miracast(channel_id, item_mc);
+			} else {
 				GIVE_UP(res, 'YOUR MESSAGE WAS NOT SAVED');
+			}
 		} else {
 			// don't have a user_id, channel_id, or message_content
 			GIVE_UP(res, 'missing user_id, channel_id, or message_content');

@@ -11,7 +11,7 @@ import {gen_gmli} from './burger-parlour.js';
 const refreshTime = 25e3;
 let refreshTimer: number = 0;
 let sock: WebSocket | null = null;
-let shouldRecover = true;
+let shouldRecover = false;
 let product_key: string | null = null;
 let user_id: number | null = null;
 
