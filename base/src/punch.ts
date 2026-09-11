@@ -140,10 +140,10 @@ let wss: ws.WebSocketServer;
 const clientMap: WeakMap<ws.WebSocket, ClientData> = new WeakMap();
 const peerAddrMap: WeakMap<ws.WebSocket, string> = new WeakMap();
 
-// we need the server returned by app.listen()
-function initWSS (server : ws.ServerOptions["server"]) {
+// we don't need the server returned by app.listen()
+function initWSS () {
 	wss = new ws.WebSocketServer({
-		server,
+		noServer: true,
 		host: 'localhost',
 		clientTracking: true,
 		autoPong: true,
@@ -152,6 +152,7 @@ function initWSS (server : ws.ServerOptions["server"]) {
 	wss.on('wsClientError', wss_onwsClientError);
 	//wss.once('listening', wss_oncelistening);
 	wss.on('connection', wss_onconnection);
+	return wss;
 }
 
 function wss_oncelistening(){

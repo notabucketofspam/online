@@ -8,7 +8,11 @@ import "./product_key";
 import "./livekit";
 import "./cdi/banquet";
 import rt_baltimore from "./dmv/baltimore";
-import {rt_goobo, initMichigan } from "./interstate";
+import {rt_goobo, initMichigan} from "./interstate";
+
+import http from "node:http";
+import stream from "node:stream";
+import ws from "ws";
 
 express_app.use("/api/dmv", rt_baltimore);
 express_app.use("/goobo", rt_goobo);
@@ -20,6 +24,8 @@ process.env.TNS_ADMIN = "./wallet_ValuedCustomer/";
 let pool: oracledb.Pool;
 
 const job = new cron.CronJob('39 6 * * *', checkPlease);
+
+const wsservers: Set<ws.WebSocketServer> = new Set();
 
 async function init() {
 		const user = astext("keys/db_user");
@@ -44,9 +50,10 @@ async function init() {
 					console.log('\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/');
 						console.log(`listening on ${port}`);
 				});
-				initWSS(server_real);
 
-			// initMichigan(server_real);
+			wsservers.add(initWSS());
+			wsservers.add(initMichigan());
+			server_real.on('upgrade', onupgrade);
 
 				job.start();
 
@@ -71,4 +78,24 @@ async function closePoolAndExit() {
 process
 		.once('SIGTERM', closePoolAndExit)
 		.once('SIGINT', closePoolAndExit);
+
+async function onupgrade(request: http.IncomingMessage, socket: stream.Duplex, head: NonSharedBuffer) {
+	try {
+		let hasBeenHandled = false;
+		for (const wss of wsservers) {
+			if (wss.shouldHandle(request)) {
+				hasBeenHandled = true;
+				wss.handleUpgrade(request, socket, head, (ws) => {
+					wss.emit('connection', ws, request);
+				});
+				break;
+			}
+		}
+		if (!hasBeenHandled) {
+			socket.destroy();
+		}
+	}catch(err) {
+		console.error(err);
+	}
+}
 

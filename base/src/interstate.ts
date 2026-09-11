@@ -41,9 +41,9 @@ interface Michigoner {
 const clientMap: WeakMap<ws.WebSocket, Michigoner> = new WeakMap();
 const guildsWithClients: Map<number, Set<ws.WebSocket>> = new Map();
 
-function initMichigan(server: ws.ServerOptions["server"]) {
+function initMichigan() {
   wss = new ws.WebSocketServer({
-    server,
+    noServer:true,
     host: 'localhost',
     clientTracking: true,
     autoPong: true,
@@ -51,12 +51,13 @@ function initMichigan(server: ws.ServerOptions["server"]) {
   });
   wss.on('wsClientError', wss_onwsClientError);
   wss.on('connection', wss_onconnection);
+  return wss;
 }
 function wss_onwsClientError(err: Error, socket: Stream.Duplex, request: http.IncomingMessage) {
   console.error(err, socket, request);
 }
 function wss_onconnection(wsConn: ws.WebSocket, req: http.IncomingMessage) {
-  console.log(req);
+  // console.log(req);
   wsConn.on('message', ws_onmessage);
   wsConn.once('close', ws_onceclose);
 }
