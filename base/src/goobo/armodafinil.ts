@@ -1,3 +1,8 @@
+/*This file has stuff that lets you make modal dialogues,
+	which I think is pretty cool.
+*/
+
+
 import {
 	type ListAllGuildsItem
 } from "./common-core";
@@ -34,8 +39,26 @@ export async function listAllGuilds() {
 export async function modal_ListAllGuilds() {
 	const dialog = modal_Framework("List of Guilds");
 	try {
+		/**this is the div that has most of the important content*/
 		const bigdiv = document.createElement('div');
 		dialog.appendChild(bigdiv);
+
+		/**a button that lets you make a new guild*/
+		const createGuildButton = document.createElement('button');
+		createGuildButton.textContent = 'Create a New Guild';
+		createGuildButton.addEventListener('click', Bev_CreateGuildModal);
+		bigdiv.appendChild(createGuildButton);
+
+		/**this is a sample button that lets you test the alert_SIGMA function*/
+		const ModerButton = document.createElement('button');
+		ModerButton.textContent = 'Moder Power';
+		ModerButton.style = "display:inline-block; margin-left: 1em;"; 
+		ModerButton.addEventListener('click', () => {
+			alert_SIGMA('Moder still cries');
+		});
+		bigdiv.appendChild(ModerButton);
+
+		/**this table will have a bunch of guilds in it */
 		const table = document.createElement('table');
 		table.classList.add("list-all-guilds");
 		bigdiv.appendChild(table);
@@ -173,5 +196,84 @@ function removeModalDialog(dialog: Element | null) {
 	if (dialog && dialog instanceof HTMLDialogElement) {
 		dialog.close();
 		dialog.remove();
+	}
+}
+
+import {
+	populate_treeview
+} from "./arbor-day.js";
+
+function Bev_CreateGuildModal(ev: PointerEvent) {
+	try {
+		const dialog = modal_CreateGuild();
+		showModalDialog(dialog);
+	} catch (err) {
+		console.error(err);
+	}
+}
+
+function modal_CreateGuild() {
+	const dialog = modal_Framework("Create Guild");
+	try {
+		const form = document.createElement('form');
+		form.setAttribute('method', 'dialog');
+		const input = document.createElement('input');
+		input.setAttribute('type', 'text');
+		input.placeholder = 'the name of the guild';
+		input.required = true;
+		input.name = 'guild_name';
+		input.id = 'guild_name';
+		form.appendChild(input);
+		form.appendChild(document.createElement('BR'));
+		const submit_button = document.createElement('button');
+		submit_button.setAttribute('type', 'submit');
+		submit_button.innerText = 'Create';
+		form.appendChild(submit_button);
+		dialog.appendChild(form);		
+		form.addEventListener('submit', Fev_CreateGuild);
+	} catch (err) {
+		console.error(err);
+	}
+	return dialog;
+}
+
+async function Fev_CreateGuild(ev: SubmitEvent) {
+	ev.preventDefault();
+	try {
+		const form = ev.currentTarget as HTMLFormElement | null;
+		if (form) {
+			const input = form.querySelector('input[name="guild_name"]') as HTMLInputElement | null;
+			const submit_button = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+			if (input && submit_button) {
+				const guild_name = input.value;
+				if (guild_name.trim().length > 0) {
+					const response = await fetch('/api/dmv/guild/create', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({guild_name})
+					});
+					if (response.ok) {
+						// guild created successfully
+						input.disabled = true;
+						submit_button.disabled = true;
+						alert_SIGMA('you made a guild');
+						populate_treeview();
+					} else {
+						// theres a problem
+						console.error(response);
+					}
+				} else {
+					// looks like the guild name was left blank-ish
+				}
+			} else {
+				// cant find some of the elements that we need
+			}
+		} else {
+			// The Form Hath Gone Missing!
+		}
+	} catch (err) {
+		console.error(err);
 	}
 }

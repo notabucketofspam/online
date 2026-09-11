@@ -1,6 +1,5 @@
 import {
 	populate_treeview,
-	init_createGuildButton
 } from "./arbor-day.js";
 
 import {
@@ -15,7 +14,6 @@ async function spawn_goobo() {
   const goobo_classic = document.getElementById('goobo-classic');
   if (goobo_classic) {
     // this is all of the init logic
-		init_createGuildButton();
 		init_ListAllGuildsButton();
 		init_chatinput();
 		await populate_treeview();
