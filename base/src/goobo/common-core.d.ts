@@ -21,3 +21,27 @@ export interface ListAllGuildsItem {
 	owner_id: number;
 	owner_username: string;
 }
+
+export type GatewayGrade =
+	'M_CREATE' | 'M_UPDATE' | 'M_DELETE' |
+	'C_CREATE' | 'C_UPDATE' | 'C_DELETE' |
+	'G_CREATE' | 'G_UPDATE' | 'G_DELETE' | 'G_JOIN';
+
+export interface GatewayItem {
+	grade: GatewayGrade;
+}
+
+export interface MessageCreate extends GatewayItem {
+	channel_id: number;
+	message_row: MessageRow;
+}
+
+export interface MessageUpdate extends GatewayItem {
+	channel_id: number;
+	message_row: MessageRow;
+}
+
+export interface MessageDelete extends GatewayItem {
+	channel_id: number;
+	message_id: number;
+}

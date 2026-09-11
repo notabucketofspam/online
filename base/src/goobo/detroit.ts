@@ -10,6 +10,11 @@ import {
 	init_ListAllGuildsButton
 } from "./armodafinil.js";
 
+import {
+	setWsShouldRecover,
+	init_websocket
+} from "./federal-express.js";
+
 async function spawn_goobo() {
   const goobo_classic = document.getElementById('goobo-classic');
   if (goobo_classic) {
@@ -17,6 +22,7 @@ async function spawn_goobo() {
 		init_ListAllGuildsButton();
 		init_chatinput();
 		await populate_treeview();
+		init_websocket();
 
 		//placeholder: activate a channel for now
 		const allchannels = Array.from(document.getElementsByClassName('goobo-channel')) as HTMLLIElement[];
@@ -34,7 +40,10 @@ document.addEventListener('spam', async (ev) => {
 	let cev = ev as CustomEvent;
 	let the_url = cev?.detail?.url;
 	if (typeof the_url === 'string' && the_url.startsWith('/goobo')) {
-    await spawn_goobo();
-  }
+		setWsShouldRecover(true);
+		await spawn_goobo();
+	} else {
+		setWsShouldRecover(false);
+	}
 });
 spawn_goobo();

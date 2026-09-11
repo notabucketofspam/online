@@ -33,6 +33,9 @@ div.ggli-guild-name{
 ul.ggli-channel-list{
 	padding-left:20px;
 }
+li.goobo-channel.unread{
+	list-style-type:circle;
+}
 
 /*ARMODAFINIL*/
 dialog.alert-sigma{

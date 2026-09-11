@@ -128,3 +128,11 @@ function generate_messageli(message_id: number, user_id: number, content: string
 	}
 	return mfrag;
 }
+
+export function gen_gmli(mr?: MessageRow) {
+	let dfrag: DocumentFragment | null = null;
+	if (Array.isArray(mr) && mr.length === 3) {
+		dfrag = generate_messageli(mr[0], mr[1], mr[2]);
+	}
+	return dfrag ?? document.createDocumentFragment();
+}
