@@ -1,7 +1,8 @@
 import path from "node:path";
 import {Router, static as serve_static, Request, Response} from "express";
 import {SessionData} from "express-session";
-import {isAuthenticated, GIVE_UP} from "./dmv/annapolis";
+import {GIVE_UP} from "./dmv/annapolis";
+import {validProductKey} from "./dmv/authn";
 
 const router = Router({mergeParams: true});
 
@@ -20,7 +21,6 @@ function immiscible_css(req: Request, res: Response) {
   }
 }
 
-
 router.use("/", serve_static(path.join(__dirname, "goobo")));
 router.get("/immiscible.css", immiscible_css);
 router.get("/", give_index_html);
@@ -35,7 +35,7 @@ import Stream from "node:stream";
 
 let wss: ws.WebSocketServer;
 interface Michigoner {
-  userId?:string;
+  user_id:number;
 }
 const clientMap: WeakMap<ws.WebSocket, Michigoner> = new WeakMap();
 
@@ -53,16 +53,45 @@ function initMichigan(server: ws.ServerOptions["server"]) {
 function wss_onwsClientError(err: Error, socket: Stream.Duplex, request: http.IncomingMessage) {
   console.error(err, socket, request);
 }
-function wss_onconnection(wsConn: ws.WebSocket, req: Request) {
-	clientMap.set(wsConn, {});
+function wss_onconnection(wsConn: ws.WebSocket, req: http.IncomingMessage) {
   wsConn.on('message', ws_onmessage);
   wsConn.once('close', ws_onceclose);
 }
 async function ws_onmessage(this: ws.WebSocket, message: ws.RawData, isBinary: boolean) {
   const wsConn = this;
-
-	try {
+  try {
+    if (!isBinary) {
+      const rawMessage = String(message);
+      const parm = JSON.parse(rawMessage);
+      if (!clientMap.has(wsConn)) {
+        // client is trying to authenticate
+        if (parm && typeof parm === 'object') {
+          if (parm.flavour === 'authn-ok'
+            && typeof parm.product_key === 'string'
+            && typeof parm.user_id === 'number') {
+            // parm bod is ok, so now we can actually do the authn thing
+            const is_valid = validProductKey(parm.user_id, parm.product_key);
+            if (is_valid) {
+              // add the user to the clientMap
+              clientMap.set(wsConn, {user_id: parm.user_id});
+              wsConn.send(JSON.stringify({flavour: 'authn-ok', user_id: parm.user_id}));
+            } else {
+              // invalid parmesan
+            }
+          } else {
+            // bad parm body
+          }
+        } else {
+          // invalid parm
+        }
+      } else {
+        // client is already authenticated; handle other messages
+      }
+    } else {
+      // probs a ping message
+    }
   } catch (err) {
+		console.error(`ws_onmessage error:`, err);
   }
 }
 function ws_onceclose(this: ws.WebSocket, code: number, reason: Buffer) {

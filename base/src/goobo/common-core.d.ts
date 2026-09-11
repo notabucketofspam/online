@@ -22,12 +22,21 @@ export interface ListAllGuildsItem {
 	owner_username: string;
 }
 
+// some stuff for websockets
+
+export type WsFlavour = 'authn-ok' | 'gmail';
+
+export interface WsEventData {
+	flavour: WsFlavour;
+}
+
 export type GatewayGrade =
 	'M_CREATE' | 'M_UPDATE' | 'M_DELETE' |
 	'C_CREATE' | 'C_UPDATE' | 'C_DELETE' |
 	'G_CREATE' | 'G_UPDATE' | 'G_DELETE' | 'G_JOIN';
 
-export interface GatewayItem {
+export interface GatewayItem extends WsEventData {
+	flavour: 'gmail';
 	grade: GatewayGrade;
 }
 
@@ -45,3 +54,4 @@ export interface MessageDelete extends GatewayItem {
 	channel_id: number;
 	message_id: number;
 }
+

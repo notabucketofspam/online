@@ -22,7 +22,7 @@ async function spawn_goobo() {
 		init_ListAllGuildsButton();
 		init_chatinput();
 		await populate_treeview();
-		init_websocket();
+		await init_websocket();
 
 		//placeholder: activate a channel for now
 		const allchannels = Array.from(document.getElementsByClassName('goobo-channel')) as HTMLLIElement[];

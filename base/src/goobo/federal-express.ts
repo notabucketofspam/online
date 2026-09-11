@@ -2,34 +2,56 @@ import {
   MessageRow,
   GatewayGrade,
   GatewayItem,
-  MessageCreate
+  MessageCreate,
+  WsEventData,
+  WsFlavour
 } from "./common-core";
 import {gen_gmli} from './burger-parlour.js';
 
-let ws: WebSocket | null = null;
+const refreshTime = 25e3;
+let refreshTimer: number = 0;
+let sock: WebSocket | null = null;
 let shouldRecover = true;
+let product_key: string | null = null;
+let user_id: number | null = null;
 
 export function setWsShouldRecover(should: boolean) {
 	shouldRecover = should;
 }
 
 /**some real slop if i've ever seen it*/
-export function init_websocket() {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window.location.host;
-  const wsUrl = `${protocol}//${host}/michigan`;
+export async function init_websocket() {
+  try {
+    // get an auth token
+    const res = await fetch('/api/dmv/authn/please', {method: 'GET'});
+    const json = await res.json();
+    if (typeof json === 'object') {
+      product_key = String(json?.product_key);
+      user_id = Number(json?.user_id);
+    }
 
-  ws = new WebSocket(wsUrl);
+		// open the websocket
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/michigan`;
+    sock = new WebSocket(wsUrl);
 
-  ws.addEventListener('open', ws_onopen);
-  ws.addEventListener('message', ws_onmessage);
-  ws.addEventListener('error', ws_onerror);
-  ws.addEventListener('close', ws_onclose);
+    sock.addEventListener('open', ws_onopen);
+    sock.addEventListener('message', ws_onmessage);
+    sock.addEventListener('error', ws_onerror);
+    sock.addEventListener('close', ws_onclose);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function ws_onclose(ev: CloseEvent) {
-	let wsUrl = 'the place';
+  let wsUrl = 'the place';
+  let ws = ev.target as WebSocket | null;
   if (ws) {
+    if (refreshTimer) {
+      window.clearInterval(refreshTimer);
+    }
 		wsUrl = ws.url;
     ws.removeEventListener('error', ws_onerror);
     ws.removeEventListener('open', ws_onopen);
@@ -44,21 +66,51 @@ function ws_onclose(ev: CloseEvent) {
 }
 function ws_onerror(ev: Event) {
   console.error(ev);
+  const ws = ev.target as WebSocket | null;
   if (ws) {
     ws.close();
   }
 }
 function ws_onmessage(ev: MessageEvent) {
   try {
-    const item = JSON.parse(ev.data);
-    handle_gmail(item);
+    const ws = ev.target as WebSocket | null;
+    const ev_data: WsEventData = JSON.parse(ev.data);
+    const flavour: WsFlavour | undefined = ev_data?.flavour;
+    if (typeof flavour === 'string') {
+      if (flavour === 'gmail') {
+        const gmail_item = ev_data as GatewayItem;
+        handle_gmail(gmail_item);
+      } else if (flavour === 'authn-ok') {
+        console.log("authn-ok is PREEM");
+        if (ws) {
+          sendWsPing(ws);
+          // send pings every so often
+          refreshTimer = window.setInterval(() => {
+            sendWsPing(ws);
+          }, refreshTime);
+        }
+      } else {
+        // invalid flavour; do nothing
+      }
+    }
   } catch (err) {
     console.error(`websocket parse error:`, err);
   }
 }
 function ws_onopen(ev: Event) {
+  const ws = ev.target as WebSocket | null;
   if (ws) {
     console.log(`websocket attached to ${ws.url}`);
+		ws.send(JSON.stringify({flavour: 'authn-ok', product_key, user_id}));
+  }
+}
+const PingBuffer = Uint8Array.from([0x09]);
+function sendWsPing(ws: WebSocket) {
+  try {
+    // send a ping frame
+    ws.send(PingBuffer);
+  } catch (err) {
+    console.error(err);
   }
 }
 
