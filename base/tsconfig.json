@@ -42,5 +42,11 @@
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true
   },
-  "exclude": ["src/goobo"]
+  "exclude": [
+    "src/goobo",
+    "goobo",
+    "html",
+    "livekit",
+    "punch"
+  ]
 }
