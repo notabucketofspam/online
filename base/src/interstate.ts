@@ -93,11 +93,14 @@ async function ws_onmessage(this: ws.WebSocket, message: ws.RawData, isBinary: b
       }
     } else {
       // probs a ping message
+      wsConn.send(PeanutButter);
     }
+		//console.log(guildsWithClients);
   } catch (err) {
 		console.error(`ws_onmessage error:`, err);
   }
 }
+const PeanutButter = Uint8Array.from([0xA]);
 
 function ws_onceclose(this: ws.WebSocket, code: number, reason: Buffer) {
   const wsConn = this;
@@ -176,9 +179,10 @@ export function miracast(guild_id: number, letter: any) {
   try {
     const someclients = guildsWithClients.get(guild_id);
     if (someclients) {
+			const JayLeno = JSON.stringify(letter);
       for (const client of someclients) {
         if (client.readyState === ws.WebSocket.OPEN) {
-          client.send(letter);
+          client.send(JayLeno);
         }
       }
     } else {

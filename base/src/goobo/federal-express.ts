@@ -11,16 +11,24 @@ import {gen_gmli} from './burger-parlour.js';
 const refreshTime = 25e3;
 let refreshTimer: number = 0;
 let sock: WebSocket | null = null;
-let shouldRecover = false;
+let shouldRecover = true;
 let product_key: string | null = null;
 let user_id: number | null = null;
 
-export function setWsShouldRecover(should: boolean) {
-	shouldRecover = should;
+export async function WSAStartup() {
+  shouldRecover = true;
+	sock = await init_websocket();
+}
+export async function WSACleanup() {
+  shouldRecover = false;
+  if (sock && typeof sock.close === 'function') {
+		sock.close();
+  }
 }
 
 /**some real slop if i've ever seen it*/
-export async function init_websocket() {
+async function init_websocket() {
+	let ws: WebSocket | null = null;
   try {
     // get an auth token
     const res = await fetch('/api/dmv/authn/please', {method: 'GET'});
@@ -34,15 +42,16 @@ export async function init_websocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const wsUrl = `${protocol}//${host}/michigan`;
-    sock = new WebSocket(wsUrl);
+    ws = new WebSocket(wsUrl);
 
-    sock.addEventListener('open', ws_onopen);
-    sock.addEventListener('message', ws_onmessage);
-    sock.addEventListener('error', ws_onerror);
-    sock.addEventListener('close', ws_onclose);
+    ws.addEventListener('open', ws_onopen);
+    ws.addEventListener('message', ws_onmessage);
+    ws.addEventListener('error', ws_onerror);
+    ws.addEventListener('close', ws_onclose);
   } catch (err) {
     console.error(err);
   }
+  return ws;
 }
 
 function ws_onclose(ev: CloseEvent) {
@@ -59,8 +68,8 @@ function ws_onclose(ev: CloseEvent) {
 		ws.removeEventListener('close', ws_onclose);
   }
   ws = null;
+	console.log(`websocket closed ${wsUrl} (${ev.code})`);
   if (shouldRecover) {
-    console.log(`retrying websocket connection to ${wsUrl}`);
 		setTimeout(init_websocket, 5000);
   }
 }
@@ -74,24 +83,29 @@ function ws_onerror(ev: Event) {
 function ws_onmessage(ev: MessageEvent) {
   try {
     const ws = ev.target as WebSocket | null;
-    const ev_data: WsEventData = JSON.parse(ev.data);
-    const flavour: WsFlavour | undefined = ev_data?.flavour;
-    if (typeof flavour === 'string') {
-      if (flavour === 'gmail') {
-        const gmail_item = ev_data as GatewayItem;
-        handle_gmail(gmail_item);
-      } else if (flavour === 'authn-ok') {
-        console.log("authn-ok is PREEM");
-        if (ws) {
-          sendWsPing(ws);
-          // send pings every so often
-          refreshTimer = window.setInterval(() => {
+    if (typeof ev.data === 'string') {
+      const ev_data: WsEventData = JSON.parse(ev.data);
+      const flavour: WsFlavour | undefined = ev_data?.flavour;
+      if (typeof flavour === 'string') {
+        if (flavour === 'gmail') {
+          const gmail_item = ev_data as GatewayItem;
+          handle_gmail(gmail_item);
+        } else if (flavour === 'authn-ok') {
+          // console.log("authn-ok is PREEM");
+          product_key = null;
+          if (ws) {
             sendWsPing(ws);
-          }, refreshTime);
+            // send pings every so often
+            refreshTimer = window.setInterval(() => {
+              sendWsPing(ws);
+            }, refreshTime);
+          }
+        } else {
+          // invalid flavour; do nothing
         }
-      } else {
-        // invalid flavour; do nothing
       }
+    } else {
+      // binary data
     }
   } catch (err) {
     console.error(`websocket parse error:`, err);
@@ -132,7 +146,7 @@ function handle_gmail(item: GatewayItem) {
         const message_li = gen_gmli(message_row);
         const fridge = document.getElementById('the-fridge');
         if (fridge) {
-          fridge.appendChild(message_li);
+          fridge.prepend(message_li);
         } else {
           // paste it onto the bottom of the html doc.
           // i honestly dont care what you do with it at this point.

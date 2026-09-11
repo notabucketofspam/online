@@ -2,6 +2,7 @@ import {Router, Request, Response} from 'express';
 import {GIVE_UP, pidgen, queryDatabase} from "./annapolis";
 import oracledb from "oracledb";
 import {miracast} from "../interstate";
+import {MessageCreate} from "../goobo/common-core";
 
 const router = Router({mergeParams: true});
 
@@ -11,20 +12,38 @@ async function createMessage(req: Request, res: Response) {
 		const channel_id = req?.body?.channel_id;
 		const message_content = req?.body?.message_content;
 		if (typeof user_id === 'number' && typeof channel_id === 'number' && typeof message_content === 'string' && message_content) {
-			//create the message
-			const message_id = pidgen.nextId();
-			const sql = `insert into messages (id, content, channel_id, user_id) values (:message_id, :message_content, :channel_id, :user_id)`;
-			const params = {message_id, message_content, channel_id, user_id};
-			const result = await queryDatabase(sql, params, true);
-			if (result && result.rowsAffected === 1) {
-				res.status(200).json({message_id});
-				const item_mc = JSON.stringify({
-					channel_id,
-					message_row:[message_id, user_id, message_content]
-				});
-				miracast(channel_id, item_mc);
+			// check something with permissions
+			const parmesan = `
+				SELECT c.guild_id 
+				FROM channels c
+				JOIN guild_members gm ON c.guild_id = gm.guild_id
+				WHERE c.id = :c AND gm.user_id = :u`;
+			const parm_params = {c: channel_id, u: user_id};
+			const parmesan_result = await queryDatabase(parmesan, parm_params, false);
+			if (parmesan_result && Array.isArray(parmesan_result.rows) && parmesan_result.rows.length === 1
+				&& Array.isArray(parmesan_result.rows[0]) && parmesan_result.rows[0].length === 1
+				&& typeof parmesan_result.rows[0][0] === 'number') {
+				const guild_id = Number(parmesan_result.rows[0][0]);
+
+				//create the message
+				const message_id = pidgen.nextId();
+				const sql = `insert into messages (id, content, channel_id, user_id) values (:message_id, :message_content, :channel_id, :user_id)`;
+				const params = {message_id, message_content, channel_id, user_id};
+				const result = await queryDatabase(sql, params, true);
+				if (result && result.rowsAffected === 1) {
+					res.status(200).json({message_id});
+					const item_mc: MessageCreate = {
+						flavour: 'gmail',
+						grade:'M_CREATE',
+						channel_id,
+						message_row:[message_id, user_id, message_content]
+					};
+					miracast(guild_id, item_mc);
+				} else {
+					GIVE_UP(res, 'YOUR MESSAGE WAS NOT SAVED');
+				}
 			} else {
-				GIVE_UP(res, 'YOUR MESSAGE WAS NOT SAVED');
+				GIVE_UP(res, 'you do not have permission to post in this channel');
 			}
 		} else {
 			// don't have a user_id, channel_id, or message_content

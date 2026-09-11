@@ -11,8 +11,8 @@ import {
 } from "./armodafinil.js";
 
 import {
-	setWsShouldRecover,
-	init_websocket
+	WSAStartup,
+	WSACleanup,
 } from "./federal-express.js";
 
 async function spawn_goobo() {
@@ -22,7 +22,7 @@ async function spawn_goobo() {
 		init_ListAllGuildsButton();
 		init_chatinput();
 		await populate_treeview();
-		await init_websocket();
+		await WSAStartup();
 
 		//placeholder: activate a channel for now
 		const allchannels = Array.from(document.getElementsByClassName('goobo-channel')) as HTMLLIElement[];
@@ -40,10 +40,9 @@ document.addEventListener('spam', async (ev) => {
 	let cev = ev as CustomEvent;
 	let the_url = cev?.detail?.url;
 	if (typeof the_url === 'string' && the_url.startsWith('/goobo')) {
-		setWsShouldRecover(true);
 		await spawn_goobo();
 	} else {
-		setWsShouldRecover(false);
+		await WSACleanup();
 	}
 });
 spawn_goobo();

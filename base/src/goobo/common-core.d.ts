@@ -42,16 +42,19 @@ export interface GatewayItem extends WsEventData {
 
 export interface MessageCreate extends GatewayItem {
 	channel_id: number;
+	grade: 'M_CREATE';
 	message_row: MessageRow;
 }
 
 export interface MessageUpdate extends GatewayItem {
 	channel_id: number;
+	grade: 'M_UPDATE';
 	message_row: MessageRow;
 }
 
 export interface MessageDelete extends GatewayItem {
 	channel_id: number;
+	grade: 'M_DELETE';
 	message_id: number;
 }
 
