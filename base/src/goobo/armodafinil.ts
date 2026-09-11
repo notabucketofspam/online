@@ -47,6 +47,8 @@ export async function modal_ListAllGuilds() {
 		const createGuildButton = document.createElement('button');
 		createGuildButton.textContent = 'Create a New Guild';
 		createGuildButton.addEventListener('click', Bev_CreateGuildModal);
+		// disable for now, for safe keeping
+		createGuildButton.disabled = true;
 		bigdiv.appendChild(createGuildButton);
 
 		/**this is a sample button that lets you test the alert_SIGMA function*/
