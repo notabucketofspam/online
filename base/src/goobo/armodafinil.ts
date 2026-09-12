@@ -35,6 +35,9 @@ export async function listAllGuilds() {
 	}
 	return guilds;
 }
+//@ts-ignore
+import MediaPlayer from "/dist/extern/MediaPlayer.js";
+const wmp = new MediaPlayer();
 
 export async function modal_ListAllGuilds() {
 	const dialog = modal_Framework("List of Guilds");
@@ -57,6 +60,7 @@ export async function modal_ListAllGuilds() {
 		ModerButton.style = "display:inline-block; margin-left: 1em;"; 
 		ModerButton.addEventListener('click', () => {
 			alert_SIGMA('Moder still cries');
+			wmp.beep('/page/soundboard/opodes/Gamer/moder.opus');
 		});
 		bigdiv.appendChild(ModerButton);
 
