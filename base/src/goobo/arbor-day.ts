@@ -151,10 +151,14 @@ async function setActiveGuild(guild_id: number) {
 		const newActive = document.querySelector(`li.goobo-guild[data-guild-id="${guild_id}"]`);
 		if (activeNow !== newActive) {
 			// not the same
-			if (activeNow instanceof HTMLLIElement)
+			if (activeNow instanceof HTMLLIElement){
 				activeNow.classList.remove('active');
-			if (newActive instanceof HTMLLIElement)
+			}
+			if (newActive instanceof HTMLLIElement) {
 				newActive.classList.add('active');
+				// also, remove the "unread" class
+				newActive.classList.remove('unread');
+			}
 			// since theyre not the same, we need to refresh the guild-members list
 			await populate_guildMembers(guild_id);
 		}
