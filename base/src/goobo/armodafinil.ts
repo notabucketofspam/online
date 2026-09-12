@@ -142,7 +142,10 @@ async function joinGuildById(guild_id: number) {
 	try {		
 		const response = await fetch(`/api/dmv/guild/join`, {
 			method: 'POST',
-			body: JSON.stringify({guild_id})
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({guild_id: Number(guild_id)})
 		});
 		if (response.ok) {
 			is_ok = true;
