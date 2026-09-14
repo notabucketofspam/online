@@ -1,9 +1,13 @@
-import { generateMSProductKey } from './util_dump'; 
+import path from 'path';
 
-import {Request, Response, Router} from 'express';
+import { Request, Response, Router } from 'express';
+import express from 'express';
+
+import { generateMSProductKey } from './util_dump';
+
 const router = Router();
 
-export async function createKey_II(req : Request, res : Response) {
+async function createKey_II(req : Request, res : Response) {
   try {
     const newkey = generateMSProductKey();
 		res.contentType('text/plain');
@@ -13,5 +17,22 @@ export async function createKey_II(req : Request, res : Response) {
   }
 }
 router.get('/product-key', createKey_II);
+
+function get_ip(req: Request, res: Response) {
+	try {
+		const xff = req.header('X-Forwarded-For');
+		res.setHeader('Content-Type', 'text/plain');
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.status(200).send(xff);
+	} catch (err) {
+		res.status(500).send({ msg: "error sorry" });
+	}
+}
+router.get("/ip", get_ip);
+
+// ========================================================
+// and this is a whole bunch of static routes
+
+router.use("/punch", express.static(path.join(process.cwd(), "punch")));
 
 export {router as rt_legacy};

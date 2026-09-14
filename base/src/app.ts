@@ -4,7 +4,8 @@ import { express_app, isAuthenticated } from './express_app';
 import { setPool, checkPlease } from './db';
 import { rt_users } from './api/users'; 
 import {grandFacade} from './punch/udp';
-import { rt_punch, initWSS } from "./punch/punch";
+import { rt_punch } from "./punch/rt_punch";
+import { initWSS } from "./punch/punch";
 import { rt_pkey } from "./api/product_key";
 import {rt_legacy} from "./legacy";
 import {rt_livekit } from "./livekit";
@@ -17,7 +18,7 @@ import stream from "node:stream";
 import ws from "ws";
 
 express_app.use("/api/users", rt_users);
-express_app.use(rt_punch);
+express_app.use("/api/punch", isAuthenticated, rt_punch);
 express_app.use("/api/pkey", isAuthenticated, rt_pkey);
 express_app.use(rt_legacy);
 express_app.use(rt_livekit);
@@ -87,7 +88,7 @@ process
 	.once('SIGTERM', closePoolAndExit)
 	.once('SIGINT', closePoolAndExit);
 
-async function onupgrade(request: http.IncomingMessage, socket: stream.Duplex, head: NonSharedBuffer) {
+async function onupgrade(request: http.IncomingMessage, socket: stream.Duplex, head: Buffer) {
 	try {
 		let hasBeenHandled = false;
 		for (const wss of wsservers) {
