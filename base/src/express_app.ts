@@ -1,15 +1,17 @@
-import express from 'express';
-import * as path from "node:path";
-import * as odb from "./db";
-import { Request, Response } from 'express';
-import session from 'express-session';
-import {SessionData} from 'express-session';
-import { RedisStore } from 'connect-redis';
-import { createClient } from 'redis';
-import * as crypto from 'node:crypto';
+import path from "node:path";
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 
-// Configure Redis client (assuming default setup on localhost:6379)
+import express from 'express';
+import { RedisStore } from 'connect-redis';
+import { Request, Response } from 'express';
+import session from 'express-session';
+import { createClient } from 'redis';
+import cors from 'cors';
+
+import { SessionData } from 'express-session';
+
+/**her name is Redis*/
 const redisClient = createClient({
 	url: 'redis://localhost:6379'
 });
@@ -30,6 +32,7 @@ redisClient.on('error', function(err) {
 	}
 });
 
+/**the man, the king of only, this is it luigi*/
 const app = express();
 
 app.set("x-powered-by", false);
@@ -39,8 +42,8 @@ app.set('trust proxy', true);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// use cors (perchance)
 const useLocalhost = fs.existsSync('notkeys/use-localhost.txt');
-import cors from 'cors';
 const corsOptions = {
 	origin: /waluigi-servebeer\.com$/,
 	methods: ['GET', 'POST', 'OPTIONS'],
@@ -75,25 +78,22 @@ const sessionParser = session({
 	saveUninitialized: false,
 	cookie: {
 		secure: false, // Set to true in production if using HTTPS
-		httpOnly: true, // Prevent client-side JS access
+		httpOnly: true,
 		path: "/api",
 		maxAge: 8.64e9, // 100 days
 	}
 });
 app.use(sessionParser);
 
-// Serve static files (like your index.html)
-app.use(express.static(path.join(__dirname, "..", 'html')));
-
-// Add this helper function to check if the user is authenticated
+/**check if the user is authenticated */
 function isAuthenticated(req: Request, res: Response, next: express.NextFunction) {
-	//console.log(req.session);
 	if (req.session && req.session.userId) {
 		// User is logged in
 		return next();
+	} else {
+		// User is not logged in
+		res.status(306).json({ message: 'Authentication required.' });
 	}
-	// User is not logged in
-	res.status(306).json({ message: 'Authentication required.' });
 }
 
 function generate_reset_token(){
@@ -117,8 +117,10 @@ function handleMemes (req : Request, res : Response) {
 }
 //app.get('/api/users/memes', handleMemes);
 
-export {redisStore, isAuthenticated, generate_reset_token};
-export { redisClient };
-
-// Export the Express app
-export {app as express_app};
+export {
+	redisStore,
+	isAuthenticated,
+	generate_reset_token,
+	redisClient,
+	app as express_app,
+};
