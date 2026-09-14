@@ -7,6 +7,12 @@ CALL #push
 ECHO.
 CD ..
 
+ECHO Pushing chat...
+cd chat
+CALL #push
+ECHO.
+CD ..
+
 ECHO Pushing opm...
 CD opm
 CALL __push.bat
