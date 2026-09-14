@@ -1,12 +1,12 @@
 import {Request, Response, Router} from 'express';
 import {AccessToken, RoomServiceClient} from 'livekit-server-sdk';
-import path from 'node:path';
-import express from 'express';
 
-import {astext} from './util_dump';
-import {isAuthenticated} from './express_app';
-import {SessionData} from "express-session";
+import {astext} from '../util_dump';
+import {isAuthenticated} from '../express_app';
+import { SessionData } from "express-session";
+
 const router = Router();
+
 const LIVEKIT_API_KEY = astext("keys/LIVEKIT_API_KEY");
 const LIVEKIT_API_SECRET = astext("keys/LIVEKIT_API_SECRET");
 
@@ -68,6 +68,14 @@ async function getActiveRooms(req: Request, res: Response) {
 	}
 }
 
-router.post('/api/join-voice', isAuthenticated, lkJoinVoice);
-router.get('/api/active-rooms', getActiveRooms);
-export {router as rt_livekit};
+router.post('join-voice', isAuthenticated, lkJoinVoice);
+router.get('active-rooms', getActiveRooms);
+
+const old_router = Router();
+old_router.post('/api/join-voice', isAuthenticated, lkJoinVoice);
+old_router.get('/api/active-rooms', getActiveRooms);
+
+export {
+	router as rt_livekit,
+	old_router as rt_livekit_old
+};
