@@ -1,10 +1,11 @@
 import * as oracledb from 'oracledb';
 import * as cron from 'cron';
-import { express_app } from './express_app'; // Import the Express app
-import { setPool, checkPlease } from './db'; // Import the setPool function
+import { express_app, isAuthenticated } from './express_app';
+import { setPool, checkPlease } from './db';
 import { rt_users } from './api/users'; 
 import {grandFacade} from './udp';
-import {rt_punch, initWSS} from "./punch";
+import { rt_punch, initWSS } from "./punch";
+import { rt_pkey } from "./api/pkey";
 import {rt_productkey} from "./product_key";
 import {rt_livekit } from "./livekit";
 import {rt_banquet} from "./cdi/banquet";
@@ -17,9 +18,10 @@ import ws from "ws";
 
 express_app.use("/api/users", rt_users);
 express_app.use(rt_punch);
+express_app.use("/api/pkey", isAuthenticated, rt_pkey);
 express_app.use(rt_productkey);
 express_app.use(rt_livekit);
-express_app.use(rt_banquet);
+express_app.use("/api/cdi/banquet", rt_banquet);
 express_app.use("/api/dmv", rt_baltimore);
 express_app.use("/goobo", rt_goobo);
 

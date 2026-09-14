@@ -76,8 +76,6 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 	}
 }
 
-
-
 /**
  * 
  * @param userId
@@ -137,7 +135,6 @@ export async function removeFromPkeys(userId : number, keyToRemove : string) : P
 	}
 }
 
-
 type Trusts = [string, string[]];
 export async function getTrusts(): Promise<Map<string, string[]> | null> {
 	const sql = `SELECT username, JSON_QUERY(storage, '$.trusts')
@@ -165,9 +162,3 @@ export async function checkPlease() {
 		console.error(error);
 	}
 }
-
-
-
-
-
-
