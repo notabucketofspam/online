@@ -5,7 +5,7 @@ import { setPool, checkPlease } from './db';
 import { rt_users } from './api/users'; 
 import {grandFacade} from './udp';
 import { rt_punch, initWSS } from "./punch";
-import { rt_pkey } from "./api/pkey";
+import { rt_pkey } from "./api/product_key";
 import {rt_productkey} from "./product_key";
 import {rt_livekit } from "./livekit";
 import {rt_banquet} from "./cdi/banquet";
