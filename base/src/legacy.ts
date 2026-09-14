@@ -34,5 +34,13 @@ router.get("/ip", get_ip);
 // and this is a whole bunch of static routes
 
 router.use("/punch", express.static(path.join(process.cwd(), "punch")));
+router.use("/livekit", express.static(path.join(process.cwd(), "livekit")));
+router.use("/goobo", express.static(path.join(process.cwd(), "goobo"), {
+	index: "classic.html", 
+	fallthrough:true
+}));
+router.use("/goobo", express.static(path.join(__dirname, "goobo"), {
+	extensions: ['js']
+}));
 
 export {router as rt_legacy};

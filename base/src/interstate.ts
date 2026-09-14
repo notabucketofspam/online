@@ -1,31 +1,7 @@
 import path from "node:path";
-import {Router, static as serve_static, Request, Response} from "express";
 import {SessionData} from "express-session";
 import {GIVE_UP, queryDatabase} from "./dmv/annapolis";
 import {validProductKey} from "./dmv/authn";
-
-const router = Router({mergeParams: true});
-
-function give_index_html(req: Request, res: Response) {
-  try {
-    res.status(200).sendFile(path.join(process.cwd(), "goobo", "classic.html"));
-  } catch (err) {
-		GIVE_UP(res, "couldnt give html");
-  }
-}
-function immiscible_css(req: Request, res: Response) {
-  try {
-    res.status(200).sendFile(path.join(process.cwd(), "goobo", "immiscible.css"));
-  } catch (err) {
-		GIVE_UP(res, "couldnt give css");
-  }
-}
-
-router.use("/", serve_static(path.join(__dirname, "goobo")));
-router.get("/immiscible.css", immiscible_css);
-router.get("/", give_index_html);
-
-export {router as rt_goobo};
 
 // =========================
 // and now it's time to copy-paste some stuff from punch.ts

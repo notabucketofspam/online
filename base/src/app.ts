@@ -11,7 +11,7 @@ import {rt_legacy} from "./legacy";
 import {rt_livekit } from "./livekit";
 import {rt_banquet} from "./cdi/banquet";
 import {rt_baltimore} from "./dmv/baltimore";
-import {rt_goobo, initMichigan} from "./interstate";
+import {initMichigan} from "./interstate";
 
 import http from "node:http";
 import stream from "node:stream";
@@ -24,7 +24,6 @@ express_app.use(rt_legacy);
 express_app.use(rt_livekit);
 express_app.use("/api/cdi/banquet", rt_banquet);
 express_app.use("/api/dmv", rt_baltimore);
-express_app.use("/goobo", rt_goobo);
 
 import {astext} from "./util_dump";
 

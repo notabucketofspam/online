@@ -70,5 +70,4 @@ async function getActiveRooms(req: Request, res: Response) {
 
 router.post('/api/join-voice', isAuthenticated, lkJoinVoice);
 router.get('/api/active-rooms', getActiveRooms);
-router.use("/livekit", express.static(path.join(__dirname, "..", 'livekit')));
 export {router as rt_livekit};
