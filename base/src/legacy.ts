@@ -14,4 +14,4 @@ export async function createKey_II(req : Request, res : Response) {
 }
 router.get('/product-key', createKey_II);
 
-export {router as rt_productkey};
+export {router as rt_legacy};
