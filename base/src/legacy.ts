@@ -34,9 +34,9 @@ router.get("/ip", get_ip);
 // and this is a whole bunch of static routes
 
 router.use("/account", express.static(path.join(process.cwd(), "html","users")));
-router.use("/punch", express.static(path.join(process.cwd(), "punch")));
-router.use("/livekit", express.static(path.join(process.cwd(), "livekit")));
-router.use("/goobo", express.static(path.join(process.cwd(), "goobo"), {
+router.use("/punch", express.static(path.join(process.cwd(), "html", "punch")));
+router.use("/livekit", express.static(path.join(process.cwd(), "html", "livekit")));
+router.use("/goobo", express.static(path.join(process.cwd(), "html", "goobo"), {
 	index: "classic.html", 
 	fallthrough:true
 }));
