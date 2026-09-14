@@ -31,9 +31,7 @@ async function handleAdd(req: Request, res: Response) {
 	}
 }
 
-
 async function handleLogin(req: Request, res: Response) {
-
 	try {
 		const { email, password } = req.body;
 		const user = await getUserByEmail(email);
