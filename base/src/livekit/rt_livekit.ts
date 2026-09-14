@@ -68,7 +68,7 @@ async function getActiveRooms(req: Request, res: Response) {
 	}
 }
 
-router.post('join-voice', isAuthenticated, lkJoinVoice);
-router.get('active-rooms', getActiveRooms);
+router.post('/join-voice', isAuthenticated, lkJoinVoice);
+router.get('/active-rooms', getActiveRooms);
 
 export {router as rt_livekit};
