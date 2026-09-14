@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { generate_reset_token, isAuthenticated } from "../express_app";
-import { generateMSProductKey } from "../product_key";
+import { generateMSProductKey } from "../util_dump";
 import * as odb from "../db";
 const router = Router();
 

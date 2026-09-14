@@ -1,7 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import {Buffer} from "node:buffer";
-import {generateMSProductKey} from "../product_key";
+import {generateMSProductKey} from "../util_dump";
 import {astext} from "../util_dump";
 
 /**
