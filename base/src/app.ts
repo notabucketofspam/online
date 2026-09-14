@@ -32,56 +32,56 @@ const job = new cron.CronJob('39 6 * * *', checkPlease);
 const wsservers: Set<ws.WebSocketServer> = new Set();
 
 async function init() {
-		const user = astext("keys/db_user");
-		const password = astext("keys/db_password");
-		const connectString = "valuedcustomer_high";
+	const user = astext("keys/db_user");
+	const password = astext("keys/db_password");
+	const connectString = "valuedcustomer_high";
 
-		try {
-				pool = await oracledb.createPool({
-						user,
-						password,
-						connectString,
-						configDir: "./wallet_ValuedCustomer/",
-						walletLocation: "./wallet_ValuedCustomer/",
-						walletPassword: astext("keys/wallet_pass")
-				});
+	try {
+		pool = await oracledb.createPool({
+			user,
+			password,
+			connectString,
+			configDir: "./wallet_ValuedCustomer/",
+			walletLocation: "./wallet_ValuedCustomer/",
+			walletPassword: astext("keys/wallet_pass")
+		});
 
-				// Set the database connection pool in the db module
-				setPool(pool);
+		// Set the database connection pool in the db module
+		setPool(pool);
 
-				const port = 39600;
-				const server_real = express_app.listen(port, () => {
-					console.log('\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/');
-						console.log(`listening on ${port}`);
-				});
+		const port = 39600;
+		const server_real = express_app.listen(port, () => {
+			console.log('\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/');
+			console.log(`listening on ${port}`);
+		});
 
-			wsservers.add(initWSS());
-			wsservers.add(initMichigan());
-			server_real.on('upgrade', onupgrade);
+		wsservers.add(initWSS());
+		wsservers.add(initMichigan());
+		server_real.on('upgrade', onupgrade);
 
-				job.start();
+		job.start();
 
-				grandFacade();
+		grandFacade();
 
-		} catch (err) { console.error(err); }
+	} catch (err) { console.error(err); }
 }
 init();
 
 // Close the default connection pool with 1 second draining, and exit
 async function closePoolAndExit() {
-		console.log("\nTerminating []");
-		try {
-				await oracledb.getPool().close(1);
-				process.exit(0);
-		} catch (err) {
-				console.error(err);
-				process.exit(1);
-		}
+	console.log("\nTerminating []");
+	try {
+		await oracledb.getPool().close(1);
+		process.exit(0);
+	} catch (err) {
+		console.error(err);
+		process.exit(1);
+	}
 }
 // Close the pool cleanly if Node.js is interrupted
 process
-		.once('SIGTERM', closePoolAndExit)
-		.once('SIGINT', closePoolAndExit);
+	.once('SIGTERM', closePoolAndExit)
+	.once('SIGINT', closePoolAndExit);
 
 async function onupgrade(request: http.IncomingMessage, socket: stream.Duplex, head: NonSharedBuffer) {
 	try {

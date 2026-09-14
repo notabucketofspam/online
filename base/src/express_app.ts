@@ -11,7 +11,7 @@ import fs from 'node:fs';
 
 // Configure Redis client (assuming default setup on localhost:6379)
 const redisClient = createClient({
-		url: 'redis://localhost:6379'
+	url: 'redis://localhost:6379'
 });
 redisClient.connect().catch(console.error);
 redisClient.on('error', function(err) {
@@ -54,14 +54,14 @@ if (!useLocalhost){
 }
 
 function getSecret() {
-		try {
-				const secret = fs.readFileSync(path.normalize("keys/session_secret"), { encoding: null });
-				return secret;
-		} catch (err) {
-				const secret = crypto.randomBytes(32);
-				fs.writeFileSync(path.normalize("keys/session_secret"), secret, { encoding: null });
-				return secret;
-		}
+	try {
+		const secret = fs.readFileSync(path.normalize("keys/session_secret"), { encoding: null });
+		return secret;
+	} catch (err) {
+		const secret = crypto.randomBytes(32);
+		fs.writeFileSync(path.normalize("keys/session_secret"), secret, { encoding: null });
+		return secret;
+	}
 }
 
 // Configure session middleware with RedisStore
@@ -69,16 +69,16 @@ const redisStore = new RedisStore({ client: redisClient });
 
 // session time
 const sessionParser = session({
-		store: redisStore,
-		secret: getSecret(),
-		resave: false,
-		saveUninitialized: false,
-		cookie: {
-				secure: false, // Set to true in production if using HTTPS
-				httpOnly: true, // Prevent client-side JS access
-				path: "/api",
-				maxAge: 8.64e9, // 100 days
-		}
+	store: redisStore,
+	secret: getSecret(),
+	resave: false,
+	saveUninitialized: false,
+	cookie: {
+		secure: false, // Set to true in production if using HTTPS
+		httpOnly: true, // Prevent client-side JS access
+		path: "/api",
+		maxAge: 8.64e9, // 100 days
+	}
 });
 app.use(sessionParser);
 
@@ -114,106 +114,106 @@ async function handleAdd(req: Request, res: Response) {
 
 async function handleLogin(req: Request, res: Response) {
 
-		try {
-			const { email, password } = req.body;
-				const user = await odb.getUserByEmail(email);
-				if (user && odb.verifyPassword(password, user.PASSWORDHASH, user.SALT)) {
-						// Successful login: store user data in session
-						req.session.userId = user.USERID;
-						req.session.username = user.USERNAME;
-						req.session.email = user.EMAIL;
-						req.session.storage = user.STORAGE;
+	try {
+		const { email, password } = req.body;
+		const user = await odb.getUserByEmail(email);
+		if (user && odb.verifyPassword(password, user.PASSWORDHASH, user.SALT)) {
+			// Successful login: store user data in session
+			req.session.userId = user.USERID;
+			req.session.username = user.USERNAME;
+			req.session.email = user.EMAIL;
+			req.session.storage = user.STORAGE;
 
-						res.json({ message: 'Login successful!' });
-				} else {
-						res.status(401).json({ message: 'Invalid credentials.' });
-				}
-		} catch (error: any) {
-				console.error(error);
-				res.status(500).json({ message: 'Login failed: ' + error.message });
+			res.json({ message: 'Login successful!' });
+		} else {
+			res.status(401).json({ message: 'Invalid credentials.' });
 		}
+	} catch (error: any) {
+		console.error(error);
+		res.status(500).json({ message: 'Login failed: ' + error.message });
+	}
 }
 
 // Add this helper function to check if the user is authenticated
 function isAuthenticated(req: Request, res: Response, next: express.NextFunction) {
 	//console.log(req.session);
-		if (req.session && req.session.userId) {
-				// User is logged in
-				return next();
-		}
-		// User is not logged in
-		res.status(306).json({ message: 'Authentication required.' });
+	if (req.session && req.session.userId) {
+		// User is logged in
+		return next();
+	}
+	// User is not logged in
+	res.status(306).json({ message: 'Authentication required.' });
 }
 
 // Example of a protected route
 function handleInfo(req: Request, res: Response) {
-		// If we reach here, req.session is populated with the user data from Redis
-		res.json({
-				userId: req.session.userId,
-				username: req.session.username,
-				email: req.session.email
-		});
+	// If we reach here, req.session is populated with the user data from Redis
+	res.json({
+		userId: req.session.userId,
+		username: req.session.username,
+		email: req.session.email
+	});
 };
 
 // New Route Handler: Logout
 async function handleLogout(req: Request, res: Response) {
-		req.session.destroy((err) => {
-				if (err) {
-						console.error('Error destroying session:', err);
-						return res.status(500).json({ message: 'Could not log out.' });
-				}
-				// Clears the session cookie in the browser
-				res.clearCookie('connect.sid');
-				res.json({ message: 'Logged out successfully.' });
-		});
+	req.session.destroy((err) => {
+		if (err) {
+			console.error('Error destroying session:', err);
+			return res.status(500).json({ message: 'Could not log out.' });
+		}
+		// Clears the session cookie in the browser
+		res.clearCookie('connect.sid');
+		res.json({ message: 'Logged out successfully.' });
+	});
 }
 
 // --------------- this stuff is for the storage api ----------------------
 // New route handler to save user's JSON storage
 async function handleSaveStorage(req: Request, res: Response) {
-		if (!req.session.userId) {
-				return res.status(401).json({ message: 'Authentication required.' });
-		}
+	if (!req.session.userId) {
+		return res.status(401).json({ message: 'Authentication required.' });
+	}
 
 		const data  = req.body; // Expect JSON data in the request body
 
-		if (typeof data !== 'object' || data === null) {
-				return res.status(400).json({ message: 'Invalid JSON data provided.' });
-		}
+	if (typeof data !== 'object' || data === null) {
+		return res.status(400).json({ message: 'Invalid JSON data provided.' });
+	}
 
-		try {
-				const result = await odb.updateJsonStorage(req.session.userId, data);
-				if (result) {
-						req.session.storage = data; // Update session with new storage data
-						res.json({ message: 'Storage updated successfully!' });
-				} else {
-						res.status(500).json({ message: 'Failed to update storage.' });
-				}
-		} catch (error: any) {
-				console.error('Error saving storage:', error);
-				res.status(500).json({ message: 'Failed to save storage: ' + error.message });
+	try {
+		const result = await odb.updateJsonStorage(req.session.userId, data);
+		if (result) {
+			req.session.storage = data; // Update session with new storage data
+			res.json({ message: 'Storage updated successfully!' });
+		} else {
+			res.status(500).json({ message: 'Failed to update storage.' });
 		}
+	} catch (error: any) {
+		console.error('Error saving storage:', error);
+		res.status(500).json({ message: 'Failed to save storage: ' + error.message });
+	}
 }
 
 // New route handler to retrieve user's JSON storage
 async function handleGetStorage(req: Request, res: Response) {
-		if (!req.session.userId) {
-				return res.status(401).json({ message: 'Authentication required.' });
-		}
+	if (!req.session.userId) {
+		return res.status(401).json({ message: 'Authentication required.' });
+	}
 
-		try {
-				const storageData = await odb.getJsonStorage(req.session.userId);
-				if (storageData) {
-						req.session.storage = storageData;
-						res.json({ storage: storageData });
-				} else {
-						// If no storage data is found, return an empty object
-						res.json({ storage: {} });
-				}
-		} catch (error: any) {
-				console.error('Error retrieving storage:', error);
-				res.status(500).json({ message: 'Failed to retrieve storage: ' + error.message });
+	try {
+		const storageData = await odb.getJsonStorage(req.session.userId);
+		if (storageData) {
+			req.session.storage = storageData;
+			res.json({ storage: storageData });
+		} else {
+			// If no storage data is found, return an empty object
+			res.json({ storage: {} });
 		}
+	} catch (error: any) {
+		console.error('Error retrieving storage:', error);
+		res.status(500).json({ message: 'Failed to retrieve storage: ' + error.message });
+	}
 }
 
 // ------------- this is the section with the password reset stuffs -----------------
@@ -236,7 +236,7 @@ async function handle_ask_for_token(req: Request, res: Response){
 	try{
 		const looks_legit = await odb.checkIfUserIsReal(email);
 		let keyfix = "pwrt";
-		
+
 		if (looks_legit) {
 			// this is a real person
 		} else {
