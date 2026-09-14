@@ -3,17 +3,21 @@ import * as cron from 'cron';
 import { express_app } from './express_app'; // Import the Express app
 import { setPool, checkPlease } from './db'; // Import the setPool function
 import {grandFacade} from './udp';
-import {initWSS} from "./punch";
-import "./product_key";
-import "./livekit";
-import "./cdi/banquet";
-import rt_baltimore from "./dmv/baltimore";
+import {rt_punch, initWSS} from "./punch";
+import {rt_productkey} from "./product_key";
+import {rt_livekit } from "./livekit";
+import {rt_banquet} from "./cdi/banquet";
+import {rt_baltimore} from "./dmv/baltimore";
 import {rt_goobo, initMichigan} from "./interstate";
 
 import http from "node:http";
 import stream from "node:stream";
 import ws from "ws";
 
+express_app.use(rt_punch);
+express_app.use(rt_productkey);
+express_app.use(rt_livekit);
+express_app.use(rt_banquet);
 express_app.use("/api/dmv", rt_baltimore);
 express_app.use("/goobo", rt_goobo);
 

@@ -16,6 +16,6 @@ router.use("/channel", rt_channel);
 router.use("/message", rt_message);
 router.use("/authn", rt_authn);
 
-export default router;
+export {router as rt_baltimore};
 
 

@@ -48,10 +48,10 @@ export function generateMSProductKey() {
   // thanks gemini
 }
 
-import {Request, Response} from 'express';
-import {generate_reset_token, isAuthenticated, express_app as app} from "./express_app";
+import {Request, Response, Router} from 'express';
+import {generate_reset_token, isAuthenticated} from "./express_app";
 import * as odb from "./db";
-
+const router = Router();
 async function createKey(req : Request, res : Response) {
 	try {
 		const reqbody = req.body;
@@ -73,7 +73,7 @@ async function createKey(req : Request, res : Response) {
 		res.status(500).json({error: 'Internal server error'});
   }
 }
-app.post('/api/pkey/create', isAuthenticated, createKey);
+router.post('/api/pkey/create', isAuthenticated, createKey);
 
 async function listKeys(req : Request, res : Response) {
 	try {
@@ -93,7 +93,7 @@ async function listKeys(req : Request, res : Response) {
 		res.status(500).json({error: 'Internal server error'});
   }
 }
-app.get('/api/pkey/list', isAuthenticated, listKeys);
+router.get('/api/pkey/list', isAuthenticated, listKeys);
 
 async function deleteKey(req : Request, res : Response) {
 	try {
@@ -120,7 +120,7 @@ async function deleteKey(req : Request, res : Response) {
 		res.status(500).json({error: 'Internal server error'});
   }
 }
-app.post('/api/pkey/delete', isAuthenticated, deleteKey);
+router.post('/api/pkey/delete', isAuthenticated, deleteKey);
 
 export async function createKey_II(req : Request, res : Response) {
   try {
@@ -131,5 +131,6 @@ export async function createKey_II(req : Request, res : Response) {
     res.status(500).json({error: 'Internal server error'});
   }
 }
-app.get('/product-key', createKey_II);
+router.get('/product-key', createKey_II);
 
+export {router as rt_productkey};

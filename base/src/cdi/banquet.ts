@@ -1,10 +1,10 @@
 import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
-import {Request, Response} from "express";
+import {Request, Response, Router} from "express";
 
 import {rember} from "../util_dump";
-import {express_app as app} from "../express_app";
+const router = Router();
 import {getWhatsOnDeck} from "./garbage_island";
 
 const contentpath = path.join(os.tmpdir(), "wsbc_banquet");
@@ -27,7 +27,9 @@ async function banquetProMax(req: Request, res: Response) {
     res.status(500).json({error: "Couldn't find any food."});
   }
 }
-app.get("/api/cdi/banquet", banquetProMax);
+router.get("/api/cdi/banquet", banquetProMax);
+
+export {router as rt_banquet};
 
 const banquetPrompt = () => ({
   "3": {

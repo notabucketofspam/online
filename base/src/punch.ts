@@ -1,11 +1,13 @@
 // all sorts of imports
 import path from "node:path";
-import { Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 import crypto from "node:crypto";
 
 import * as odb from "./db";
-import {generate_reset_token, isAuthenticated, express_app as app, redisStore } from "./express_app";
+import {generate_reset_token, isAuthenticated, redisStore } from "./express_app";
 import {Punch, ClientData, WsbcReply, WsEventData, WsPair, WsPairMeta } from "VocabQuiz";
+
+const router = Router();
 
 import {SessionData} from "express-session";
 import express from 'express';
@@ -122,10 +124,11 @@ async function askToJoin(req: Request, res: Response){
 	}
 }
 
-app.get("/ip", get_ip);
-app.use("/punch", express.static(path.join(__dirname, "..", 'punch')));
-app.get("/api/punch/list", isAuthenticated, getPunchList);
-app.post("/api/punch/join", isAuthenticated, askToJoin);
+router.get("/ip", get_ip);
+router.use("/punch", express.static(path.join(__dirname, "..", 'punch')));
+router.get("/api/punch/list", isAuthenticated, getPunchList);
+router.post("/api/punch/join", isAuthenticated, askToJoin);
+export {router as rt_punch};
 
 // ===========================================================
 // websocket server
