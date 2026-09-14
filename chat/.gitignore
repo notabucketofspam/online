@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 package-lock.json
-/src/extern
+/src/extern/***
+/dts/***

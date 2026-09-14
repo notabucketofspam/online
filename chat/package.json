@@ -2,10 +2,18 @@
   "name": "chat",
   "private": true,
   "version": "0.0.0",
+  "main": "dist/livekit-widget.js",
+  "types": "dts/widget.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dts/widget.d.ts",
+      "import": "./dist/livekit-widget.js"
+    }
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
