@@ -1,9 +1,10 @@
 // widget.tsx (Your new entry point)
 import { createRoot } from 'react-dom/client';
+import './index.css'
 import LiveKitRoomComponent from './LiveKitRoomComponent'; // Your LiveKit code
 
 // Attach to window so the non-React app can access it
-(window as any).mountLiveKitWidget = (containerId:string, options:{roomCode:string, onDisconnect:() => void}) => {
+export const mountLiveKitWidget = (containerId:string, options:{roomCode:string, onDisconnect:() => void}) => {
   const container = document.getElementById(containerId);
   if (!container) throw new Error(`Could not find element #${containerId}`);
 
