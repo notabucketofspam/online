@@ -71,11 +71,4 @@ async function getActiveRooms(req: Request, res: Response) {
 router.post('join-voice', isAuthenticated, lkJoinVoice);
 router.get('active-rooms', getActiveRooms);
 
-const old_router = Router();
-old_router.post('/api/join-voice', isAuthenticated, lkJoinVoice);
-old_router.get('/api/active-rooms', getActiveRooms);
-
-export {
-	router as rt_livekit,
-	old_router as rt_livekit_old
-};
+export {router as rt_livekit};

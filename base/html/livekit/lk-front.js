@@ -198,7 +198,7 @@ async function joinVoiceChannel(roomcode) {
 		if (!roomcode) {
 			roomcode = 'general-chat';
     }
-    const response = await fetch('/api/join-voice', {
+    const response = await fetch('/api/livekit/join-voice', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
 			body: JSON.stringify({roomcode})
@@ -309,7 +309,7 @@ async function loadActiveRooms() {
     return;
   }
   try {
-    const response = await fetch('/api/active-rooms',{
+    const response = await fetch('/api/livekit/active-rooms',{
 		  method: 'GET',
 		  cache: 'no-store',
     });

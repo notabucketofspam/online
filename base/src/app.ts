@@ -8,8 +8,8 @@ import { rt_punch } from "./punch/rt_punch";
 import { initWSS } from "./punch/punch";
 import { rt_pkey } from "./api/product_key";
 import {rt_legacy} from "./legacy";
-import {rt_livekit, rt_livekit_old } from "./livekit/rt_livekit";
-import {rt_banquet} from "./cdi/banquet";
+import {rt_livekit } from "./livekit/rt_livekit";
+import {rt_cdi} from "./cdi/rt_cdi";
 import {rt_baltimore} from "./dmv/baltimore";
 import {initAnacostia } from "./dmv/anacostia";
 
@@ -22,8 +22,7 @@ express_app.use("/api/users", rt_users);
 express_app.use("/api/punch", isAuthenticated, rt_punch);
 express_app.use("/api/pkey", isAuthenticated, rt_pkey);
 express_app.use("/api/livekit",rt_livekit);
-express_app.use(rt_livekit_old);
-express_app.use("/api/cdi/banquet", rt_banquet);
+express_app.use("/api/cdi", rt_cdi);
 express_app.use("/api/dmv", rt_baltimore);
 
 import {astext} from "./util_dump";

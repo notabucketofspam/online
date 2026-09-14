@@ -12,7 +12,7 @@ export default function App() {
       try {
         // Because your auth is already handled, your backend knows who is making this request via their session cookie
         let roomcode = 'general-chat';
-        const response = await fetch('/api/join-voice', {
+        const response = await fetch('/api/livekit/join-voice', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({roomcode})
