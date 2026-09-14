@@ -1,32 +1,34 @@
-// widget.tsx (Your new entry point)
 import { createRoot } from 'react-dom/client';
+import { type RoomEventCallbacks } from 'livekit-client';
+import LiveKitRoomComponent from './LiveKitRoomComponent';
 import './index.css'
-import LiveKitRoomComponent from './LiveKitRoomComponent'; // Your LiveKit code
 
-// Attach to window so the non-React app can access it
-export const mountLiveKitWidget = (containerId:string, options:{roomCode:string, onDisconnect:() => void}) => {
+export interface WidgetMountOptions {
+  roomcode: string;
+  eventVectors?: Partial<RoomEventCallbacks>;
+}
+/**this is the function that creates a little voice chat window*/
+export function mountLiveKitWidget (containerId:string, options: WidgetMountOptions) {
   const container = document.getElementById(containerId);
-  if (!container) throw new Error(`Could not find element #${containerId}`);
+  if (!container)
+    throw new Error(`Could not find element #${containerId}`);
 
   const root = createRoot(container);
 
   // Initial render
   root.render(
     <LiveKitRoomComponent 
-      roomCode={options.roomCode} 
-      onDisconnect={options.onDisconnect} 
+      roomcode={options.roomcode} 
+      eventVectors={options.eventVectors}
     />
   );
 
-  // Return an object that lets vanilla JS update the React component later
   return {
     setRoomCode: (newRoomCode:string) => {
-      // Re-rendering the root with new props is the standard React 18 way 
-      // to update from the outside. React is smart enough to only update the DOM that changed.
       root.render(
         <LiveKitRoomComponent 
-          roomCode={newRoomCode} 
-          onDisconnect={options.onDisconnect} 
+          roomcode={newRoomCode} 
+          eventVectors={options.eventVectors}
         />
       );
     },
@@ -34,4 +36,4 @@ export const mountLiveKitWidget = (containerId:string, options:{roomCode:string,
       root.unmount();
     }
   };
-};
+}

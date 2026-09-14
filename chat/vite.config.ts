@@ -27,4 +27,4 @@ export default defineConfig({
 		cssCodeSplit: false,
 		emptyOutDir: true,
 	}
-})
+});
