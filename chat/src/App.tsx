@@ -10,7 +10,6 @@ export default function App() {
     // This runs exactly once when the page loads
     const fetchToken = async () => {
       try {
-        // Because your auth is already handled, your backend knows who is making this request via their session cookie
         let roomcode = 'general-chat';
         const response = await fetch('/api/livekit/join-voice', {
           method: 'POST',
