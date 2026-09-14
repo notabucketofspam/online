@@ -11,7 +11,7 @@ import {rt_legacy} from "./legacy";
 import {rt_livekit } from "./livekit";
 import {rt_banquet} from "./cdi/banquet";
 import {rt_baltimore} from "./dmv/baltimore";
-import {initMichigan} from "./interstate";
+import {initAnacostia } from "./interstate";
 
 import http from "node:http";
 import stream from "node:stream";
@@ -60,7 +60,7 @@ async function init() {
 		});
 
 		wsservers.add(initWSS());
-		wsservers.add(initMichigan());
+		wsservers.add(initAnacostia());
 		server_real.on('upgrade', onupgrade);
 
 		job.start();

@@ -17,13 +17,13 @@ interface Michigoner {
 const clientMap: WeakMap<ws.WebSocket, Michigoner> = new WeakMap();
 const guildsWithClients: Map<number, Set<ws.WebSocket>> = new Map();
 
-function initMichigan() {
+export function initAnacostia() {
   wss = new ws.WebSocketServer({
     noServer:true,
     host: 'localhost',
     clientTracking: true,
     autoPong: true,
-    path: '/michigan'
+    path: '/anacostia'
   });
   wss.on('wsClientError', wss_onwsClientError);
   wss.on('connection', wss_onconnection);
@@ -168,6 +168,3 @@ export function miracast(guild_id: number, letter: any) {
     console.error(err);
   }
 }
-
-export {initMichigan};
-
