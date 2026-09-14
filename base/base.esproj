@@ -4,4 +4,7 @@
     <BuildCommand>build</BuildCommand>
     <CleanCommand>RD /S /Q dist</CleanCommand>
   </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="src\punch\" />
+  </ItemGroup>
 </Project>

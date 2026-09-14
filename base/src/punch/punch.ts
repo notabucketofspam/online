@@ -3,8 +3,8 @@ import path from "node:path";
 import { Request, Response, Router } from 'express';
 import crypto from "node:crypto";
 
-import * as odb from "./db";
-import {generate_reset_token, isAuthenticated, redisStore } from "./express_app";
+import * as odb from "../db";
+import {generate_reset_token, isAuthenticated, redisStore } from "../express_app";
 import {Punch, ClientData, WsbcReply, WsEventData, WsPair, WsPairMeta } from "VocabQuiz";
 
 const router = Router();
