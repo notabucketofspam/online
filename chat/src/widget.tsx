@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { type RoomEventCallbacks } from 'livekit-client';
 import LiveKitRoomComponent from './components/LiveKitRoom';
-import './index.css'
+import './index.css';
 
 export interface WidgetMountOptions {
   roomcode: string;
