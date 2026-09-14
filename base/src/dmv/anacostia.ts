@@ -1,13 +1,12 @@
-import path from "node:path";
-import {SessionData} from "express-session";
-import {GIVE_UP, queryDatabase} from "./dmv/annapolis";
-import {validProductKey} from "./dmv/authn";
+// Anacostia has a bunch of stuff that's used for the websocket wrt goobo
+// it used to be called "interstate", but i didnt like that name as much
 
-// =========================
-// and now it's time to copy-paste some stuff from punch.ts
-import ws from "ws";
 import http from "node:http";
 import Stream from "node:stream";
+import ws from "ws";
+import {queryDatabase} from "../db";
+import { validProductKey } from "./authn";
+import { SessionData } from "express-session";
 
 let wss: ws.WebSocketServer;
 interface Michigoner {
@@ -29,6 +28,7 @@ export function initAnacostia() {
   wss.on('connection', wss_onconnection);
   return wss;
 }
+
 function wss_onwsClientError(err: Error, socket: Stream.Duplex, request: http.IncomingMessage) {
   console.error(err, socket, request);
 }

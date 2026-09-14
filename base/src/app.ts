@@ -11,7 +11,7 @@ import {rt_legacy} from "./legacy";
 import {rt_livekit } from "./livekit";
 import {rt_banquet} from "./cdi/banquet";
 import {rt_baltimore} from "./dmv/baltimore";
-import {initAnacostia } from "./interstate";
+import {initAnacostia } from "./dmv/anacostia";
 
 import http from "node:http";
 import stream from "node:stream";
