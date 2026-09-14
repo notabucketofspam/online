@@ -2,6 +2,7 @@ import * as oracledb from 'oracledb';
 import * as cron from 'cron';
 import { express_app } from './express_app'; // Import the Express app
 import { setPool, checkPlease } from './db'; // Import the setPool function
+import { rt_users } from './api/users'; 
 import {grandFacade} from './udp';
 import {rt_punch, initWSS} from "./punch";
 import {rt_productkey} from "./product_key";
@@ -14,6 +15,7 @@ import http from "node:http";
 import stream from "node:stream";
 import ws from "ws";
 
+express_app.use("/api/users", rt_users);
 express_app.use(rt_punch);
 express_app.use(rt_productkey);
 express_app.use(rt_livekit);
