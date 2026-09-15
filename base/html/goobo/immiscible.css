@@ -13,18 +13,29 @@ div[id^="goobo-"] {
 ul#guild-list{
 	padding:0;
 }
-.active {
-	background-color:#ff000033;
+li.goobo-guild.active {
+	/*background-color:#eeea;*/
+}
+li.goobo-channel.active {
+	background-color: #faaa;
 }
 li.goobo-guild {
 	list-style-type: none;
 	padding: 0;
 }
 	li.goobo-guild:hover {
-		background-color: #0000ff33;
+		/*background-color: #7777ff33;*/
 	}
 li.goobo-channel:hover {
 	background-color: #00ff0033;
+}
+button.create-channel {
+	float:right;
+	padding:0px;
+	width:1.5em;
+}
+ul#guild-list * {
+	user-select: none;
 }
 
 div.ggli-guild-name{
@@ -42,9 +53,10 @@ dialog.alert-sigma{
 	top:0px;
 }
 button.modal-close {
-	display:inline-block;
-	position:absolute;
-	right:12px;
+	display: inline-block;
+	position: absolute;
+	right: 12px;
+	user-select: none;
 }
 table.list-all-guilds, table.list-all-guilds th, table.list-all-guilds td {
 	border-collapse: collapse;

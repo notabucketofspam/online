@@ -35,3 +35,20 @@ export async function channelList(guild_id: number) {
 		return [];
 	}
 }
+
+import type { sinfo } from './common-core';
+export async function get_sinfo() {
+	let info:sinfo|null = null;
+	try {
+		const res = await fetch('/api/users/info', {
+			method: 'GET',
+			cache: 'no-store',
+		});
+		if (res.ok) {
+			info = await res.json();
+		}
+	} catch (err) {
+		console.error(err);
+	}
+	return info;
+}

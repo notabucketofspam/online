@@ -1,24 +1,42 @@
 import {Router, Request, Response} from 'express';
 import {GIVE_UP, pidgen, queryDatabase} from "./annapolis";
 
-const router = Router({mergeParams: true});
+const router = Router({ mergeParams: true });
+
+const CHANNEL_TYPES = new Set(['text', 'voice']);
 
 async function createChannel(req: Request, res: Response) {
 	try {
 		const user_id = req.session.userId;
 		const guild_id = req?.body?.guild_id;
 		const channel_name = req?.body?.channel_name;
-		if (typeof user_id === 'number' && typeof guild_id === 'number' && typeof channel_name === 'string' && channel_name) {
-			// create the channel
-			const channel_id = pidgen.nextId();
-			const sql = `insert into channels (id, name, guild_id) values (:channel_id, :channel_name, :guild_id)`;
-			const params = {channel_id, channel_name, guild_id};
-			await queryDatabase(sql, params, true);
+		const channel_type = req?.body?.channel_type || 'text';
+		if (typeof user_id === 'number'
+			&& typeof guild_id === 'number'
+			&& typeof channel_name === 'string' && channel_name
+			&& typeof channel_type === 'string' && channel_type && CHANNEL_TYPES.has(channel_type)) {
+			//auth check for owner_id
+			const auth_sql = `select owner_id from guilds where id = :guild_id and owner_id = :user_id`;
+			const auth_params = { guild_id, user_id };
+			const auth_result = await queryDatabase(auth_sql, auth_params, false);
+			if (auth_result && Array.isArray(auth_result.rows) && auth_result.rows.length) {
+				// auth is ok
+				// create the channel
+				const channel_id = pidgen.nextId();
+				const sql = `
+				insert into channels (id, name, guild_id, channel_type)
+					values (:channel_id, :channel_name, :guild_id, :channel_type)`;
+				const params = { channel_id, channel_name, guild_id, channel_type };
+				await queryDatabase(sql, params, true);
 
-			res.status(200).json({channel_id});
+				res.status(200).json({ channel_id });
+			} else {
+				// no auth
+				GIVE_UP(res, 'user is not the owner of the guild');
+			}
 		} else {
-			// don't have a user_id, guild_id, or channel_name
-			GIVE_UP(res, 'missing user_id, guild_id, or channel_name');
+			// don't have a user_id, guild_id, channel_name, or channel_type is invalid
+			GIVE_UP(res, 'missing user_id, guild_id, channel_name, OR channel_type is invalid');
 		}
 	} catch (err) {
 		GIVE_UP(res, 'couldnt make the channel');
@@ -91,7 +109,8 @@ async function listAllChannelsForUser(req: Request, res: Response) {
 		if (user_id) {
 			// thanks gemini
 			const sql = `
-				SELECT 
+				SELECT
+					g.owner_id AS owner_id,
 					g.id AS guild_id,
 					g.name AS guild_name,
 					COALESCE(
@@ -108,13 +127,14 @@ async function listAllChannelsForUser(req: Request, res: Response) {
 				JOIN guild_members gm ON g.id = gm.guild_id
 				LEFT JOIN channels c ON g.id = c.guild_id
 				WHERE gm.user_id = :user_id
-				GROUP BY g.id, g.name;
+				GROUP BY g.id, g.name, g.owner_id;
 			`;
 			const params = {user_id};
 			const result = await queryDatabase(sql, params);
 			if (result && Array.isArray(result.rows)) {
-				const rows = result.rows as Array<[number, string, any]>;
-				const guilds = rows.map(([guild_id, guild_name, channels]) => ({
+				const rows = result.rows as Array<[number, number, string, any]>;
+				const guilds = rows.map(([owner_id, guild_id, guild_name, channels]) => ({
+					owner_id,
 					id: guild_id,
 					name: guild_name,
 					channels: JSON.parse(channels||'[]')

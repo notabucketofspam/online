@@ -8,9 +8,16 @@ export interface Channel {
 	channel_type: string;
 }
 export interface Guild {
+	owner_id: number;
 	id: number;
 	name: string;
 	channels: Channel[];
+}
+
+export interface sinfo {
+	userId: number;
+	username: string;
+	email: string;
 }
 
 export type MessageRow = [id: number, user_id: number, content: string];
