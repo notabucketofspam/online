@@ -1,4 +1,4 @@
 @ECHO off
 RD /S /Q dist
 CALL tsc --build
-CALL tsc --project src/goobo/tsconfig.json
+CALL vite build -l warn

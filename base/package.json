@@ -19,7 +19,8 @@
     "@types/node": "^25.9.2",
     "@types/oracledb": "^7.0.0",
     "@types/ws": "^8.18.1",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0"
   },
   "dependencies": {
     "chat": "file:../chat",
@@ -28,6 +29,7 @@
     "cron": "^4.4.0",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "livekit-client": "^2.22.3",
     "livekit-server-sdk": "^2.15.4",
     "oci-sdk": "^2.132.0",
     "oracledb": "^7.0.0",
