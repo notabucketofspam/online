@@ -6,7 +6,7 @@ import {
 	removeModalDialog,
 } from "./armodafinil.js";
 
-const CHANNEL_TYPES = ['text', 'voice'];
+export const CHANNEL_TYPES = ['text', 'voice'];
 
 function modal_CreateChannel(guild_id: number) {
 	const dialog = modal_Framework('Create Channel');

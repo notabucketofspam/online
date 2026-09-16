@@ -135,12 +135,23 @@ async function setActiveChannel(channel_id: number) {
 		const new_active = document.querySelector(`li.goobo-channel[data-channel-id="${channel_id}"]`);
 		if (previous_active !== new_active) {
 			// not the same
-			if (previous_active instanceof HTMLLIElement)
+			// change active class on the channel list
+			if (previous_active instanceof HTMLLIElement){
 				previous_active.classList.remove('active');
-			if (new_active instanceof HTMLLIElement)
+			}
+			if (new_active instanceof HTMLLIElement && new_active.dataset.channelType) {
 				new_active.classList.add('active');
-			// load the messages for the new channel
-			await populate_fridge(channel_id, true);
+				// gotta see what kind of channel this is
+				const channel_type = new_active.dataset.channelType;
+				if (channel_type === 'text') {
+					// load the messages for the new channel
+					await populate_fridge(channel_id, true);
+				} else if (channel_type === 'voice') {
+					// handle voice channel
+				} else {
+
+				}
+			}
 		}
 	} catch (err) {
 		console.error(err);

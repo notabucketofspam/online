@@ -12,6 +12,7 @@ export default defineConfig({
       formats: ['es']
     },
     outDir: 'dist/goobo',
-    emptyOutDir: true
+    emptyOutDir: true,
+    minify:false,
   },
 });
