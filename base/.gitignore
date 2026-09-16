@@ -11,3 +11,4 @@ wallet_ValuedCustomer/***
 desktop.ini
 package-lock.json
 tsconfig.tsbuildinfo
+src/goobo/extern/***

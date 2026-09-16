@@ -41,7 +41,7 @@ async function init_websocket() {
 		// open the websocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/michigan`;
+    const wsUrl = `${protocol}//${host}/anacostia`;
     ws = new WebSocket(wsUrl);
 
     ws.addEventListener('open', ws_onopen);

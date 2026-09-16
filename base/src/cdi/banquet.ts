@@ -27,7 +27,7 @@ async function banquetProMax(req: Request, res: Response) {
     res.status(500).json({error: "Couldn't find any food."});
   }
 }
-router.get("/api/cdi/banquet", banquetProMax);
+router.get("/", banquetProMax);
 
 export {router as rt_banquet};
 

@@ -1,7 +1,7 @@
 import {Router, Request, Response} from 'express';
 import {GIVE_UP, pidgen, queryDatabase} from "./annapolis";
 import oracledb from "oracledb";
-import {miracast} from "../interstate";
+import {miracast} from "./anacostia";
 import {MessageCreate} from "../goobo/common-core";
 
 const router = Router({mergeParams: true});

@@ -1,9 +1,8 @@
 @ECHO off
 
-CALL tsc --build
-CALL vite build
+CALL build
 ECHO build done
 
 CALL mexec "./push.sh"
 
-timeout /t 10
+REM timeout /t 10

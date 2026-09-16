@@ -2,7 +2,6 @@
 	which I think is pretty cool.
 */
 
-
 import {
 	type ListAllGuildsItem
 } from "./common-core";
@@ -35,8 +34,8 @@ export async function listAllGuilds() {
 	}
 	return guilds;
 }
-//@ts-ignore
-import MediaPlayer from "/dist/extern/MediaPlayer.js";
+
+import MediaPlayer from "MediaPlayer";
 const wmp = new MediaPlayer();
 
 export async function modal_ListAllGuilds() {
@@ -195,13 +194,13 @@ export function alert_SIGMA(text: string) {
 	showModalDialog(dialog);
 }
 
-function showModalDialog(dialog: Element | null) {
+export function showModalDialog(dialog: Element | null) {
 	if (dialog && dialog instanceof HTMLDialogElement) {
 		document.body.appendChild(dialog);
 		dialog.showModal();
 	}
 }
-function removeModalDialog(dialog: Element | null) {
+export function removeModalDialog(dialog: Element | null) {
 	if (dialog && dialog instanceof HTMLDialogElement) {
 		dialog.close();
 		dialog.remove();

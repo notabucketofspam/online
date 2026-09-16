@@ -1,25 +1,29 @@
 import * as oracledb from 'oracledb';
 import * as cron from 'cron';
-import { express_app } from './express_app'; // Import the Express app
-import { setPool, checkPlease } from './db'; // Import the setPool function
-import {grandFacade} from './udp';
-import {rt_punch, initWSS} from "./punch";
-import {rt_productkey} from "./product_key";
-import {rt_livekit } from "./livekit";
-import {rt_banquet} from "./cdi/banquet";
+import { express_app, isAuthenticated } from './express_app';
+import { setPool, checkPlease } from './db';
+import { rt_users } from './api/users'; 
+import {grandFacade} from './punch/udp';
+import { rt_punch } from "./punch/rt_punch";
+import { initWSS } from "./punch/punch";
+import { rt_pkey } from "./api/product_key";
+import {rt_legacy} from "./legacy";
+import {rt_livekit } from "./livekit/rt_livekit";
+import {rt_cdi} from "./cdi/rt_cdi";
 import {rt_baltimore} from "./dmv/baltimore";
-import {rt_goobo, initMichigan} from "./interstate";
+import {initAnacostia } from "./dmv/anacostia";
 
 import http from "node:http";
 import stream from "node:stream";
 import ws from "ws";
 
-express_app.use(rt_punch);
-express_app.use(rt_productkey);
-express_app.use(rt_livekit);
-express_app.use(rt_banquet);
+express_app.use(rt_legacy);
+express_app.use("/api/users", rt_users);
+express_app.use("/api/punch", isAuthenticated, rt_punch);
+express_app.use("/api/pkey", isAuthenticated, rt_pkey);
+express_app.use("/api/livekit",rt_livekit);
+express_app.use("/api/cdi", rt_cdi);
 express_app.use("/api/dmv", rt_baltimore);
-express_app.use("/goobo", rt_goobo);
 
 import {astext} from "./util_dump";
 
@@ -56,7 +60,7 @@ async function init() {
 		});
 
 		wsservers.add(initWSS());
-		wsservers.add(initMichigan());
+		wsservers.add(initAnacostia());
 		server_real.on('upgrade', onupgrade);
 
 		job.start();
@@ -83,7 +87,7 @@ process
 	.once('SIGTERM', closePoolAndExit)
 	.once('SIGINT', closePoolAndExit);
 
-async function onupgrade(request: http.IncomingMessage, socket: stream.Duplex, head: NonSharedBuffer) {
+async function onupgrade(request: http.IncomingMessage, socket: stream.Duplex, head: Buffer) {
 	try {
 		let hasBeenHandled = false;
 		for (const wss of wsservers) {

@@ -14,6 +14,9 @@ import {
 	WSAStartup,
 	WSACleanup,
 } from "./federal-express.js";
+import {
+	leaveVoiceChannel,
+} from "./zoom.js";
 
 async function spawn_goobo() {
   const goobo_classic = document.getElementById('goobo-classic');
@@ -42,6 +45,7 @@ document.addEventListener('spam', async (ev) => {
 	if (typeof the_url === 'string' && the_url.startsWith('/goobo')) {
 		await spawn_goobo();
 	} else {
+		await leaveVoiceChannel();
 		await WSACleanup();
 	}
 });

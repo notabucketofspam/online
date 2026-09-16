@@ -1,5 +1,4 @@
 import * as oracledb from 'oracledb';
-import * as crypto from 'node:crypto';
 
 // Define the database connection pool (it will be initialized in main.ts)
 let pool: oracledb.Pool;
@@ -10,7 +9,7 @@ export function setPool(dbPool: oracledb.Pool) {
 }
 
 // Define the User interface
-interface User {
+export interface User {
 	USERID: number;
 	USERNAME: string;
 	PASSWORDHASH: string;
@@ -60,28 +59,6 @@ export async function queryDatabase(sql: string, params: oracledb.BindParameters
 	}
 }
 
-// Function to add a new user to the database
-export async function addUser(username: string, password: string, email: string) {
-	const { salt, passwordHash } = hashPassword(password);
-	const sql = `
-				INSERT INTO Users (USERNAME, PASSWORDHASH, SALT, EMAIL, STORAGE, PKEYS)
-				VALUES (:username, :passwordHash, :salt, :email, :storage, :pkeys)
-		`;
-	const storage = { val: {}, type: oracledb.DB_TYPE_JSON }; // Initialize with an empty JavaScript object
-	const pkeys = { val: {}, type: oracledb.DB_TYPE_JSON }; // Initialize with an empty JavaScript object
-	const params = { username, passwordHash, salt, email, storage, pkeys }; // Pass the JavaScript object directly
-
-	try {
-		const result = await queryDatabase(sql, params, true);
-		console.log('User added successfully');
-		return result;
-	} catch (error) {
-		console.error('Error adding user:', error);
-		return null;
-	}
-}
-
-// Function to get a user by email from the database
 export async function getUserByEmail(email: string): Promise<User | null> {
 	const sql = 'SELECT * FROM USERS WHERE EMAIL = :email';
 	const params = { email };
@@ -96,57 +73,6 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 	} catch (err) {
 		console.error('Error getting user:', err);
 		return null;
-	}
-}
-
-// Function to hash a password using scrypt
-function hashPassword(password: crypto.BinaryLike) {
-	// 1. Generate a random salt
-	const salt = crypto.randomBytes(16).toString('hex'); // 16 bytes is a good size
-	// 2. Hash the password with the salt
-	const passwordHash = crypto.scryptSync(password, salt, 64, { N: 1024 }).toString('hex');
-	// 3. Return the salt and the hashed password
-	return { salt, passwordHash };
-}
-
-// Function to verify a password against a stored hash and salt
-export function verifyPassword(password: crypto.BinaryLike, passwordHash: string, salt: crypto.BinaryLike) {
-	// Hash the provided password with the stored salt
-	const hashedAttempt = crypto.scryptSync(password, salt, 64, { N: 1024 }).toString('hex');
-	// Compare the generated hash with the stored hash
-	return hashedAttempt === passwordHash;
-}
-
-// New function to update a user's JSON storage
-export async function updateJsonStorage(userId: number, jsonData: object): Promise<boolean> {
-	const sql = `UPDATE users
-									SET storage =
-										json_mergepatch(storage, :bv)									
-									WHERE USERID = :userId`;
-	const params = { bv: { val: jsonData, type: oracledb.DB_TYPE_JSON }, userId }; // Pass the JavaScript object directly
-	try {
-		const result = await queryDatabase(sql, params, true);
-		return result.rowsAffected === 1;
-	} catch (error) {
-		console.error("Error updating JSON storage:", error);
-		throw error;
-	}
-}
-
-// New function to retrieve a user's JSON storage
-export async function getJsonStorage(userId: number): Promise<object | null> {
-	const sql = `SELECT STORAGE FROM USERS WHERE USERID = :userId`;
-	const params = { userId };
-	try {
-		const result = await queryDatabase(sql, params, false, { outFormat: oracledb.OUT_FORMAT_OBJECT });
-		if (result && result.rows && result.rows.length > 0) {
-			// OracleDB automatically converts the native JSON type to a JavaScript object
-			return (result.rows[0] as User).STORAGE as object;
-		}
-		return null;
-	} catch (error) {
-		console.error("Error retrieving JSON storage:", error);
-		throw error;
 	}
 }
 
@@ -209,7 +135,6 @@ export async function removeFromPkeys(userId : number, keyToRemove : string) : P
 	}
 }
 
-
 type Trusts = [string, string[]];
 export async function getTrusts(): Promise<Map<string, string[]> | null> {
 	const sql = `SELECT username, JSON_QUERY(storage, '$.trusts')
@@ -235,53 +160,5 @@ export async function checkPlease() {
 		const result = await queryDatabase(sql, params, true);
 	} catch (error) {
 		console.error(error);
-	}
-}
-
-export async function checkIfUserIsReal (email : string) {
-	const sql = `SELECT EMAIL FROM USERS WHERE EMAIL = :email`;
-	const params = { email };
-	try {
-		const result = await queryDatabase(sql, params, false);
-		if (result && result.rows && result.rows.length > 0) {
-			return true;
-		} else {
-			return false;
-		}
-	} catch (error) {
-		console.error(error);
-		// eh, assume that it's the user's fault this time
-		return false;
-	}
-}
-
-export async function updateUserPassword (email : string, password : string) {
-
-	const {salt, passwordHash} = hashPassword(password);
-
-	const sql =
-		`UPDATE USERS SET
-		PASSWORDHASH = :passwordHash,
-		SALT = :salt
-	WHERE EMAIL = :email`;
-	const params = {passwordHash, salt, email};
-	try {
-		const result = await queryDatabase(sql, params, true);
-		return result.rowsAffected === 1;
-	} catch (error) {
-		console.error(error);
-		throw error;
-	}
-}
-
-export async function deleteUser (userId : number) {
-	const sql = `DELETE FROM USERS WHERE USERID = :userId`;
-	const params = { userId };
-	try {
-		const result = await queryDatabase(sql, params, true);
-		return result.rowsAffected === 1;
-	} catch (error) {
-		console.error(error);
-		throw error;
 	}
 }

@@ -2,17 +2,25 @@
   "name": "chat",
   "private": true,
   "version": "0.0.0",
+  "main": "dist/livekit-widget.js",
+  "types": "dts/widget.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dts/widget.d.ts",
+      "import": "./dist/livekit-widget.js"
+    }
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@livekit/components-react": "^2.9.21",
     "@livekit/components-styles": "^1.2.0",
-    "livekit-client": "^2.19.2",
+    "livekit-client": "^2.22.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -28,6 +36,7 @@
     "globals": "^17.6.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vite-plugin-css-injected-by-js": "^5.0.2"
   }
 }

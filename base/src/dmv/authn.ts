@@ -1,6 +1,6 @@
 import {Router, Request, Response} from 'express';
 import {GIVE_UP} from "./annapolis";
-import {generateMSProductKey} from "../product_key";
+import {generateMSProductKey} from "../util_dump";
 
 const router = Router({mergeParams: true});
 

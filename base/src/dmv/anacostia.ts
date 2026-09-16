@@ -1,37 +1,12 @@
-import path from "node:path";
-import {Router, static as serve_static, Request, Response} from "express";
-import {SessionData} from "express-session";
-import {GIVE_UP, queryDatabase} from "./dmv/annapolis";
-import {validProductKey} from "./dmv/authn";
+// Anacostia has a bunch of stuff that's used for the websocket wrt goobo
+// it used to be called "interstate", but i didnt like that name as much
 
-const router = Router({mergeParams: true});
-
-function give_index_html(req: Request, res: Response) {
-  try {
-    res.status(200).sendFile(path.join(process.cwd(), "goobo", "classic.html"));
-  } catch (err) {
-		GIVE_UP(res, "couldnt give html");
-  }
-}
-function immiscible_css(req: Request, res: Response) {
-  try {
-    res.status(200).sendFile(path.join(process.cwd(), "goobo", "immiscible.css"));
-  } catch (err) {
-		GIVE_UP(res, "couldnt give css");
-  }
-}
-
-router.use("/", serve_static(path.join(__dirname, "goobo")));
-router.get("/immiscible.css", immiscible_css);
-router.get("/", give_index_html);
-
-export {router as rt_goobo};
-
-// =========================
-// and now it's time to copy-paste some stuff from punch.ts
-import ws from "ws";
 import http from "node:http";
 import Stream from "node:stream";
+import ws from "ws";
+import {queryDatabase} from "../db";
+import { validProductKey } from "./authn";
+import { SessionData } from "express-session";
 
 let wss: ws.WebSocketServer;
 interface Michigoner {
@@ -41,18 +16,19 @@ interface Michigoner {
 const clientMap: WeakMap<ws.WebSocket, Michigoner> = new WeakMap();
 const guildsWithClients: Map<number, Set<ws.WebSocket>> = new Map();
 
-function initMichigan() {
+export function initAnacostia() {
   wss = new ws.WebSocketServer({
     noServer:true,
     host: 'localhost',
     clientTracking: true,
     autoPong: true,
-    path: '/michigan'
+    path: '/anacostia'
   });
   wss.on('wsClientError', wss_onwsClientError);
   wss.on('connection', wss_onconnection);
   return wss;
 }
+
 function wss_onwsClientError(err: Error, socket: Stream.Duplex, request: http.IncomingMessage) {
   console.error(err, socket, request);
 }
@@ -192,6 +168,3 @@ export function miracast(guild_id: number, letter: any) {
     console.error(err);
   }
 }
-
-export {initMichigan};
-

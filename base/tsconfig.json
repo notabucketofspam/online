@@ -48,5 +48,8 @@
     "html",
     "livekit",
     "punch"
-  ]
+  ],
+	"include": [
+		"src"
+	]
 }

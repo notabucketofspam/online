@@ -4,11 +4,17 @@
 
 import {
 	Channel,
-	Guild
+	Guild,
+	type sinfo
 } from "./common-core";
 
 import {populate_fridge} from "./burger-parlour.js";
-import {populate_guildMembers} from "./criminals.js";
+import { populate_guildMembers } from "./criminals.js";
+import { Bev_CreateChannelModal } from "./create-channel.js";
+import { get_sinfo } from "./auxfun.js";
+import { renderVoice, doJoinVoice } from "./zoom.js"; 
+
+let userinfo: sinfo | null = null;
 
 // ========================= and now we actually have to plant some goddamn trees
 
@@ -20,6 +26,10 @@ export async function populate_treeview(){
 		if (guild_list instanceof HTMLUListElement
 			&& guild_t instanceof HTMLTemplateElement
 			&& channel_t instanceof HTMLTemplateElement) {
+			// get the user info first and foremost
+			userinfo = await get_sinfo();
+			//clear the guild list
+			guild_list.replaceChildren();
 			// populate the treeview here			
 			const listall = await channelListAll();
 			for (const guild of listall) {
@@ -67,12 +77,25 @@ function plantTree(guild: Guild){
 			const guild_f = document.importNode(guild_t.content, true);
 			// set the guild id
 			const goobo_guild = guild_f.querySelector('li.goobo-guild');
-			if (goobo_guild instanceof HTMLLIElement)
-				goobo_guild.setAttribute('data-guild-id', guild_id.toString());
+			if (goobo_guild instanceof HTMLLIElement) {
+				goobo_guild.setAttribute('data-guild-id', String(guild_id));
+				goobo_guild.setAttribute('data-owner-id', String(guild.owner_id));
+				// if the user is the owner of the guild, add a button to create a channel
+				if (userinfo && userinfo.userId === guild.owner_id) {
+					const create_channel = document.createElement('button');
+					create_channel.setAttribute('type', 'button');
+					create_channel.classList.add('create-channel');
+					create_channel.textContent = "+";
+					create_channel.setAttribute('data-guild-id', String(guild_id));
+					create_channel.addEventListener('click', Bev_CreateChannelModal);
+					goobo_guild.insertAdjacentElement('afterbegin', create_channel);
+				}
+			}
 			// set the guild name
 			const ggli_guild_name = guild_f.querySelector('.ggli-guild-name');
-			if (ggli_guild_name instanceof HTMLElement)
+			if (ggli_guild_name instanceof HTMLElement) {
 				ggli_guild_name.textContent = guild_name;
+			}
 			// actually show the channels
 			const ggli_channel_list = guild_f.querySelector('.ggli-channel-list');
 			if (ggli_channel_list instanceof HTMLUListElement) {
@@ -82,8 +105,8 @@ function plantTree(guild: Guild){
 					// display the channel id and type
 					const goobo_channel = channel_f.querySelector('li.goobo-channel');
 					if (goobo_channel instanceof HTMLLIElement) {
-						goobo_channel.setAttribute('data-channel-id', id.toString());
-						goobo_channel.setAttribute('data-channel-type', channel_type.toString());
+						goobo_channel.setAttribute('data-channel-id', String(id));
+						goobo_channel.setAttribute('data-channel-type', String(channel_type));
 						goobo_channel.addEventListener('click', gcli_onclick);
 					}
 					// display the channel name
@@ -113,12 +136,35 @@ async function setActiveChannel(channel_id: number) {
 		const new_active = document.querySelector(`li.goobo-channel[data-channel-id="${channel_id}"]`);
 		if (previous_active !== new_active) {
 			// not the same
-			if (previous_active instanceof HTMLLIElement)
+			// change active class on the channel list
+			if (previous_active instanceof HTMLLIElement){
 				previous_active.classList.remove('active');
-			if (new_active instanceof HTMLLIElement)
+			}
+			if (new_active instanceof HTMLLIElement && new_active.dataset.channelType) {
 				new_active.classList.add('active');
-			// load the messages for the new channel
-			await populate_fridge(channel_id, true);
+				// gotta see what kind of channel this is
+				const channel_type = new_active.dataset.channelType;
+				if (channel_type === 'text') {
+					// un-render the voice channel
+					await renderVoice(channel_id, false);
+					// load the messages for the new channel
+					await populate_fridge(channel_id, true);
+				} else if (channel_type === 'voice') {
+					// render the voice channel
+					await renderVoice(channel_id);
+				} else {
+					// do nothing at the moment
+				}
+			}
+		} else {
+			// they are the same
+			if (new_active instanceof HTMLLIElement && new_active.dataset.channelType) {
+				const channel_type = new_active.dataset.channelType;
+				if (channel_type === 'voice') {
+					// render the voice channel (we are already joined)
+					// await renderVoice(channel_id);
+				}
+			}
 		}
 	} catch (err) {
 		console.error(err);
