@@ -1,0 +1,25 @@
+{
+  "name": "mediaplayer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/MediaPlayer.js",
+  "types": "dist/MediaPlayer.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/MediaPlayer.d.ts",
+      "import": "./dist/MediaPlayer.js"
+    }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "keywords": [],
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^22.20.3",
+    "typescript": "^7.0.2"
+  }
+}

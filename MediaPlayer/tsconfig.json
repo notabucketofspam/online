@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+     "rootDir": "./src",
+     "outDir": "./dist",
+
+    "module": "esnext",
+    "target": "esnext",
+    "types": [],
+     "lib": ["esnext", "DOM"],
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+		"tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "strict": true,
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  }
+}
