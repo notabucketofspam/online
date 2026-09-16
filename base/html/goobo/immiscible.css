@@ -47,6 +47,11 @@ ul.ggli-channel-list{
 li.goobo-channel.unread{
 	list-style-type:circle;
 }
+#the-freezer{
+	/*transform:scaleX(0.64);*/
+	/*position:absolute;*/
+	/*right:13%;*/
+}
 
 /*ARMODAFINIL*/
 dialog.alert-sigma{

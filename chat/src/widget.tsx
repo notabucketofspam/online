@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Room } from 'livekit-client';
 import { LiveKitRoom, VideoConference } from '@livekit/components-react';
 import '@livekit/components-styles';
+import "./index.css";
 
 export function createLivekitWidget(
   containerId: string,
@@ -24,6 +25,8 @@ export function createLivekitWidget(
       room={room}
       token={token}
       serverUrl={serverUrl}
+      data-lk-theme="default"
+      connect={true}
     >
       <VideoConference />
     </LiveKitRoom>

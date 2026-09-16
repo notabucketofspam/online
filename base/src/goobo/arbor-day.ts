@@ -150,8 +150,8 @@ async function setActiveChannel(channel_id: number) {
 					// load the messages for the new channel
 					await populate_fridge(channel_id, true);
 				} else if (channel_type === 'voice') {
-					// join voice chat, but dont render the voice channel
-					await doJoinVoice(channel_id);
+					// render the voice channel
+					await renderVoice(channel_id);
 				} else {
 					// do nothing at the moment
 				}
@@ -162,7 +162,7 @@ async function setActiveChannel(channel_id: number) {
 				const channel_type = new_active.dataset.channelType;
 				if (channel_type === 'voice') {
 					// render the voice channel (we are already joined)
-					await renderVoice(channel_id);
+					// await renderVoice(channel_id);
 				}
 			}
 		}

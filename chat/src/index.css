@@ -19,3 +19,9 @@ div.lk-grid-layout-wrapper {
 button.lk-close-button.lk-button.lk-chat-toggle {
 	background-color: darkcyan;
 }
+div.lk-control-bar{
+	flex-flow:wrap;
+}
+div.lk-chat{
+	width:unset;
+}

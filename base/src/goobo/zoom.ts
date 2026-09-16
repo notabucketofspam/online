@@ -20,7 +20,20 @@ const LIVEKIT_URL = "wss://livekit.waluigi-servebeer.com";
 const room = new Room();
 const mediaplayer = new MediaPlayer();
 let livekit_token: string = '';
-let unmountTheWidget: (() => void) | null = null;
+let unmount: (() => void) | null = null;
+
+function CALL_unmount() {
+	if (typeof unmount === 'function') {
+		unmount();
+		unmount = null;
+	}
+}
+function CALL_mount() {
+	try {
+		CALL_unmount();
+		unmount = createLivekitWidget('the-freezer', room, livekit_token, LIVEKIT_URL);
+	} catch (e) {}
+}
 
 /**We call this inside of "setActiveChannel", within arbor-day.ts */
 export async function doJoinVoice(channel_id: number) {
@@ -37,36 +50,35 @@ export async function renderVoice(channel_id: number, mount:boolean = true) {
 	try {
 		const the_fridge = document.getElementById('the-fridge') as HTMLUListElement | null;
 		const the_freezer = document.getElementById('the-freezer') as HTMLDivElement | null;
-		const info = getMetallikInfo();
-		if (the_fridge && the_freezer && info) {
+		if (the_fridge && the_freezer) {
 			if (mount) {
-				const now_active = document.querySelector('li.goobo-channel.active') as HTMLLIElement | null;
-				/**the id for the current channel*/
-				const now_cid = Number(now_active?.getAttribute('data-channel-id'));
-				if (now_cid !== channel_id) {
-					// this is a different channel than the channel we're currently looking at
-					if (typeof unmountTheWidget === 'function') {
-						unmountTheWidget();
-						unmountTheWidget = null;
+				let info = getMetallikInfo();
+				if (info) {
+					// we have metallik; thus, we are in voice chat
+					const info_id = Number(info.roomcode);
+					if (info_id !== channel_id) {
+						// this is a different channel than the channel we're currently looking at
+						CALL_mount();
+					} else {
+						// we are already looking at this channel, so do nothing
 					}
-					unmountTheWidget = createLivekitWidget('the-freezer', room, livekit_token, LIVEKIT_URL);
 				} else {
-					// we are already looking at this channel
+					// no metallik means that we arent in voice chat
+					await doJoinVoice(channel_id);
+					info = getMetallikInfo();
+					CALL_mount();
 				}
 				// actually show it to the customer
 				the_fridge.setAttribute('hidden', '');
 				the_freezer.removeAttribute('hidden');
 			} else {
 				// this is dealing with teardown
-				if (typeof unmountTheWidget === 'function') {
-					unmountTheWidget();
-					unmountTheWidget = null;
-				}
+				//CALL_unmount();
 				the_freezer.setAttribute('hidden', '');
 				the_fridge.removeAttribute('hidden');
 			}
 		} else {
-			// no fridge and/or freezer, or maybe no metallik info
+			// no fridge and/or freezer
 		}
 	} catch (errrrr) {
 		console.error(errrrr);
@@ -90,10 +102,6 @@ async function joinVoiceChannel(roomcode: string) {
 
 		await room.connect(LIVEKIT_URL, livekit_token);
 
-		// write down some info, in case we navigate away
-		let roomsid = await room.getSid();
-		writeMetallik({ roomcode, roomsid });
-
 		// actually use the microphone
 		await room.localParticipant.setMicrophoneEnabled(true, {
 			echoCancellation: true,
@@ -101,27 +109,38 @@ async function joinVoiceChannel(roomcode: string) {
 			voiceIsolation: true,
 			autoGainControl: true
 		});
-
-		mediaplayer.beep(livekitSound.join);
 	} catch (err) {
 		console.error('Error joining voice channel:', err);
 	}
 }
 
-async function leaveVoiceChannel() {
+export async function leaveVoiceChannel(unmount=true) {
 	try {
 		await room.disconnect();
-		livekit_token = '';
-
-		removeMetallik();
-
-		mediaplayer.beep(livekitSound.disconnect);
+		if (unmount) {
+			CALL_unmount();
+		}
 	} catch (err) {
 		console.error(err);
 	}
 }
 
 // some event listeners for the room
+
+room.on(RoomEvent.Connected, async function () {
+	// write down some info, in case we navigate away
+	let roomsid = await room.getSid();
+	let roomcode = room.name;
+	writeMetallik({ roomcode, roomsid });
+	mediaplayer.beep(livekitSound.join);
+});
+
+room.on(RoomEvent.Disconnected, function () {
+	CALL_unmount();
+	livekit_token = '';
+	removeMetallik();
+	mediaplayer.beep(livekitSound.disconnect);
+});
 
 room.on(RoomEvent.ParticipantConnected, function(participant) {
 	mediaplayer.beep(livekitSound.join);
