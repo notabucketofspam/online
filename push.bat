@@ -1,6 +1,10 @@
 @ECHO off
 TITLE %~nx0
 
+cd MediaPlayer
+CALL build
+CD ..
+
 ECHO Pushing base...
 CD base
 CALL #push
