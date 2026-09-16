@@ -88,11 +88,11 @@ async function Fev_CreateChannel(ev: SubmitEvent) {
 	try {
 		const form = ev.target as HTMLFormElement | null;
 		if (form) {
-			const input_name = form.querySelector('input[name="channel_name"]') as HTMLInputElement | null;
-			const input_ctype = form.querySelector('input[name="channel_type"]') as HTMLInputElement | null;
+			const input_name = form.elements.namedItem('channel_name') as HTMLInputElement | null;
+			const input_ctype = form.elements.namedItem('channel_type') as RadioNodeList | null;
 			const submit_button = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
 			const guild_id = Number(form.getAttribute('data-guild-id'));
-			if (input_name && input_ctype && submit_button && guild_id) {
+			if (input_name && input_ctype && input_ctype.value && submit_button && guild_id) {
 				const channel_name = input_name.value.trim();
 				const channel_type = input_ctype.value.trim();
 				if (channel_name && channel_type) {
@@ -104,7 +104,9 @@ async function Fev_CreateChannel(ev: SubmitEvent) {
 						body: JSON.stringify({ channel_name, channel_type, guild_id }),
 					});
 					if (response.ok) {
-						input_ctype.disabled = true;
+						for (const i of input_ctype) {
+							i.disabled = true;
+						}
 						input_name.disabled = true;
 						submit_button.disabled = true;
 						alert_SIGMA('you created a channel');
