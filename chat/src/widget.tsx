@@ -1,39 +1,35 @@
+// widget.tsx
 import { createRoot } from 'react-dom/client';
-import { type RoomEventCallbacks } from 'livekit-client';
-import LiveKitRoomComponent from './components/LiveKitRoom';
-import './index.css';
+import { Room } from 'livekit-client';
+import { LiveKitRoom, VideoConference } from '@livekit/components-react';
+import '@livekit/components-styles';
 
-export interface WidgetMountOptions {
-  roomcode: string;
-  eventVectors?: Partial<RoomEventCallbacks>;
-}
-/**this is the function that creates a little voice chat window*/
-export function mountLiveKitWidget (containerId:string, options: WidgetMountOptions) {
+export function createLivekitWidget(
+  containerId: string,
+  room: Room,
+  token: string,
+  serverUrl: string
+) {
   const container = document.getElementById(containerId);
-  if (!container)
-    throw new Error(`Could not find element #${containerId}`);
+
+  if (!container) {
+    console.error(`Could not find container with ID: ${containerId}`);
+    return null;
+  }
 
   const root = createRoot(container);
 
-  // Initial render
   root.render(
-    <LiveKitRoomComponent 
-      roomcode={options.roomcode} 
-      eventVectors={options.eventVectors}
-    />
+    <LiveKitRoom
+      room={room}
+      token={token}
+      serverUrl={serverUrl}
+    >
+      <VideoConference />
+    </LiveKitRoom>
   );
 
-  return {
-    setRoomCode: (newRoomCode:string) => {
-      root.render(
-        <LiveKitRoomComponent 
-          roomcode={newRoomCode} 
-          eventVectors={options.eventVectors}
-        />
-      );
-    },
-    unmount: () => {
-      root.unmount();
-    }
+  return () => {
+    root.unmount();
   };
 }

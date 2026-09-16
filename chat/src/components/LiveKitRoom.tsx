@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import VoiceChannel from './voice/VoiceChannel';
 import '@livekit/components-styles';
-import { type WidgetMountOptions } from '../widget'; 
-
+import { type RoomEventCallbacks } from 'livekit-client';
+interface WidgetMountOptions {
+  roomcode: string;
+  eventVectors?: Partial<RoomEventCallbacks>;
+}
 export default function LiveKitRoomComponent({ roomcode, eventVectors }: WidgetMountOptions) {
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
