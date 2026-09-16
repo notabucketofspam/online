@@ -13,6 +13,7 @@ export default defineConfig({
     },
     outDir: 'dist/goobo',
     emptyOutDir: true,
-    minify:false,
+    minify: true,
+		chunkSizeWarningLimit: 8000,
   },
 });

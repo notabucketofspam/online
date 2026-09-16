@@ -12,6 +12,7 @@ import {populate_fridge} from "./burger-parlour.js";
 import { populate_guildMembers } from "./criminals.js";
 import { Bev_CreateChannelModal } from "./create-channel.js";
 import { get_sinfo } from "./auxfun.js";
+import { renderVoice, doJoinVoice } from "./zoom.js"; 
 
 let userinfo: sinfo | null = null;
 
@@ -144,12 +145,24 @@ async function setActiveChannel(channel_id: number) {
 				// gotta see what kind of channel this is
 				const channel_type = new_active.dataset.channelType;
 				if (channel_type === 'text') {
+					// un-render the voice channel
+					await renderVoice(channel_id, false);
 					// load the messages for the new channel
 					await populate_fridge(channel_id, true);
 				} else if (channel_type === 'voice') {
-					// handle voice channel
+					// join voice chat, but dont render the voice channel
+					await doJoinVoice(channel_id);
 				} else {
-
+					// do nothing at the moment
+				}
+			}
+		} else {
+			// they are the same
+			if (new_active instanceof HTMLLIElement && new_active.dataset.channelType) {
+				const channel_type = new_active.dataset.channelType;
+				if (channel_type === 'voice') {
+					// render the voice channel (we are already joined)
+					await renderVoice(channel_id);
 				}
 			}
 		}
