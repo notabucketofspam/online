@@ -1,9 +1,7 @@
+import { Room } from "livekit-client";
+import { createLivekitWidget } from "chat";
 
-import { mountLiveKitWidget, WidgetMountOptions } from "chat";
-//@ts-ignore
-//import { mountLiveKitWidget, WidgetMountOptions } from "/chat/livekit-widget.js";
-
-import MediaPlayer from "./extern/MediaPlayer";
+import MediaPlayer from "MediaPlayer";
 
 const mediaplayer = new MediaPlayer();
 
@@ -13,11 +11,11 @@ const livekitSound = {
 	disconnect: '/page/soundboard/opodes/MLG/Discord%20disconnect%20voice%20chat.opus'
 };
 
-export function mountZoomWidget(containerId: string, options: WidgetMountOptions) {
+export function mountZoomWidget(containerId: string) {
 	try {
 		const container = document.getElementById(containerId);
-		if (container && typeof options?.roomcode === "string") {
-			// const rval = mountLiveKitWidget(containerId, options);
+		if (container) {
+			// const rval = createLivekitWidget(containerId);
 		} else {
 			console.error('missing things');
 		}

@@ -35,7 +35,7 @@ export async function listAllGuilds() {
 	return guilds;
 }
 
-import MediaPlayer from "./extern/MediaPlayer.js";
+import MediaPlayer from "MediaPlayer";
 const wmp = new MediaPlayer();
 
 export async function modal_ListAllGuilds() {
