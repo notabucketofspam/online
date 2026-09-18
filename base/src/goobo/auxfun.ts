@@ -7,7 +7,10 @@ type ChannelList = {
 };
 export async function guildList() {
 	try {
-		const response = await fetch('/api/dmv/guild/list', {method: 'GET'});
+		const response = await fetch('/api/dmv/guild/list', {
+			cache: 'no-store',
+			method: 'GET'
+		});
 		if (response.ok) {
 			const data: GuildList = await response.json();
 			return data.guilds;
@@ -22,7 +25,10 @@ export async function guildList() {
 }
 export async function channelList(guild_id: number) {
 	try {
-		const response = await fetch(`/api/dmv/channel/list/${guild_id}`, {method: 'GET'});
+		const response = await fetch(`/api/dmv/channel/list/${guild_id}`, {
+			cache: 'no-store',
+			method: 'GET'
+		});
 		if (response.ok) {
 			const data: ChannelList = await response.json();
 			return data.channels;

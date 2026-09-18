@@ -8,7 +8,10 @@ import {UserInfo} from "./common-core";
 export async function getUsers(guild_id:number) {
 	let users: UserInfo[] = [];
 	try {
-		const response = await fetch(`/api/dmv/guild/list-users/${guild_id}`, {method: 'GET'});
+		const response = await fetch(`/api/dmv/guild/list-users/${guild_id}`, {
+			cache: 'no-store',
+			method: 'GET'
+		});
 		if (response.ok) {
 			const data = await response.json();
 			users = data.users;

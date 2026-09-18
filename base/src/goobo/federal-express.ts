@@ -31,7 +31,10 @@ async function init_websocket() {
 	let ws: WebSocket | null = null;
   try {
     // get an auth token
-    const res = await fetch('/api/dmv/authn/please', {method: 'GET'});
+    const res = await fetch('/api/dmv/authn/please', {
+      cache: 'no-store',
+      method: 'GET'
+    });
     const json = await res.json();
     if (typeof json === 'object') {
       product_key = String(json?.product_key);

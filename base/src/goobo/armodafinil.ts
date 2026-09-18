@@ -144,6 +144,7 @@ async function joinGuildById(guild_id: number) {
 			headers: {
 				'Content-Type': 'application/json'
 			},
+			cache:'no-store',
 			body: JSON.stringify({guild_id: Number(guild_id)})
 		});
 		if (response.ok) {

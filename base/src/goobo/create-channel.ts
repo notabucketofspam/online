@@ -101,6 +101,7 @@ async function Fev_CreateChannel(ev: SubmitEvent) {
 						headers: {
 							'Content-Type': 'application/json',
 						},
+						cache: 'no-store',
 						body: JSON.stringify({ channel_name, channel_type, guild_id }),
 					});
 					if (response.ok) {

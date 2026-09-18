@@ -48,7 +48,10 @@ export async function populate_treeview(){
 async function channelListAll(){
 	let all_guilds: Guild[] = [];
 	try {
-		const response = await fetch('/api/dmv/channel/list-all', {method: 'GET'});
+		const response = await fetch('/api/dmv/channel/list-all', {
+			method: 'GET',
+			cache: 'no-store'
+		});
 		if (response.ok) {
 			const data: {guilds: Guild[]} = await response.json();
 			all_guilds = data.guilds;

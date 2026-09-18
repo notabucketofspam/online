@@ -93,6 +93,7 @@ async function joinVoiceChannel(roomcode: string) {
 			roomcode = 'general-chat';
 		}
 		const response = await fetch('/api/livekit/join-voice', {
+			cache: 'no-store',
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ roomcode })

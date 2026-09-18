@@ -42,6 +42,7 @@ async function sendMessage(channel_id: number, message_content: string) {
 			headers: {
 				'Content-Type': 'application/json'
 			},
+			cache: 'no-store',
 			body: JSON.stringify({ channel_id, message_content })
 		});
 		if (response.ok) {
@@ -74,7 +75,10 @@ export async function populate_fridge(channel_id: number, clearall: boolean = fa
 					query_params = `?before=${last_message_id}`;
 				}
 			}
-			const result = await fetch(`/api/dmv/message/list/${channel_id}${query_params}`, {method: 'GET'});
+			const result = await fetch(`/api/dmv/message/list/${channel_id}${query_params}`, {
+				method: 'GET',
+				cache: 'no-store'
+			});
 			if (result.ok){
 				const data: MessageRow[] = await result.json();
 				// Today, we shall render this data
