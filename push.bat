@@ -5,14 +5,14 @@ cd MediaPlayer
 CALL build
 CD ..
 
-ECHO Pushing base...
-CD base
+ECHO Pushing chat...
+cd chat
 CALL #push
 ECHO.
 CD ..
 
-ECHO Pushing chat...
-cd chat
+ECHO Pushing base...
+CD base
 CALL #push
 ECHO.
 CD ..
