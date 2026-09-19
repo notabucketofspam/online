@@ -22,6 +22,7 @@ export default defineConfig({
 			fileName: 'livekit-widget',
 			formats: ['es']
 		},
+		minify: false,
 		outDir: 'dist',
 		chunkSizeWarningLimit: 8000,
 		cssCodeSplit: false,
@@ -29,6 +30,18 @@ export default defineConfig({
 		rolldownOptions: {
 			treeshake: {
 				moduleSideEffects: false
+			},			
+			external: [
+				"react",
+				"react-dom/client",
+				'livekit-client',
+			],
+			output: {
+				paths: {
+					"react": "/dlc/chat/react.js",
+					"react-dom/client": "/dlc/chat/react-dom/client.js",
+					'livekit-client': '/dlc/chat/livekit-client.js',
+				}
 			}
 		}
 	}
