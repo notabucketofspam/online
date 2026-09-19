@@ -26,5 +26,10 @@ export default defineConfig({
 		chunkSizeWarningLimit: 8000,
 		cssCodeSplit: false,
 		emptyOutDir: false,
+		rolldownOptions: {
+			treeshake: {
+				moduleSideEffects: false
+			}
+		}
 	}
 });
