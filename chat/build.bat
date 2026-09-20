@@ -2,7 +2,8 @@
 
 REM RD /S /Q "dist"
 SETLOCAL EnableDelayedExpansion
-SET "__modnames=react react-dom/client livekit-client"
+REM SET "__modnames=react react-dom/client livekit-client"
+SET "__modnames=livekit-client"
 FOR %%G IN (%__modnames%) DO (  
   CALL rolldown "%%G" --minify false --cleanDir false --format esm --log-level warn --file "dist/%%G.js">nul
 )

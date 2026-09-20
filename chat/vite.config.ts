@@ -32,14 +32,14 @@ export default defineConfig({
 				moduleSideEffects: false
 			},			
 			external: [
-				"react",
-				"react-dom/client",
+				// "react",
+				// "react-dom/client",
 				'livekit-client',
 			],
 			output: {
 				paths: {
-					"react": "/dlc/chat/react.js",
-					"react-dom/client": "/dlc/chat/react-dom/client.js",
+					// "react": "/dlc/chat/react.js",
+					// "react-dom/client": "/dlc/chat/react-dom/client.js",
 					'livekit-client': '/dlc/chat/livekit-client.js',
 				}
 			}
