@@ -8,8 +8,8 @@ import {
 	isAuthenticated,
 	generate_reset_token,
 	redisStore,
-	rateLimiter,
 } from "../express_app"; 
+import { rateLimiter } from "../malware/norton.js";
 
 // Route Handlers
 async function handleAdd(req: Request, res: Response) {

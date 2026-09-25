@@ -8,8 +8,6 @@ import { Request, Response } from 'express';
 import session from 'express-session';
 import { createClient } from 'redis';
 import cors from 'cors';
-import { rateLimit } from 'express-rate-limit';
-import { RedisStore as RateLimitRedisStore } from "rate-limit-redis";
 
 import { SessionData } from 'express-session';
 
@@ -87,18 +85,6 @@ const sessionParser = session({
 });
 app.use(sessionParser);
 
-/**this guy makes sure that we dont go over our email rate limit because of bots*/
-const rateLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 4,
-	standardHeaders: true,
-	legacyHeaders: false,
-	store: new RateLimitRedisStore({
-		sendCommand: (...args: string[]) => redisClient.sendCommand(args),
-		prefix: 'rate-limit:',
-	}),
-});
-
 /**check if the user is authenticated */
 function isAuthenticated(req: Request, res: Response, next: express.NextFunction) {
 	if (req.session && req.session.userId) {
@@ -137,5 +123,4 @@ export {
 	generate_reset_token,
 	redisClient,
 	app as express_app,
-	rateLimiter,
 };
