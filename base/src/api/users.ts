@@ -9,7 +9,7 @@ import {
 	generate_reset_token,
 	redisStore,
 } from "../express_app"; 
-import { rateLimiter } from "../malware/norton.js";
+import { despammer } from "../malware/norton.js";
 
 // Route Handlers
 async function handleAdd(req: Request, res: Response) {
@@ -277,8 +277,8 @@ router.post('/logout', isAuthenticated, handleLogout);
 router.get("/info", isAuthenticated, handleInfo);
 router.post('/storage', isAuthenticated, handleSaveStorage); // Route to save JSON storage
 router.get('/storage', isAuthenticated, handleGetStorage);   // Route to retrieve JSON storage
-router.post('/ask-for-token', rateLimiter, handle_ask_for_token);
-router.post('/password-reset', rateLimiter, handlePasswordReset);
+router.post('/ask-for-token', despammer, handle_ask_for_token);
+router.post('/password-reset', despammer, handlePasswordReset);
 router.get("/delete", isAuthenticated, handleDelete);
 
 export { router as rt_users};
