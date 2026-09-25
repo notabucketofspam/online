@@ -101,7 +101,8 @@ async function handleSaveStorage(req: Request, res: Response) {
 				res.status(500).json({ message: 'Failed to save storage: ' + error.message });
 			}
 		} else {
-			return res.status(400).json({ message: 'Invalid JSON data provided.' });
+			res.status(400).json({ message: 'Invalid JSON data provided.' });
+			return;
 		}
 	} else {
 		// no auth
@@ -112,7 +113,8 @@ async function handleSaveStorage(req: Request, res: Response) {
 // New route handler to retrieve user's JSON storage
 async function handleGetStorage(req: Request, res: Response) {
 	if (!req.session.userId) {
-		return res.status(401).json({ message: 'Authentication required.' });
+		res.status(401).json({ message: 'Authentication required.' });
+		return;
 	}
 
 	try {
