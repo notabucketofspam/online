@@ -3,7 +3,13 @@ import session from 'express-session';
 import { SessionData } from 'express-session';
 import * as odb from "./users_db";
 import { getUserByEmail } from "../db";
-import { redisClient, isAuthenticated, generate_reset_token, redisStore } from "../express_app"; 
+import {
+	redisClient,
+	isAuthenticated,
+	generate_reset_token,
+	redisStore,
+	rateLimiter,
+} from "../express_app"; 
 
 // Route Handlers
 async function handleAdd(req: Request, res: Response) {
@@ -271,8 +277,8 @@ router.post('/logout', isAuthenticated, handleLogout);
 router.get("/info", isAuthenticated, handleInfo);
 router.post('/storage', isAuthenticated, handleSaveStorage); // Route to save JSON storage
 router.get('/storage', isAuthenticated, handleGetStorage);   // Route to retrieve JSON storage
-router.post('/ask-for-token', handle_ask_for_token);
-router.post('/password-reset', handlePasswordReset);
+router.post('/ask-for-token', rateLimiter, handle_ask_for_token);
+router.post('/password-reset', rateLimiter, handlePasswordReset);
 router.get("/delete", isAuthenticated, handleDelete);
 
 export { router as rt_users};
