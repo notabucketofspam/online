@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="/css/great-scott.css"/>
+<meta name="viewport" content="width=device-width, user-scalable=yes"/>
+  <title>Minimal CAPTCHA Test - waluigi-servebeer.com</title>
+<script src="/online/captcha/window-cap.js"></script>
+<script src="/dlc/cap/widget/src/cap.min.js" async defer></script>
+<script>
+</script>
+  <style>/*
+    body { font-family: sans-serif; padding: 2rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; cursor: pointer; }
+    #status { margin-top: 1rem; font-weight: bold; }*/
+    cap-widget{
+    display:block;
+    }
+  </style>
+</head>
+<body>
+
+<div class="cd-rom lard">
+  <h1>Minimal CAPTCHA Test</h1>
+  <form id="test-form">
+    <button type="submit">Submit Test</button>
+  </form>
+  <div id="status"></div>
+</div>
+  
+<script src="/js/everything.js"></script>
+  <script type="module">
+  // @ts-ignore
+import { handleCaptcha, manufactureCapWidget } from '/online/captcha/captcha-form.js';
+var testForm = document.getElementById('test-form');
+if (testForm) {
+	testForm.addEventListener('submit', handleCaptcha);
+  testForm.insertAdjacentElement('afterbegin', manufactureCapWidget());
+}
+  </script>
+</body>
+</html>

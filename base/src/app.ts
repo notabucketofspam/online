@@ -12,6 +12,7 @@ import {rt_livekit } from "./livekit/rt_livekit";
 import {rt_cdi} from "./cdi/rt_cdi";
 import {rt_baltimore} from "./dmv/baltimore";
 import {initAnacostia } from "./dmv/anacostia";
+import { rt_captcha } from "./malware/captcha.js";
 
 import http from "node:http";
 import stream from "node:stream";
@@ -24,6 +25,7 @@ express_app.use("/api/pkey", isAuthenticated, rt_pkey);
 express_app.use("/api/livekit",rt_livekit);
 express_app.use("/api/cdi", rt_cdi);
 express_app.use("/api/dmv", rt_baltimore);
+express_app.use("/api/captcha", rt_captcha);
 
 import {astext} from "./util_dump";
 
