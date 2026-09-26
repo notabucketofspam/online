@@ -9,7 +9,7 @@ export function manufactureCapWidget() {
 export async function handleCaptcha(ev) {
   ev.preventDefault();
 
-  let statusDiv = document.getElementById('status');
+  let statusDiv = document.getElementById('cap-status');
   if (!(statusDiv instanceof HTMLDivElement)) {
 		statusDiv = document.createElement('div');
   }
