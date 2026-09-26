@@ -293,9 +293,9 @@ document.getElementById('this-is-the-leave-button')?.addEventListener('click', (
 });
 
 // ============================== captcha tomfoolery
-injectCapScript();
 
 setTimeout(function () {
+	injectCapScript();
 	[
 		'api_users_add',
 		'api_users_login',
