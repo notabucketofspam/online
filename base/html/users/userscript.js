@@ -167,7 +167,7 @@ document.getElementById('api_users_add')?.addEventListener('submit', async funct
 
 	try {
 		/**@type {string|null} */
-		let capResponse = myCap(event);
+		let capResponse = get_capWidget_from_event(event);
 		const response = await fetch('/api/users/ask-for-token', {
 			method: 'POST',
 			headers: {
@@ -200,7 +200,7 @@ document.getElementById('api_users_login')?.addEventListener('submit', async fun
 	const password = document.querySelector('#api_users_login [name="password"]').value;
 
 	try {
-		let capResponse = myCap(event);
+		let capResponse = get_capWidget_from_event(event);
 		const response = await fetch('/api/users/login', {
 			method: 'POST',
 			headers: {
@@ -234,7 +234,7 @@ document.getElementById("ask_for_token")?.addEventListener("submit", async funct
 	const email = document.querySelector('#ask_for_token [name="email"]').value;
 
 	try {
-		let capResponse = myCap(ev);
+		let capResponse = get_capWidget_from_event(ev);
 		const response = await fetch('/api/users/ask-for-token', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -294,29 +294,6 @@ document.getElementById('this-is-the-leave-button')?.addEventListener('click', (
 
 // ============================== captcha tomfoolery
 injectCapScript();
-
-/**@param {string} someid */
-function insert_capWidget_here(someid){
-	const someform = document.getElementById(someid);
-	if (someform instanceof HTMLFormElement) {
-		const lec = someform.lastElementChild;
-		if (lec){
-			lec.insertAdjacentElement('beforebegin', manufactureCapWidget());
-		}
-	}
-}
-
-/**@param {Event} ev 
- * @returns {string | null}
- */
-function myCap(ev){
-	/**@type {string|null} */
-	let capResponse = null;
-	if (ev.target instanceof HTMLFormElement) {
-		capResponse = extractCapResponseFromForm(ev.target);
-	}
-	return capResponse;
-}
 
 setTimeout(function () {
 	[

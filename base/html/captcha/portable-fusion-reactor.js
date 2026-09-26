@@ -16,6 +16,17 @@ function manufactureCapWidget() {
   return capWidget;
 }
 
+/**@param {string} someid */
+function insert_capWidget_here(someid) {
+  const someform = document.getElementById(someid);
+  if (someform instanceof HTMLFormElement) {
+    const lec = someform.lastElementChild;
+    if (lec) {
+      lec.insertAdjacentElement('beforebegin', manufactureCapWidget());
+    }
+  }
+}
+
 function manufactureCapScript() {
   const script = document.createElement('script');
   script.setAttribute('src', '/dlc/cap/widget/src/cap.min.js');
@@ -54,6 +65,18 @@ function extractCapResponseFromForm(form) {
     }
   } else {
 
+  }
+  return capResponse;
+}
+
+/**@param {Event} ev 
+ * @returns {string | null}
+ */
+function get_capWidget_from_event(ev) {
+  /**@type {string|null} */
+  let capResponse = null;
+  if (ev.target instanceof HTMLFormElement) {
+    capResponse = extractCapResponseFromForm(ev.target);
   }
   return capResponse;
 }
