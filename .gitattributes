@@ -6,7 +6,7 @@
 *.sh text eol=lf
 *.service text eol=lf
 *.timer text eol=lf
-vhost/*.conf text eol=lf
+**/vhost/*.conf text eol=lf
 
 ###############################################################################
 # Set default behavior for command prompt diff.
