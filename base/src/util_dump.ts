@@ -5,6 +5,9 @@ import crypto from "node:crypto";
 export function astext(x: string) {
   return fs.readFileSync(path.normalize(x), {encoding: "utf8"});
 }
+export async function astext_p(x: string): Promise<string> {
+	return fs.promises.readFile(path.normalize(x), { encoding: "utf8" });
+}
 
 export function rember<T>(arr: T[]): T {
   return arr[crypto.randomInt(arr.length)]!;
