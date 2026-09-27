@@ -36,7 +36,7 @@ redisClient.on('error', function(err) {
 const app = express();
 
 app.set("x-powered-by", false);
-app.set('trust proxy', true);
+app.set('trust proxy', '127.0.0.1');
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
