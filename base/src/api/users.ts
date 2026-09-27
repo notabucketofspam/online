@@ -172,7 +172,7 @@ async function handle_ask_for_token(req: Request, res: Response) {
 			// sending the email now			
 			const not_ok = await emain.craft(email, token, keyfix);
 			if (not_ok) {
-				console.log('something went wrong with the email sending');
+				// console.log('something went wrong with the email sending');
 			}
 		}
 

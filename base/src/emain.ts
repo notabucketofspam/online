@@ -23,7 +23,7 @@ async function sendEmail(submitEmailDetails : models.SubmitEmailDetails) {
 		return 0;
 	}
 	catch (error) {
-		console.log("submitEmail Failed with error  " + error);
+		// console.log("submitEmail Failed with error  " + error);
 		return 1;
 	}
 }
