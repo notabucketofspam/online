@@ -90,7 +90,7 @@ async function listMessages(req: Request, res: Response) {
 			GIVE_UP(res, 'missing user_id or channel_id');
 		}
 	} catch (err) {
-		console.error(err);
+		console.error("listMessages error:", err);
 		GIVE_UP(res, 'couldnt list messages');
 	}
 }

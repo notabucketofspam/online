@@ -65,7 +65,7 @@ function modal_CreateChannel(guild_id: number) {
 		// glue
 		dialog.appendChild(form);
 	} catch (err) {
-		console.error(err);
+		console.error('modal_CreateChannel error:', err);
 	}
 	return dialog;
 }
@@ -79,7 +79,7 @@ export function Bev_CreateChannelModal(ev: PointerEvent) {
 			showModalDialog(dialog);
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('Bev_CreateChannelModal error:', err);
 	}
 }
 
@@ -126,6 +126,6 @@ async function Fev_CreateChannel(ev: SubmitEvent) {
 			// no form
 		}
 	} catch(err){
-		console.error(err);
+		console.error('Fev_CreateChannel error:', err);
 	}
 }

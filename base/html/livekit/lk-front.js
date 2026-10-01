@@ -261,7 +261,7 @@ async function leaveVoiceChannel() {
     // refresh listings
 		setTimeout(loadActiveRooms, 100);
 	} catch (err) {
-    console.error(err);
+    console.error('leaveVoiceChannel error:', err);
   }
 }
 

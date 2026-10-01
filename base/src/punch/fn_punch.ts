@@ -28,7 +28,7 @@ function getPunchServices(): Punch[] {
 			}
 		});
 	} catch (err) {
-		console.error(err);
+		console.error("getPunchServices error:", err);
 	}
 	return all_services;
 }
@@ -51,7 +51,7 @@ function getClientByService(search: Punch): ws.WebSocket | undefined {
 			}
 		}
 	} catch (err) {
-		console.error(err);
+		console.error("getClientByService error:", err);
 	}
 	return foundClient;
 }
@@ -71,7 +71,7 @@ function getWsClientByPunchSku(searchSku: string): ws.WebSocket | undefined {
 			}
 		}
 	} catch (err) {
-		console.error(err);
+		console.error("getWsClientByPunchSku error:", err);
 	}
 	return foundClient;
 }
@@ -91,7 +91,7 @@ function getPunchBySku(searchSku: string): Punch | undefined {
 			}
 		}
 	} catch (err) {
-		console.error(err);
+		console.error("getPunchBySku error:", err);
 	}
 	return foundPunch;
 }
@@ -190,7 +190,7 @@ async function performJunction({ wsClient, wsServer, reqPunch, reqUsername, reqA
 		}
 
 	} catch (err) {
-		console.error(err);
+		console.error("performJunction error:", err);
 		if (res) {
 			res.status(500).json({ msg: "error with join" });
 		}

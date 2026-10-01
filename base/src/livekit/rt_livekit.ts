@@ -37,7 +37,7 @@ async function lkJoinVoice(req: Request, res: Response) {
 			res.status(400).json({msg: 'Missing username or roomcode'});
 		}
 	} catch (err) {
-		console.error(err);
+		console.error("lkJoinVoice error:", err);
 		res.status(500).json({msg: 'Failed to join voice channel'});
 	}
 }
@@ -63,7 +63,7 @@ async function getActiveRooms(req: Request, res: Response) {
 
 		res.json(publicRooms);
 	} catch (error) {
-		console.error(error);
+		console.error("getActiveRooms error:", error);
 		res.status(500).json({error: 'Failed to fetch rooms from LiveKit'});
 	}
 }

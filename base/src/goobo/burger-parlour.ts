@@ -7,7 +7,7 @@ export function init_chatinput(){
 			vegan_whopper.addEventListener('keydown', chatinput_onkeydown);
 		} else {/*couldn't find the input element*/ }
 	} catch (err) {
-		console.error(err);
+		console.error('init_chatinput error:', err);
 	}
 }
 
@@ -53,7 +53,7 @@ async function sendMessage(channel_id: number, message_content: string) {
 			console.error('Failed to send message');
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('sendMessage error:', err);
 	}
 	return is_ok;
 }
@@ -91,7 +91,7 @@ export async function populate_fridge(channel_id: number, clearall: boolean = fa
 			// no fridge?
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('populate_fridge error:', err);
 	}
 }
 
@@ -128,7 +128,7 @@ function generate_messageli(message_id: number, user_id: number, content: string
 			}
 		}
 	}catch(err){
-		console.error(err);
+		console.error('generate_messageli error:', err);
 	}
 	return mfrag;
 }

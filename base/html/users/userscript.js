@@ -90,7 +90,7 @@ document.getElementById('delete_this')?.addEventListener('click', async function
 			alert_II('fail');
 		}
 	} catch (eeeee) {
-		console.error(eeeee);
+		console.error('deleteme errno:', eeeee);
 	}
 });
 
@@ -251,7 +251,7 @@ document.getElementById("ask_for_token")?.addEventListener("submit", async funct
 			alert_II('fail: ' + (errorData || 'Unknown error'));
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('ask_for_token error:', err);
 		alert_II("Error: " + err.message);
 	}
 });
@@ -270,7 +270,7 @@ async function setStorage(stor) {
 		const data = await response.json();
 		return data;
 	} catch (error) {
-		console.error(error);
+		console.error('setStorage error:', error);
 	}
 }
 
@@ -280,7 +280,7 @@ async function getStorage() {
 		const data = await response.json();
 		return data;
 	} catch (error) {
-		console.error(error);
+		console.error('getStorage error:', error);
 	}
 }
 

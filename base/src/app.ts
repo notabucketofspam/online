@@ -69,7 +69,9 @@ async function init() {
 
 		grandFacade();
 
-	} catch (err) { console.error(err); }
+	} catch (err) {
+		console.error("init error:", err);
+	}
 }
 init();
 
@@ -80,7 +82,7 @@ async function closePoolAndExit() {
 		await oracledb.getPool().close(1);
 		process.exit(0);
 	} catch (err) {
-		console.error(err);
+		console.error("closePoolAndExit error:", err);
 		process.exit(1);
 	}
 }
@@ -105,7 +107,7 @@ async function onupgrade(request: http.IncomingMessage, socket: stream.Duplex, h
 			socket.destroy();
 		}
 	}catch(err) {
-		console.error(err);
+		console.error("onupgrade error:", err);
 	}
 }
 

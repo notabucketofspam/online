@@ -52,7 +52,7 @@ async function init_websocket() {
     ws.addEventListener('error', ws_onerror);
     ws.addEventListener('close', ws_onclose);
   } catch (err) {
-    console.error(err);
+    console.error('init_websocket error:', err);
   }
   return ws;
 }
@@ -77,7 +77,7 @@ function ws_onclose(ev: CloseEvent) {
   }
 }
 function ws_onerror(ev: Event) {
-  console.error(ev);
+  console.error('ws_onerror event:', ev);
   const ws = ev.target as WebSocket | null;
   if (ws) {
     ws.close();
@@ -111,7 +111,7 @@ function ws_onmessage(ev: MessageEvent) {
       // binary data
     }
   } catch (err) {
-    console.error(`websocket parse error:`, err);
+    console.error('ws_onmessage error:', err);
   }
 }
 function ws_onopen(ev: Event) {
@@ -127,7 +127,7 @@ function sendWsPing(ws: WebSocket) {
     // send a ping frame
     ws.send(PingBuffer);
   } catch (err) {
-    console.error(err);
+    console.error('sendWsPing error:', err);
   }
 }
 

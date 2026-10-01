@@ -47,7 +47,7 @@ async function getPunchList(req: Request, res: Response) {
 
 		res.status(200).json(filteredView);
 	} catch (err) {
-		console.error(err);
+		console.error('getPunchList error:', err);
 		res.status(500).json({ msg: "error sorry" });
 	}
 }
@@ -103,7 +103,7 @@ async function askToJoin(req: Request, res: Response) {
 			}
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('askToJoin error:', err);
 		res.status(500).json({ msg: "error with join" });
 	}
 }

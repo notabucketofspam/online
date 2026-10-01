@@ -19,7 +19,7 @@ export async function getUsers(guild_id:number) {
 			console.error('couldnt get users in guild');
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('getUsers error:', err);
 	}
 	return users;
 }
@@ -37,7 +37,7 @@ export async function populate_guildMembers(guild_id:number){
 			// looks like that guy is missing, oops lol
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('populate_guildMembers error:', err);
 	}
 }
 
@@ -65,8 +65,8 @@ function generate_userli(user_id: number, username: string) {
 		} else {
 			// couldnt find the user template
 		}
-	} catch(err){
-		// eh
+	}catch(err){
+		console.error('generate_userli error:', err);
 	}
 	return ret_f;
 }

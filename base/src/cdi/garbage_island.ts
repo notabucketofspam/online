@@ -150,12 +150,12 @@ export async function getWhatsOnDeck(promptfn: ()=>object, fname: string, fresh:
 					manMeaSand(promptfn(), fname_next);
 				}, 10e3);
 			} catch (e) {
-				console.error(e);
+				console.error("Failed to write content file:", e);
 			}
 		}
 	} catch(err) {
 		// something has gone horribly wrong
-		console.error(err);
+		console.error("getWhatsOnDeck error:", err);
 	}
 	return content;
 }
@@ -173,7 +173,7 @@ async function manMeaSand(prompt: object, fname: string) {
 			// well, cant say we didnt try lol
 		}
 	} catch(errno){
-		console.error(errno);
+		console.error("manMeaSand error:", errno);
 	}
 }
 

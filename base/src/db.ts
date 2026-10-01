@@ -159,6 +159,6 @@ export async function checkPlease() {
 	try {
 		const result = await queryDatabase(sql, params, true);
 	} catch (error) {
-		console.error(error);
+		console.error("checkPlease error:", error);
 	}
 }

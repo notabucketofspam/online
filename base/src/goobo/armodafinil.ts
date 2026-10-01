@@ -17,7 +17,7 @@ export function init_ListAllGuildsButton() {
 			});
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('init_ListAllGuildsButton error:', err);
 	}
 }
 
@@ -30,7 +30,7 @@ export async function listAllGuilds() {
 			guilds = data.guilds ?? [];
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('listAllGuilds error:', err);
 	}
 	return guilds;
 }
@@ -114,7 +114,7 @@ export async function modal_ListAllGuilds() {
 			}
 		});
 	} catch (err) {
-		console.error(err);
+		console.error('init_ListAllGuildsButton error:', err);
 	}
 	return dialog;
 }
@@ -132,7 +132,7 @@ async function Bev_JoinGuild(ev: PointerEvent) {
 			}
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('Bev_JoinGuild error:', err);
 	}
 }
 
@@ -151,7 +151,7 @@ async function joinGuildById(guild_id: number) {
 			is_ok = true;
 		}
 	} catch(err){
-		console.error(err);
+		console.error('joinGuildById error:', err);
 	}
 	return is_ok;
 }
@@ -162,7 +162,7 @@ function Bev_KillModal(ev: PointerEvent) {
 		const dialog = target.closest('dialog');
 		removeModalDialog(dialog);
 	} catch (err) {
-		console.error(err);
+		console.error('Bev_KillModal error:', err);
 	}
 }
 
@@ -217,7 +217,7 @@ function Bev_CreateGuildModal(ev: PointerEvent) {
 		const dialog = modal_CreateGuild();
 		showModalDialog(dialog);
 	} catch (err) {
-		console.error(err);
+		console.error('Bev_CreateGuildModal error:', err);
 	}
 }
 
@@ -241,7 +241,7 @@ function modal_CreateGuild() {
 		dialog.appendChild(form);		
 		form.addEventListener('submit', Fev_CreateGuild);
 	} catch (err) {
-		console.error(err);
+		console.error('modal_CreateGuild error:', err);
 	}
 	return dialog;
 }
@@ -271,7 +271,7 @@ async function Fev_CreateGuild(ev: SubmitEvent) {
 						populate_treeview();
 					} else {
 						// theres a problem
-						console.error(response);
+						console.error('Fev_CreateGuild response error:', response);
 					}
 				} else {
 					// looks like the guild name was left blank-ish
@@ -283,6 +283,6 @@ async function Fev_CreateGuild(ev: SubmitEvent) {
 			// The Form Hath Gone Missing!
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('Fev_CreateGuild error:', err);
 	}
 }

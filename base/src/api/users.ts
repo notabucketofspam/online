@@ -32,7 +32,7 @@ async function handleAdd(req: Request, res: Response) {
 			res.status(401).json({ message: 'Invalid or expired token.' });
 		}
 	} catch (error: any) {
-		console.error(error);
+		console.error("Failed to add user:", error);
 		res.status(500).json({ message: 'Failed to add user: ' + error.message });
 	}
 }
@@ -53,7 +53,7 @@ async function handleLogin(req: Request, res: Response) {
 			res.status(401).json({ message: 'Invalid credentials.' });
 		}
 	} catch (error: any) {
-		console.error(error);
+		console.error("Failed to login:", error);
 		res.status(500).json({ message: 'Login failed: ' + error.message });
 	}
 }

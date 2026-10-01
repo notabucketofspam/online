@@ -41,7 +41,7 @@ export async function doJoinVoice(channel_id: number) {
 		const roomcode = String(channel_id);
 		await joinVoiceChannel(roomcode);
 	} catch (er) {
-		console.error(er);
+		console.error('doJoinVoice error:', er);
 	}
 }
 
@@ -81,7 +81,7 @@ export async function renderVoice(channel_id: number, mount:boolean = true) {
 			// no fridge and/or freezer
 		}
 	} catch (errrrr) {
-		console.error(errrrr);
+		console.error('you have been rended apart:', errrrr);
 	}
 }
 
@@ -122,7 +122,7 @@ export async function leaveVoiceChannel(unmount=true) {
 			CALL_unmount();
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('you can never leave', err);
 	}
 }
 

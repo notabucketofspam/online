@@ -33,7 +33,7 @@ async function wantAuthn(req: Request, res: Response) {
 			GIVE_UP(res, 'missing userId or X-Forwarded-For header');
 		}
 	} catch (errrrr) {
-		console.error(errrrr);
+		console.error("authn problem:", errrrr);
 		GIVE_UP(res, 'couldnt handle authn request');
 	}
 }

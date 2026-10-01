@@ -64,7 +64,7 @@ export async function checkIfUserIsReal(email: string) {
 			return false;
 		}
 	} catch (error) {
-		console.error(error);
+		console.error('checkIfUserIsReal error:', error);
 		// eh, assume that it's the user's fault this time
 		return false;
 	}
@@ -104,7 +104,7 @@ export async function updateUserPassword(email: string, password: string) {
 		const result = await queryDatabase(sql, params, true);
 		return result.rowsAffected === 1;
 	} catch (error) {
-		console.error(error);
+		console.error('error with password update:', error);
 		throw error;
 	}
 }
@@ -152,7 +152,7 @@ export async function deleteUser(userId: number) {
 		const result = await queryDatabase(sql, params, true);
 		return result.rowsAffected === 1;
 	} catch (error) {
-		console.error(error);
+		console.error("Failed to delete user:", error);
 		throw error;
 	}
 }

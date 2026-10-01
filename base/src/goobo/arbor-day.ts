@@ -41,7 +41,7 @@ export async function populate_treeview(){
 			console.error('missing some stuffs, mate');
 		}
 	} catch(errr){
-		console.error(errr);
+		console.error('populate_treeview error:', errr);
 	}
 }
 
@@ -59,7 +59,7 @@ async function channelListAll(){
 			console.error('couldnt get the channel list');
 		}
 	} catch (errr) {
-		console.error(errr);
+		console.error('channelListAll error:', errr);
 	}
 	return all_guilds;
 }
@@ -128,7 +128,7 @@ function plantTree(guild: Guild){
 			// missing the template
 		}
 	} catch(err) {
-		console.error(err);
+		console.error('populate_treeview error:', err);
 	}
 	return ret_f;
 }
@@ -170,7 +170,7 @@ async function setActiveChannel(channel_id: number) {
 			}
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('setActiveChannel error:', err);
 	}
 }
 
@@ -190,7 +190,7 @@ async function gcli_onclick(ev: PointerEvent) {
 			await setActiveChannel(channel_id);
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('gcli_onclick error:', err);
 	}
 }
 
@@ -212,7 +212,7 @@ async function setActiveGuild(guild_id: number) {
 			await populate_guildMembers(guild_id);
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('setActiveGuild error:', err);
 	}
 }
 

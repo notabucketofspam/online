@@ -88,7 +88,7 @@ export function theWsbcUdpRelay(pm: WsPairMeta){
 		relaySocket.addListener('message', relay_onmessage );
 
 	} catch (err) {
-		console.log(err);
+		console.error("a small udp problem:", err);
 	}
 }
 

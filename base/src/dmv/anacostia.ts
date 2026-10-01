@@ -30,7 +30,7 @@ export function initAnacostia() {
 }
 
 function wss_onwsClientError(err: Error, socket: Stream.Duplex, request: http.IncomingMessage) {
-  console.error(err, socket, request);
+  console.error('ANACOSTIA WSS ERROR:',err, socket, request);
 }
 function wss_onconnection(wsConn: ws.WebSocket, req: http.IncomingMessage) {
   // console.log(req);
@@ -73,7 +73,7 @@ async function ws_onmessage(this: ws.WebSocket, message: ws.RawData, isBinary: b
     }
 		//console.log(guildsWithClients);
   } catch (err) {
-		console.error(`ws_onmessage error:`, err);
+		console.error("ANOTHER ANACOSTIA WSS ERROR:", err);
   }
 }
 const PeanutButter = Uint8Array.from([0xA]);
@@ -147,7 +147,7 @@ async function smotherUserWithGlue(wsConn: ws.WebSocket, user_id: number) {
       // theres something funky with the result
     }
   } catch (err) {
-    console.error(err);
+    console.error("smotherUserWithGlue error:", err);
   }
 }
 
@@ -165,6 +165,6 @@ export function miracast(guild_id: number, letter: any) {
       // ah, looks like theres no clients
     }
   } catch (err) {
-    console.error(err);
+    console.error("miracast error:", err);
   }
 }

@@ -17,7 +17,7 @@ const redisClient = createClient({
 });
 redisClient.connect().catch(console.error);
 redisClient.on('error', function(err) {
-	console.error(err);
+	console.error('redis error:',err);
 	if (err?.code === "ECONNREFUSED"){
 		console.log(`
 		=======================

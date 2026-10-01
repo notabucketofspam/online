@@ -19,7 +19,7 @@ export async function guildList() {
 			return [];
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('guildList error:', err);
 		return [];
 	}
 }
@@ -37,7 +37,7 @@ export async function channelList(guild_id: number) {
 			return [];
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('channelList error:', err);
 		return [];
 	}
 }
@@ -54,7 +54,7 @@ export async function get_sinfo() {
 			info = await res.json();
 		}
 	} catch (err) {
-		console.error(err);
+		console.error('get_sinfo error:', err);
 	}
 	return info;
 }

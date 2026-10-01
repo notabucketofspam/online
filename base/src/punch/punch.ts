@@ -152,7 +152,7 @@ async function ws_onmessage (this: ws.WebSocket,message : ws.RawData, isBinary: 
 				// client is doing the join handshake thing
 				const ev_data: WsbcReply = parsedMessage;
 					const {request_id, flavour, punch_port} = ev_data;
-				console.log("ws_onmessage", ev_data);
+				//console.log("ws_onmessage", ev_data);
 				const wsPair = joinMap.get(request_id);
 				if (typeof wsPair !== 'undefined') {
 						const {wsClient, wsServer, wsMeta} = wsPair;
@@ -310,7 +310,7 @@ async function ws_onmessage (this: ws.WebSocket,message : ws.RawData, isBinary: 
 			// it's just a ping message
 		}
 		}catch(err){
-		console.error(err);
+		console.error("ws_onmessage error:", err);
 	}
 }
 
@@ -322,9 +322,7 @@ function ws_onceclose (this: ws.WebSocket,code : number, reason : Buffer) {
 }
 
 function wss_onwsClientError (err : Error, socket: Stream.Duplex, request: http.IncomingMessage){
-	console.error('WebSocket client error', err);
-	console.error(socket);
-	console.error(request);
+	console.error('WebSocket client error', err, socket, request);
 }
 
 // exports? yes.
