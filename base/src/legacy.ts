@@ -47,6 +47,6 @@ router.use("/goobo", express.static(msdir("dist","goobo"), {
 	extensions: ['js']
 }));
 router.use("/online/captcha", express.static(msdir("html", "captcha")));
-router.use("/online/registrar", express.static(msdir("html", "registrar")));
+router.use("/online/registrar", express.static(msdir("html", "office-of-the-registrar")));
 
 export {router as rt_legacy};

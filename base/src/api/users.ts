@@ -10,6 +10,7 @@ import {
 	redisStore,
 } from "../express_app.ts"; 
 import { despammer } from "../malware/norton.js";
+import { requireCaptcha } from "../malware/captcha.ts";
 
 // Route Handlers
 async function handleAdd(req: Request, res: Response) {
@@ -274,14 +275,14 @@ async function handleDelete(req: Request, res: Response) {
 const router = Router();
 
 // Define Routes
-router.post('/add', handleAdd);
-router.post('/login', handleLogin);
+router.post('/add', requireCaptcha, handleAdd);
+router.post('/login', requireCaptcha, handleLogin);
 router.post('/logout', isAuthenticated, handleLogout);
 router.get("/info", isAuthenticated, handleInfo);
 router.post('/storage', isAuthenticated, handleSaveStorage); // Route to save JSON storage
 router.get('/storage', isAuthenticated, handleGetStorage);   // Route to retrieve JSON storage
 router.post('/ask-for-token', despammer, handle_ask_for_token);
-router.post('/password-reset', despammer, handlePasswordReset);
+router.post('/password-reset', requireCaptcha, handlePasswordReset);
 router.get("/delete", isAuthenticated, handleDelete);
 
 export { router as rt_users};

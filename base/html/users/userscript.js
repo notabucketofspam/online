@@ -294,11 +294,9 @@ document.getElementById('this-is-the-leave-button')?.addEventListener('click', (
 
 // ============================== captcha tomfoolery
 
-setTimeout(function () {
-	injectCapScript();
-	[
-		'api_users_add',
-		'api_users_login',
-		'ask_for_token',
-	].forEach(insert_capWidget_here);
-});
+//@ts-ignore
+Fuller_Auto(
+	'api_users_add',
+	'api_users_login',
+	'ask_for_token',
+);

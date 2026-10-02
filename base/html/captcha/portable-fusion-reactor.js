@@ -80,3 +80,13 @@ function get_capWidget_from_event(ev) {
   }
   return capResponse;
 }
+
+/**@param {string[]} some_ids */
+function Fuller_Auto(...some_ids) {
+  setTimeout(function () {
+    injectCapScript();
+    if (some_ids instanceof Array) {
+      some_ids.forEach(insert_capWidget_here);
+    }
+  });
+}
