@@ -44,5 +44,6 @@ router.use("/goobo", express.static(path.join(__dirname, "goobo"), {
 	extensions: ['js']
 }));
 router.use("/online/captcha", express.static(path.join(process.cwd(), "html", "captcha")));
+router.use("/online/registrar", express.static(path.join(process.cwd(), "html", "registrar")));
 
 export {router as rt_legacy};
