@@ -134,7 +134,7 @@ async function handleGetStorage(req: Request, res: Response) {
 
 // ======================================================================================
 // ------------- this is the section with the password reset stuffs -----------------
-import * as emain from "../emain";
+import craft_email from "../malware/eminent-domain.js";
 
 /**
  * this guy shall do the sending of the email
@@ -170,9 +170,10 @@ async function handle_ask_for_token(req: Request, res: Response) {
 			await redisClient.setEx(`${keyfix}:${email}`, 1000, token);
 
 			// sending the email now			
-			const not_ok = await emain.craft(email, token, keyfix);
-			if (not_ok) {
+			const is_ok = await craft_email(email, token, keyfix);
+			if (!is_ok) {
 				// console.log('something went wrong with the email sending');
+				console.error('something went wrong with the email sending');
 			}
 		}
 
