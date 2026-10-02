@@ -5,7 +5,12 @@ import {Request, Response, Router} from "express";
 
 import {rember} from "../util_dump.ts";
 const router = Router();
-import {getWhatsOnDeck} from "./garbage_island.ts";
+import {
+  getWhatsOnDeck,
+  generateTrash,
+  type PromptFn,
+  type CauldronFn,
+} from "./garbage_island.ts";
 
 const contentpath = path.join(os.tmpdir(), "wsbc_banquet");
 
@@ -15,7 +20,7 @@ const contentpath = path.join(os.tmpdir(), "wsbc_banquet");
 const maxfresh = 8.64e5;
 async function banquetProMax(req: Request, res: Response) {
   try {
-		const bindo = await getWhatsOnDeck(banquetPrompt, contentpath, maxfresh);
+		const bindo = await getWhatsOnDeck(banquetCauldron, contentpath, maxfresh);
     if (bindo){
       // send the bindo
 			res.status(200).contentType("image/png").send(bindo);
@@ -31,7 +36,7 @@ router.get("/", banquetProMax);
 
 export {router as rt_banquet};
 
-const banquetPrompt = () => ({
+const banquetPrompt: PromptFn = () => ({
   "3": {
     "class_type": "KSampler",
     "inputs": {
@@ -91,14 +96,16 @@ const banquetPrompt = () => ({
   }
 });
 
-const adj = [
+const banquetCauldron: CauldronFn = () => generateTrash(banquetPrompt);
+
+export const adj = [
   "EXTRA", "EXTRA", "EXTRA", "EXTRA",
   "EXTRA", "EXTRA", "BONUS", 
   "EXTRA", "EXTRA", "MORE", "EXTRA", 
   "EXTRA", "EXTRA", "100% NATURAL",
   "VERY", "REDUCED",
 ];
-const noun = [
+export const noun = [
   "BEANS", "LONG", "CALORIES", "SAUCE",
   "SO-DIMM SLOTS", "BANQUET", "SONGS",
   "NATURAL", "POP", "GRUNGE", "PARTICLES",

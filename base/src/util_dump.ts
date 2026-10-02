@@ -13,6 +13,10 @@ export function rember<T>(arr: T[]): T {
   return arr[crypto.randomInt(arr.length)]!;
 }
 
+export function rui(k: number) {
+  return Math.trunc(Math.random() * k);
+}
+
 /**
  * generate a very real Microsoft product key
  * @returns 

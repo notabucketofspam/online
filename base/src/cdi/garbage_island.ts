@@ -1,17 +1,23 @@
 import path from "node:path";
 import fs from "node:fs";
 import {Buffer} from "node:buffer";
-import { generateMSProductKey, astext } from "../util_dump.ts";
+import { generateMSProductKey, astext_p, astext } from "../util_dump.ts";
+
+const use_localhost = fs.existsSync('notkeys/use-localhost.txt');
 
 /**
  * this is the function that we use to generate an image with the EVGA FTW GTX 1080
  */
-export async function generateTrash(prompt:object) {
-	return await new Promise<Buffer|null>(function(resolve, reject) {
+export async function generateTrash(promptfn: PromptFn):Promise<Buffer|null> {
+	return await new Promise<Buffer|null>(async function(resolve, reject) {
 		/**the buffer that has the final image in it*/
 		let resb: Buffer | null;
-
-		const endpoint = astext(path.join(process.cwd(),'keys','garbage_island'));
+		let endpoint = '';
+		if (use_localhost) {
+			endpoint = await astext_p(path.join(process.cwd(), 'keys', 'local_garbage'));
+		} else {
+			endpoint = await astext_p(path.join(process.cwd(), 'keys', 'garbage_island'));
+		}
 		const client_id = generateMSProductKey();
 	
 		const socket = new WebSocket(`ws://${endpoint}/ws?clientId=${client_id}`);
@@ -22,7 +28,7 @@ export async function generateTrash(prompt:object) {
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({prompt,client_id})
+				body: JSON.stringify({prompt: promptfn(), client_id})
 			}).catch(function(er){
 				console.error("Failed to send prompt:", er);
 				socket.close();
@@ -89,7 +95,7 @@ export async function generateTrash(prompt:object) {
  * if he's stale, give nothing.
  * if he's hella fresh, return our man.
  */
-async function chkfresh(fname: string, fresh: number) {
+async function chkfresh(fname: string, fresh: number) : Promise<Buffer | null> {
 	let lastcontent: Buffer | null = null;
 	try {
 		// try to read the content file
@@ -114,7 +120,7 @@ async function chkfresh(fname: string, fresh: number) {
  * - we give the user back the one that's on-deck, if possible
  * - we generate a new man
  */
-export async function getWhatsOnDeck(promptfn: ()=>object, fname: string, fresh: number) {
+export async function getWhatsOnDeck(cauldron: CauldronFn, fname: string, fresh: number): Promise<Buffer | null> {
 	let content: Buffer | null = null;
 	try {
 		// check existing content
@@ -132,7 +138,7 @@ export async function getWhatsOnDeck(promptfn: ()=>object, fname: string, fresh:
 			} else {
 				// we have neither of them
 				// generate at least one new guy. we have to wait this time.
-				const aBrandNewMan = await generateTrash(promptfn());
+				const aBrandNewMan = await cauldron();
 				if (aBrandNewMan) {
 					content = aBrandNewMan;
 				} else {
@@ -146,7 +152,7 @@ export async function getWhatsOnDeck(promptfn: ()=>object, fname: string, fresh:
 				await fs.promises.writeFile(fname, content);
 				// wait a lil bit before make the next one
 				setTimeout(function() {
-					manMeaSand(promptfn(), fname_next);
+					manMeaSand(cauldron, fname_next);
 				}, 10e3);
 			} catch (e) {
 				console.error("Failed to write content file:", e);
@@ -163,9 +169,9 @@ export async function getWhatsOnDeck(promptfn: ()=>object, fname: string, fresh:
  * Mr. Sandman, man me a sand
  * make him the cutest man car door hook hand
  */
-async function manMeaSand(prompt: object, fname: string) {
+async function manMeaSand(cauldron: CauldronFn, fname: string): Promise<void> {
 	try {
-		const buf = await generateTrash(prompt);
+		const buf = await cauldron();
 		if (buf) {
 			await fs.promises.writeFile(fname, buf);
 		} else {
@@ -176,3 +182,6 @@ async function manMeaSand(prompt: object, fname: string) {
 	}
 }
 
+export type PromptFn = () => object;
+export type ChurnStyleFn = (promptfn: PromptFn) => Promise<Buffer | null>;
+export type CauldronFn = () => Promise<Buffer | null>;
