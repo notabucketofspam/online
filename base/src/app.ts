@@ -1,22 +1,22 @@
-import * as oracledb from 'oracledb';
+import oracledb from 'oracledb';
 import * as cron from 'cron';
-import { express_app, isAuthenticated } from './express_app';
-import { setPool, checkPlease } from './db';
-import { rt_users } from './api/users'; 
-import {grandFacade} from './punch/udp';
-import { rt_punch } from "./punch/rt_punch";
-import { initWSS } from "./punch/punch";
-import { rt_pkey } from "./api/product_key";
-import {rt_legacy} from "./legacy";
-import {rt_livekit } from "./livekit/rt_livekit";
-import {rt_cdi} from "./cdi/rt_cdi";
-import {rt_baltimore} from "./dmv/baltimore";
-import {initAnacostia } from "./dmv/anacostia";
+import { express_app, isAuthenticated } from './express_app.ts';
+import { setPool, checkPlease } from './db.ts';
+import { rt_users } from './api/users.ts'; 
+import { grandFacade } from './punch/udp.ts';
+import { rt_punch } from "./punch/rt_punch.ts";
+import { initWSS } from "./punch/punch.ts";
+import { rt_pkey } from "./api/product_key.ts";
+import { rt_legacy } from "./legacy.ts";
+import { rt_livekit } from "./livekit/rt_livekit.ts";
+import { rt_cdi } from "./cdi/rt_cdi.ts";
+import { rt_baltimore } from "./dmv/baltimore.ts";
+import { initAnacostia } from "./dmv/anacostia.ts";
 import { rt_captcha } from "./malware/captcha.js";
 
 import http from "node:http";
 import stream from "node:stream";
-import ws from "ws";
+import * as ws from "ws";
 
 express_app.use(rt_legacy);
 express_app.use("/api/users", rt_users);
@@ -27,7 +27,7 @@ express_app.use("/api/cdi", rt_cdi);
 express_app.use("/api/dmv", rt_baltimore);
 express_app.use("/api/captcha", rt_captcha);
 
-import {astext} from "./util_dump";
+import { astext } from "./util_dump.ts";
 
 process.env.TNS_ADMIN = "./wallet_ValuedCustomer/";
 

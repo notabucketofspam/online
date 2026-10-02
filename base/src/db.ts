@@ -1,4 +1,4 @@
-import * as oracledb from 'oracledb';
+import oracledb from 'oracledb';
 
 // Define the database connection pool (it will be initialized in main.ts)
 let pool: oracledb.Pool;

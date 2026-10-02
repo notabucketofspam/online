@@ -10,7 +10,7 @@ import {
 	generatePunchSku,
 	getClientByService,
 	getPunchServices
-} from "./fn_punch"; 
+} from "./fn_punch.ts"; 
 
 import { Punch } from "VocabQuiz";
 import { SessionData } from "express-session";

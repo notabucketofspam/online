@@ -1,10 +1,10 @@
-import * as oracledb from 'oracledb';
+import oracledb from 'oracledb';
 import crypto from 'node:crypto';
 import session from 'express-session';
 import { SessionData } from 'express-session';
 
-import { queryDatabase, User } from "../db";
-import { redisStore } from "../express_app"; 
+import { queryDatabase, User } from "../db.ts";
+import { redisStore } from "../express_app.ts"; 
 
 // ======================================================================================
 // Function to add a new user to the database

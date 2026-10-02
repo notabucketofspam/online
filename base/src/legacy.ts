@@ -3,7 +3,10 @@ import path from 'path';
 import { Request, Response, Router } from 'express';
 import express from 'express';
 
-import { generateMSProductKey } from './util_dump';
+import {
+	generateMSProductKey,
+	msdir
+} from './util_dump.ts';
 
 const router = Router();
 
@@ -33,17 +36,17 @@ router.get("/ip", get_ip);
 // ========================================================
 // and this is a whole bunch of static routes
 
-router.use("/account", express.static(path.join(process.cwd(), "html","users")));
-router.use("/punch", express.static(path.join(process.cwd(), "html", "punch")));
-router.use("/livekit", express.static(path.join(process.cwd(), "html", "livekit")));
-router.use("/goobo", express.static(path.join(process.cwd(), "html", "goobo"), {
+router.use("/account", express.static(msdir("html","users")));
+router.use("/punch", express.static(msdir("html", "punch")));
+router.use("/livekit", express.static(msdir("html", "livekit")));
+router.use("/goobo", express.static(msdir("html", "goobo"), {
 	index: "classic.html", 
 	fallthrough:true
 }));
-router.use("/goobo", express.static(path.join(__dirname, "goobo"), {
+router.use("/goobo", express.static(msdir("dist","goobo"), {
 	extensions: ['js']
 }));
-router.use("/online/captcha", express.static(path.join(process.cwd(), "html", "captcha")));
-router.use("/online/registrar", express.static(path.join(process.cwd(), "html", "registrar")));
+router.use("/online/captcha", express.static(msdir("html", "captcha")));
+router.use("/online/registrar", express.static(msdir("html", "registrar")));
 
 export {router as rt_legacy};

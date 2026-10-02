@@ -24,6 +24,10 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
 
+    "moduleResolution": "nodenext",
+    "rewriteRelativeImportExtensions": true,
+    "allowArbitraryExtensions": true,
+
     // Style Options
     // "noImplicitReturns": true,
     // "noImplicitOverride": true,

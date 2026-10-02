@@ -3,9 +3,9 @@ import os from "node:os";
 import crypto from "node:crypto";
 import {Request, Response, Router} from "express";
 
-import {rember} from "../util_dump";
+import {rember} from "../util_dump.ts";
 const router = Router();
-import {getWhatsOnDeck} from "./garbage_island";
+import {getWhatsOnDeck} from "./garbage_island.ts";
 
 const contentpath = path.join(os.tmpdir(), "wsbc_banquet");
 

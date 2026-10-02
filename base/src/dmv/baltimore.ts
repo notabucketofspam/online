@@ -1,11 +1,11 @@
 import {Router} from "express";
 import {SessionData} from "express-session";
-import {isAuthenticated} from "./annapolis";
+import {isAuthenticated} from "./annapolis.ts";
 
-import rt_guild from "./guild";
-import rt_channel from "./channel";
-import rt_message from "./message";
-import rt_authn from "./authn";
+import rt_guild from "./guild.ts";
+import rt_channel from "./channel.ts";
+import rt_message from "./message.ts";
+import rt_authn from "./authn.ts";
 
 const router = Router({mergeParams: true});
 

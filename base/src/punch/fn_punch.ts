@@ -3,11 +3,11 @@ import crypto from "node:crypto";
 import net from "node:net";
 
 import { Response } from 'express';
-import ws from 'ws';
+import * as ws from 'ws';
 
-import * as odb from "../db";
-import { generate_reset_token } from "../express_app";
-import { wss, clientMap, punchJoinMap as joinMap } from "./punch";
+import * as odb from "../db.ts";
+import { generate_reset_token } from "../express_app.ts";
+import { wss, clientMap, punchJoinMap as joinMap } from "./punch.ts";
 
 import { Punch, ClientData, WsEventData, WsPairMeta } from "VocabQuiz";
 import { SessionData } from "express-session";

@@ -1,5 +1,5 @@
 import {Router, Request, Response} from 'express';
-import {GIVE_UP, pidgen, queryDatabase} from "./annapolis";
+import {GIVE_UP, pidgen, queryDatabase} from "./annapolis.ts";
 
 const router = Router({ mergeParams: true });
 

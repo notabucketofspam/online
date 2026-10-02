@@ -1,8 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import {Buffer} from "node:buffer";
-import {generateMSProductKey} from "../util_dump";
-import {astext} from "../util_dump";
+import { generateMSProductKey, astext } from "../util_dump.ts";
 
 /**
  * this is the function that we use to generate an image with the EVGA FTW GTX 1080

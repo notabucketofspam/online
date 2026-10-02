@@ -4,18 +4,18 @@ import http from 'node:http';
 import net from "node:net";
 
 import { Request } from 'express';
-import ws from 'ws';
+import * as ws from 'ws';
 
-import * as odb from "../db";
-import { redisStore } from "../express_app";
-import { rsPort, theWsbcUdpRelay } from './udp';
+import * as odb from "../db.ts";
+import { redisStore } from "../express_app.ts";
+import { rsPort, theWsbcUdpRelay } from './udp.ts';
 import {
 	generatePunchSku,
 	getPunchBySku,
 	getWsClientByPunchSku,
 	performJunction,
 	generateClientBarcode
-} from "./fn_punch"; 
+} from "./fn_punch.ts"; 
 
 import {
 	Punch,

@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
-import { generate_reset_token, isAuthenticated } from "../express_app";
-import { generateMSProductKey } from "../util_dump";
-import * as odb from "../db";
+import { generate_reset_token, isAuthenticated } from "../express_app.js";
+import { generateMSProductKey } from "../util_dump.js";
+import * as odb from "../db.ts";
 const router = Router();
 
 async function createKey(req: Request, res: Response) {

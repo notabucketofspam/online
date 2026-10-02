@@ -1,7 +1,7 @@
 // also, some of this stuff was taken directly from
 // Oracle's docs (which was apparently also machine-generated btw)
 
-import {astext as astext_II} from "./util_dump";
+import { astext as astext_II } from "./util_dump.ts";
 
 import * as emaildataplane from "oci-emaildataplane";
 import common = require("oci-common");

@@ -1,6 +1,6 @@
 import dgram from 'node:dgram';
-import {punchJoinMap as joinMap} from "./punch";
-import {WsPairMeta} from "VocabQuiz";
+import { punchJoinMap as joinMap } from "./punch.ts";
+import type {WsPairMeta} from "VocabQuiz";
 
 const udpOK = Buffer.from('PUNCH');
 

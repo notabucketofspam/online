@@ -3,9 +3,9 @@
 
 import http from "node:http";
 import Stream from "node:stream";
-import ws from "ws";
-import {queryDatabase} from "../db";
-import { validProductKey } from "./authn";
+import * as ws from "ws";
+import {queryDatabase} from "../db.ts";
+import { validProductKey } from "./authn.ts";
 import { SessionData } from "express-session";
 
 let wss: ws.WebSocketServer;

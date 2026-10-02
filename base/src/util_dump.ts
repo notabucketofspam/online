@@ -62,3 +62,7 @@ export function generateMSProductKey() {
   return parts.join("-");
   // thanks gemini
 }
+
+export function msdir(...x: string[]) {
+  return path.join(process.cwd(), ...x);
+}

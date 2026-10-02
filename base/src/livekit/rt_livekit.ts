@@ -1,8 +1,8 @@
 import {Request, Response, Router} from 'express';
 import {AccessToken, RoomServiceClient} from 'livekit-server-sdk';
 
-import {astext} from '../util_dump';
-import {isAuthenticated} from '../express_app';
+import {astext} from '../util_dump.ts';
+import {isAuthenticated} from '../express_app.ts';
 import { SessionData } from "express-session";
 
 const router = Router();

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { rt_banquet } from "./banquet";
+import { rt_banquet } from "./banquet.ts";
 
 const router = Router();
 

@@ -1,14 +1,14 @@
 import { Request, Response, Router } from 'express';
 import session from 'express-session';
 import { SessionData } from 'express-session';
-import * as odb from "./users_db";
-import { getUserByEmail } from "../db";
+import * as odb from "./users_db.ts";
+import { getUserByEmail } from "../db.ts";
 import {
 	redisClient,
 	isAuthenticated,
 	generate_reset_token,
 	redisStore,
-} from "../express_app"; 
+} from "../express_app.ts"; 
 import { despammer } from "../malware/norton.js";
 
 // Route Handlers
