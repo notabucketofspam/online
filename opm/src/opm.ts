@@ -789,7 +789,7 @@ const listenToKid = true;
  * 1) a kiddo
  * 2) a function to pair with the remote
  * 3) a function to kill the kiddo*/
-function spawn_copium(options: CopiumOptions): Microplastics {
+async function spawn_copium(options: CopiumOptions): Promise<Microplastics> {
 	// Determine ports based on our Role
 
 	/**this is 0 in server mode*/
@@ -797,13 +797,17 @@ function spawn_copium(options: CopiumOptions): Microplastics {
 	/**this is 0 in CLIENT MODE*/
 	const targetPort = options.isServerMode ? options.appPort.toString() : "0";
 
+	const isV6 = options.coordHost.startsWith('6.');
+	const bindIp = await getRouteIp(options.coordHost, options.coordPort, isV6);
+
 	/** the copium child process*/
 	const kiddo = spawn(options.executablePath, [
 		bindPort,
 		targetPort,
 		options.coordHost,
 		options.coordPort.toString(),
-		options.requestId
+		options.requestId,
+		bindIp
 	]);
 	const piddo = kiddo.pid??0;
 	console.log(`@${piddo} BIRTH as ${options.isServerMode ? 'SERVER' : 'CLIENT'}`);
@@ -903,7 +907,7 @@ async function onWsMessage_copium(ev: MessageEvent) {
 					requestId: request_id
 				};
 
-				const detrius = spawn_copium(copium_options);
+				const detrius = await spawn_copium(copium_options);
 
 				// kiddo has to start up and then send a datagram to grandFacade.
 				// That takes time, so we'll wait for him (just a smidge, tho).
@@ -972,6 +976,35 @@ function postListings(ws: WebSocket) {
 		ws.send(JSON.stringify(_services));
 	} catch (err) {
 		console.error(err);
+	}
+}
+
+/**thanks gemimi*/
+async function getRouteIp(targetHost: string, targetPort: number, isV6?: boolean): Promise<string> {
+	if (typeof isV6 === 'undefined') {
+		isV6 = net.isIPv6(targetHost);
+	}
+	const fallback = isV6 ? '::' : '0.0.0.0';
+	const sock = dgram.createSocket(isV6 ? 'udp6' : 'udp4');
+	sock.on('error', () => {});
+	try {
+		return await new Promise<string>((resolve, reject) => {
+			const signal = AbortSignal.timeout(1000);
+			signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+			sock.connect(targetPort, targetHost, () => {
+				try {
+					resolve(sock.address().address);
+				} catch {
+					resolve(fallback);
+				}
+			});
+			sock.once('error', reject);
+		});
+	} catch {
+		return fallback;
+	} finally {
+		sock.removeAllListeners();
+		try { sock.close(); } catch {}
 	}
 }
 
