@@ -276,7 +276,7 @@ const router = Router();
 
 // Define Routes
 router.post('/add', requireCaptcha, handleAdd);
-router.post('/login', requireCaptcha, handleLogin);
+router.post('/login', handleLogin);
 router.post('/logout', isAuthenticated, handleLogout);
 router.get("/info", isAuthenticated, handleInfo);
 router.post('/storage', isAuthenticated, handleSaveStorage); // Route to save JSON storage
