@@ -335,7 +335,8 @@ int main(int argc, char* argv[]) {
               local_app_known = true;
               char ip_str[INET_ADDRSTRLEN];
               inet_ntop(AF_INET, &((struct sockaddr_in*)&local_addr_storage)->sin_addr, ip_str, sizeof(ip_str));
-              std::cout << "local addr is known. Try to connect to " << ip_str << std::endl;
+              std::cout << "OK COOL. Now go back to your bame and try to connect to " << 
+                (is_ipv6? "[::1]" : "127.0.0.1") << std::endl;
             } else {
               // we already know the local app's info
             }
