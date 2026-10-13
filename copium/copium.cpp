@@ -87,8 +87,9 @@ struct NetworkManager {
 };
 
 int main(int argc, char* argv[]) {
-  if (argc != 6) {
-    std::cerr << "Usage: udp_relay <local_bind_port> <local_target_port> <coord_host> <coord_port> <request_id>" << std::endl;
+  // six seven lol
+  if (argc < 6 || argc > 7) {
+    std::cerr << "Usage: udp_relay <local_bind_port> <local_target_port> <coord_host> <coord_port> <request_id> [bind_ip]" << std::endl;
     return 1;
   }
   NetworkManager net_manager;
@@ -108,6 +109,7 @@ int main(int argc, char* argv[]) {
   const char* COORD_HOST = argv[3];
   const char* COORD_PORT = argv[4];
   const char* REQUEST_ID = argv[5];
+  const char* BIND_IP = (argc == 7) ? argv[6] : "0.0.0.0";
 
   // resolve some dns
   struct addrinfo* result = nullptr;
@@ -163,14 +165,22 @@ int main(int argc, char* argv[]) {
     setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&no, sizeof(no));
     struct sockaddr_in6* addr6 = (struct sockaddr_in6*)&server_addr;
     addr6->sin6_family = AF_INET6;
-    addr6->sin6_addr = in6addr_any;
+    if (std::strcmp(BIND_IP, "::") == 0 || std::strcmp(BIND_IP, "0.0.0.0") == 0) {
+      addr6->sin6_addr = in6addr_any;
+    } else {
+      inet_pton(AF_INET6, BIND_IP, &addr6->sin6_addr);
+    }
     addr6->sin6_port = htons(LOCAL_BIND_PORT);
     bind_len = sizeof(struct sockaddr_in6);
   } else {
     // We fell back to an IPv4 socket. Bind it the classic way.
     struct sockaddr_in* addr4 = (struct sockaddr_in*)&server_addr;
     addr4->sin_family = AF_INET;
-    addr4->sin_addr.s_addr = INADDR_ANY;
+    if (std::strcmp(BIND_IP, "0.0.0.0") == 0 || std::strcmp(BIND_IP, "::") == 0) {
+      addr4->sin_addr.s_addr = INADDR_ANY;
+    } else {
+      inet_pton(AF_INET, BIND_IP, &addr4->sin_addr);
+    }
     addr4->sin_port = htons(LOCAL_BIND_PORT);
     bind_len = sizeof(struct sockaddr_in);
   }
