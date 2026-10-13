@@ -297,6 +297,6 @@ document.getElementById('this-is-the-leave-button')?.addEventListener('click', (
 //@ts-ignore
 Fuller_Auto(
 	'api_users_add',
-	'api_users_login',
+	// 'api_users_login',
 	'ask_for_token',
 );
