@@ -142,8 +142,12 @@ async function performJunction({ wsClient, wsServer, reqPunch, reqUsername, reqA
 		if (reqUsername === reqPunch.username) {
 			// same-user, so we don't have to check the database for trust issues
 			shouldSend = true;
-		} else {
+		} else if (reqPunch.trusts?.includes(reqUsername)) {
+			// he's on the VIP list, let him in
+			shouldSend = true;
+		} else if (typeof reqPunch.trusts === 'undefined') {
 			// check odb for trust
+			// we should only be doing this if the relevant punch doesn't specify its own trusts
 			const result = await odb.getTrusts();
 			if (result !== null) {
 				const isTrusted = result.get(reqPunch.username)?.includes(reqUsername);
