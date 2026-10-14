@@ -13,10 +13,8 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "@types/node": "^25.9.0",
-    "eslint": "^10.1.0",
+    "@types/node": "^26.6.5",
     "punchsalad": "file:../PunchSalad",
-    "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
