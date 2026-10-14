@@ -1,11 +1,16 @@
 declare module 'VocabQuiz' {
 	import { type WebSocket as ws } from 'ws';
 
-	export {
+	import type {
 		Punch,
 		WsEventData,
 		WireInfo,
 	} from 'PunchSalad';
+	export {
+		Punch,
+		WsEventData,
+		WireInfo
+	};
 
 	export interface WannaJoin {
 		/**the relevant punch sku*/

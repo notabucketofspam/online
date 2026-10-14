@@ -2,11 +2,16 @@ declare module 'ProperNouns' {
 	import dgram from 'node:dgram';
 	import {ChildProcess} from 'node:child_process';
 	
-	export {
+	import type {
 		Punch,
 		WsEventData,
 		WireInfo,
 	} from 'PunchSalad';
+	export {
+		Punch,
+		WsEventData,
+		WireInfo
+	};
 
 	/**info about a WebSocket that's connected to WSBC*/
 	export interface WsClientInfo {
@@ -31,6 +36,7 @@ declare module 'ProperNouns' {
 		is_advertiser: number;
 		use_localhost: number;
 		use_copium: number;
+		//@ts-ignore
 		[string]: any;
 	}
 

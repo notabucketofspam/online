@@ -1,0 +1,25 @@
+{
+  "name": "punchsalad",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/PunchSalad.js",
+  "types": "dist/PunchSalad.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/PunchSalad.d.ts",
+      "import": "./dist/PunchSalad.js"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

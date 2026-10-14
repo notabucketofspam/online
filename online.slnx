@@ -30,4 +30,9 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="PunchSalad/PunchSalad.esproj">
+    <Platform Project="AnyCPU" />
+    <Build />
+    <Deploy />
+  </Project>
 </Solution>
