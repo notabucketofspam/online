@@ -36,7 +36,10 @@ declare module 'ProperNouns' {
 		is_advertiser: number;
 		use_localhost: number;
 		use_copium: number;
-		//@ts-ignore
+		/**The preferred IPv4 interface address. Leave blank to bind on all.*/
+		if4: string;
+		/**ditto, but for IPv6.*/
+		if6: string;
 		[string]: any;
 	}
 

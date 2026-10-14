@@ -159,13 +159,16 @@ int main(int argc, char* argv[]) {
   // the binding is dynamic
   struct sockaddr_storage server_addr = {};
   int bind_len = 0;
+  int pls_addr_any = std::strcmp(BIND_IP, "::") == 0 
+    || std::strcmp(BIND_IP, "0.0.0.0") == 0
+    || std::strcmp(BIND_IP, "") == 0;
   if (is_ipv6) {
     // we have IPv6
     int no = 0;
     setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&no, sizeof(no));
     struct sockaddr_in6* addr6 = (struct sockaddr_in6*)&server_addr;
     addr6->sin6_family = AF_INET6;
-    if (std::strcmp(BIND_IP, "::") == 0 || std::strcmp(BIND_IP, "0.0.0.0") == 0) {
+    if (pls_addr_any) {
       addr6->sin6_addr = in6addr_any;
     } else {
       inet_pton(AF_INET6, BIND_IP, &addr6->sin6_addr);
@@ -176,7 +179,7 @@ int main(int argc, char* argv[]) {
     // We fell back to an IPv4 socket. Bind it the classic way.
     struct sockaddr_in* addr4 = (struct sockaddr_in*)&server_addr;
     addr4->sin_family = AF_INET;
-    if (std::strcmp(BIND_IP, "0.0.0.0") == 0 || std::strcmp(BIND_IP, "::") == 0) {
+    if (pls_addr_any) {
       addr4->sin_addr.s_addr = INADDR_ANY;
     } else {
       inet_pton(AF_INET, BIND_IP, &addr4->sin_addr);
@@ -335,8 +338,8 @@ int main(int argc, char* argv[]) {
               local_app_known = true;
               char ip_str[INET_ADDRSTRLEN];
               inet_ntop(AF_INET, &((struct sockaddr_in*)&local_addr_storage)->sin_addr, ip_str, sizeof(ip_str));
-              std::cout << "OK COOL. Now go back to your bame and try to connect to " << 
-                (is_ipv6? "[::1]" : "127.0.0.1") << std::endl;
+              std::cout << "OK COOL. Now go back to your game and try to connect to " << 
+                (is_ipv6? "::1" : "127.0.0.1") << std::endl;
             } else {
               // we already know the local app's info
             }

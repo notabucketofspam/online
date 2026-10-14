@@ -25,7 +25,9 @@ fs.mkdirSync('opm-data', {recursive:true});
 const settings: SettingsJson = {
 	is_advertiser: 0,
 	use_localhost: 0,
-	use_copium: 1
+	use_copium: 1,
+	if4: "0.0.0.0",
+	if6: "::",
 };
 
 /** try to load settings from disk */
@@ -36,7 +38,11 @@ function init_settings() {
 			const savefile = JSON.parse(astext('opm-data/settings.json')) as SettingsJson;
 			for (const key in settings) {
 				if (typeof settings[key] === typeof savefile[key]) {
-					settings[key] = savefile[key];
+					if (!key.startsWith("if")
+						|| (key === 'if4' && net.isIPv4(savefile[key]))
+						|| (key === 'if6' && net.isIPv6(savefile[key]))) {
+						settings[key] = savefile[key];
+					}
 				}
 			}
 		} catch (err) {
@@ -798,7 +804,8 @@ async function spawn_copium(options: CopiumOptions): Promise<Microplastics> {
 	const targetPort = options.isServerMode ? options.appPort.toString() : "0";
 
 	const isV6 = options.coordHost.startsWith('6.');
-	const bindIp = await getRouteIp(options.coordHost, options.coordPort, isV6);
+	// const bindIp = await getRouteIp(options.coordHost, options.coordPort, isV6);
+	const bindIp = isV6 ? settings.if6 : settings.if4;
 
 	/** the copium child process*/
 	const kiddo = spawn(options.executablePath, [
