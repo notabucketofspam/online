@@ -29,7 +29,7 @@ express_app.use("/api/captcha", rt_captcha);
 
 import { astext } from "./util_dump.ts";
 
-process.env.TNS_ADMIN = "./wallet_ValuedCustomer/";
+process.env.TNS_ADMIN = "./Wallet_ValuedCustomer/";
 
 let pool: oracledb.Pool;
 
@@ -47,8 +47,8 @@ async function init() {
 			user,
 			password,
 			connectString,
-			configDir: "./wallet_ValuedCustomer/",
-			walletLocation: "./wallet_ValuedCustomer/",
+			configDir: "./Wallet_ValuedCustomer/",
+			walletLocation: "./Wallet_ValuedCustomer/",
 			walletPassword: astext("keys/wallet_pass")
 		});
 
